@@ -5,14 +5,15 @@
 
 from __future__ import annotations
 
+import importlib
 import json
-import subprocess
 from pathlib import Path
 
 import kyuura_engine
 from kyuura_engine import client_api as C
 from kyuura_engine import diagnostics as D
 from kyuura_engine import legal_actions as L
+from kyuura_gui_server.engine_source import verify_engine_source
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -20,13 +21,14 @@ EXPECTED = json.loads((ROOT / "contract" / "kyuura-client-api-v1.json").read_tex
 
 
 def test_engine_identity():
-    assert kyuura_engine.__version__ == EXPECTED["engine"]["version"]
-    src = Path(kyuura_engine.__file__).resolve().parents[1]
-    head = subprocess.run(["git", "-C", str(src), "rev-parse", "HEAD"], capture_output=True, text=True)
-    if head.returncode == 0:  # -e で入れた clone なら、そのコミットを確かめる
-        assert head.stdout.strip() == EXPECTED["engine"]["commit"]
+    """導入元は direct_url.json の vcs_info で確かめる（site-packages で git rev-parse をしない）。"""
+    summary = verify_engine_source(EXPECTED["engine"]["commit"], EXPECTED["engine"]["version"])
+    assert summary["commit_id"] == EXPECTED["engine"]["commit"] and summary["version"] == kyuura_engine.__version__ == "0.164.0"
+    assert "site-packages" in Path(summary["module"]).parts and ".venv/src" not in Path(summary["module"]).as_posix()
     reqs = (ROOT / "server" / "requirements.txt").read_text(encoding="utf-8")
-    assert f"kyuura-engine@{EXPECTED['engine']['commit']}" in reqs
+    assert f"kyuura-engine @ git+https://github.com/moheronemy/kyuura-engine@{EXPECTED['engine']['commit']}" in reqs
+    assert not any(line.strip().startswith("-e") for line in reqs.splitlines())
+    importlib.import_module("kyuura_engine.resolution")  # 修正前の配布物では入っていなかったサブパッケージ
 
 
 def test_envelope_and_formats():
