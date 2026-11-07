@@ -13,9 +13,10 @@ web/       フロントエンド（Vite・React・TypeScript）。/api を Vite 
   src/api/       契約の値（contract.ts）・JSON の型（types.ts）・実行時検証（validate.ts）・通信層（transport.ts）
   src/state/     入口ごとの画面の状態（取っ手・取り直し・遅れた応答の破棄）・送信の門・ログの要約
   src/components 盤面・状態・候補・coverage・決定の入力・診断・ログ・作成の画面
+  src/cards/     カード画像（公開カード定義の検証・kyuura-card-renderer の入口・描画の部品）
   e2e/           実エンジンへのブラウザの接続確認（Playwright）
 server/    ローカル接続層（Python・FastAPI）。ClientHub を包む薄い層。127.0.0.1 だけで待ち受ける
-  kyuura_gui_server/  app.py（HTTP の口）・local_match.py（入口の保持・直列化・更新の保持）・decks.py・scenarios.py・safety.py
+  kyuura_gui_server/  app.py（HTTP の口）・local_match.py（入口の保持・直列化・更新の保持）・decks.py・scenarios.py・safety.py・card_definitions.py（描画用の公開カード定義）
   tests/              接続層のテスト（実際の固定版エンジンへつなぐ）
   tools/              検証用の固定例の作り直し
 contract/  GUI が前提にする契約の値の表（TypeScript と Python のテストが同じ表を読む）
@@ -62,6 +63,15 @@ cd server && .venv/bin/python -m kyuura_gui_server.engine_source
 # → {"install": "git", "commit_id": "ffcc5cab5df1ebde0faed3fd23b481295374e1f9", "version": "0.164.0", "module": ".../site-packages/kyuura_engine/__init__.py"}
 ```
 
+## カード画像の renderer の固定
+
+- **kyuura-card-renderer** の完全なコミット: `af882310059c7f33bc371d31b859b09f5428f6d1`（同じ Canvas では最後に始めた要求だけが描く、非同期の描画の修正を含む）。renderer の main の先頭へは自動で追従しない
+- 依存の定義: `web/package.json` の `"kyuura-card-renderer": "github:moheronemy/kyuura-card-renderer#af882310059c7f33bc371d31b859b09f5428f6d1"`。`web/package-lock.json` も同じコミット。導入のときに renderer の `prepare`（`npm run build:lib`。tsc で `dist-lib/` を作り、素材画像を写す）が動く。npm の `allowScripts` で、このコミットの `prepare` だけを許可している
+- 固定の記録: [`contract/kyuura-gui-card-definitions-v1.json`](contract/kyuura-gui-card-definitions-v1.json) の `renderer.commit`（接続層のテストが `package.json`・lockfile と照らす）
+- 使う公開 API（パッケージの入口の export だけ。`src/` の中を直接 import しない）: `fromEngineCard`・`renderToCanvas`・`cancelRenderToCanvas`・型 `EngineCardRecord`・`RenderableCard` など（`web/src/cards/renderer.ts`）
+- `renderToCanvas` の戻り値: `true` は描いた、`false` は同じ Canvas へのあとの要求・キャンセルで無効になった（エラーではない）、reject は有効な要求の読み込み・描画の失敗
+- `dist-lib` はバンドルしていない ESM（素材画像と Web フォントの CSS を import する）なので、Vite が扱う。Vitest でも Vite の変換を通す（`vite.config.ts` の `test.server.deps.inline`）
+
 ## 導入と起動
 
 ```sh
@@ -70,6 +80,8 @@ npm run dev       # 接続層（127.0.0.1:8765）と Vite（127.0.0.1:5173）を
 ```
 
 ブラウザで <http://127.0.0.1:5173/> を開きます。
+
+本番ビルドの確認: `npm run build` のあと、接続層を起動して `cd web && npx vite preview`（<http://127.0.0.1:4173/>。開発時と同じく `/api` を接続層へプロキシする）。
 
 個別に起動する場合:
 
@@ -95,6 +107,41 @@ cd web && npm run dev
 | サドン・デス | 延長戦の開始 | **ローカルホスト（別枠）** |
 
 表示: 相手のバトル場・ベンチ・各領域の公開枚数、自分のバトル場・ベンチ・手札、HP・ダメージ・特殊状態・エネルギー、段階・入力待ちの主体、操作候補と処理可能性・保証の範囲・入力の公開区分、coverage（対応範囲と未対応の種類）、診断、閲覧者に届いた公開の更新の要約。
+
+## カード画像
+
+カード画像は、**エンジンのカード定義から kyuura-card-renderer で作る、非公式のカード風の画像**です。実際のカードの画像・公式の画像ではなく、画像を外部から取得・収集する機能もありません。
+
+- renderer の制限: イラスト枠は白（エンジンのデータにイラストがない）、エネルギーは仮の表示（エネルギーの枠の素材がない）、ベイビィはたねの枠（ベイビィの枠がない）
+- 画像を出す場所: 自分の手札、公開のバトル場・ベンチ、おもてのサイド、トラッシュ（開いたときだけ）、スタジアム・使用中のトレーナー、決定の選択肢のうち本人に `card_id` が公開されたもの
+- 裏面: 枚数だけが公開された領域（相手の手札・山札・サイド）と、観測が `face_down` のポケモン（最初の番の前の相手の場など）。手札は枚数分（最大 8 枚＋残りの数）、サイドは位置ごと（おもての位置だけ表面）、山札は 1 枚
+- 印刷の画像と今の状態: 画像は印刷の値（印刷の HP・ワザ）で、今の HP・ダメージ・特殊状態・ついているエネルギーは画像の隣に観測の値を文字で出す（「印刷の画像」と「今の状態（観測の値）」）。画像の値を今の状態の代わりに使わない
+- 画像の選択: 決定の選択肢の画像を押すと、その選択肢の入力（radio・checkbox）を選ぶだけ。送るのは候補の入力の選択肢の id で、画像・カード名から値やコマンドを決めない
+- 文字の表示への切り替え: カード定義を取得できない・表にないカード・renderer が変換できない・Canvas や素材画像・フォントの読み込みや描画に失敗した、のどの場合も、カード名と理由を文字で表示する。操作は続けられる。失敗したカードは自動で描き直さない（ページを読み込み直すと描き直す）
+- 読み上げ: 表面の Canvas は「〈名前〉の印刷のカード画像（非公式のカード風の画像）」、裏面は場所と枚数（「プレイヤー1・手札（裏向き 7 枚）」）。カード名・ID・HP などは今までどおり文字でも表示する
+
+### 公開カード定義の取得（接続層の拡張）
+
+`GET /api/card-definitions` は **GUI の接続層の拡張の口**です（エンジンの client_api にある入口ではありません）。接続層が、導入済みの kyuura-engine の同梱データ `kyuura_engine/data/kyuura_cards.json` を `importlib.resources` で読み（ソースの checkout・`.venv/src` には依存しない）、描画に使う項目だけを写して返します。
+
+- 識別: `schema: "kyuura-gui-card-definitions"`・`schema_version: 1`、`source`（`format: "kyuura-engine card extract 1"`・`engine_version`・同梱データの `sha256`）。表は [`contract/kyuura-gui-card-definitions-v1.json`](contract/kyuura-gui-card-definitions-v1.json)
+- 記録の項目: `id`・`jp_set`・`category`・`name`・`pokemon`（段階・進化元・HP・タイプ・弱点・抵抗力・にげる・ルール文・ポケモンパワー・ワザ）・`trainer`（文）・`energy`（基本／特殊・タイプ・文）・`jp_print`（LV・レアリティ）。出典の記録・メモ・URL などは写さない
+- **全体の表**（固定版のエンジンでは 1374 件）を返す。対戦の状態（山札・サイド・手札の配分・デッキリスト）を読まず、対戦で使っているカードだけの表は作らない（対戦の構成が分かってしまうため）。プロセスの中で 1 回だけ作り、使い回す
+- 形の合わない記録・同じ ID の重なった記録は表に入れず `omitted` に数える（画面は「カード定義にないカード」）。同梱データを読めなければ `GUI_CARD_DATA_UNAVAILABLE`（503）
+- フロントは応答を項目ごとに確かめて renderer の `EngineCardRecord` の形に組み立て直す（`as` で型を決めつけない。`web/src/cards/definitions.ts`）。観測やカード名の表（`/api/cards`）は描画に要る形ではないので使わない
+- **表を持っていることと、非公開のカードが何かを知ってよいことは別**です。表面を描くのは、閲覧者の観測にカード ID があるカードだけ。表（キャッシュ）で表示の権限を判定しない
+
+### 非同期の描画と非公開の情報
+
+renderer の世代の管理（同じ Canvas では最後の要求だけが描く）は、**すでに描かれたピクセルを消しません**。GUI は次のようにします（`web/src/cards/CardImages.tsx`）。
+
+1. 描く内容ごとに別の Canvas を作る（カード ID が変わる・表面から裏面になる・閲覧者を切り替えて画面ごと作り直す、のどれでも古い Canvas を使い回さない）
+2. 内容の変更・部品の破棄では、effect の cleanup で `cancelRenderToCanvas` で待機中の描画を無効にし（キャンセル）、同時に Canvas をすぐに隠して幅・高さを 0 にしてピクセルを消す（消去）。キャンセルは「古い内容をこれから描かせない」、消去は「今見えている古い内容を消す」役割で、両方を行う
+3. 新しい内容は、描けた（`true`）ときだけ表示する。それまでは文字の「画像を準備中」
+
+- キャンセル後の `false` はエラーとして表示しない。cleanup のあとに終わった古い要求の完了・失敗は、その effect の目印で無視する（新しい表示を変えない）。React の StrictMode（effect の 2 回の実行）でも同じ
+- 裏面の部品はカード ID・名前を受け取らない（props・DOM の属性・`title`・`aria-label`・画像の名前に入りようがない）。裏面の画像は 1 回だけ描いて全部の裏向きのカードで共有する（カードの情報を含まない静的な画像。裏向きのカードごとに Canvas を作らない）
+- 表面の描ける内容の使い回しは、公開カード定義の表のカード ID だけをキーにする（閲覧者・秘密の状態をキーに入れない）。同じカードは同じ内容のオブジェクトなので、親の再描画で描き直さない
 
 ## 未対応の操作
 
@@ -123,6 +170,7 @@ cd web && npm run dev
 | `GET /api/health` | 接続層・エンジンの版、契約の識別 |
 | `GET /api/decks/presets` | エンジンの固定デッキ（サンプル）と規約集合 |
 | `GET /api/cards` | カード名の表（ID・日本語名・分類・段階・HP） |
+| `GET /api/card-definitions` | 描画用の公開カード定義の全体の表（GUI 接続層の拡張。「カード画像」） |
 | `GET /api/scenarios` | 検証用の固定例の一覧 |
 | `POST /api/local-match` | 対戦の作成（`{"mode":"decks","decks":[{"entries":[{"card_id","count"}]},…],"conventions"?}` か `{"mode":"scenario","scenario"}`）。古い対戦を捨てる |
 | `DELETE /api/local-match` | 対戦を捨てる |
@@ -148,9 +196,12 @@ npm test            # 接続層（pytest。実際の固定版エンジン）＋ 
 npm run typecheck   # TypeScript の型検査
 npm run build       # 型検査と Vite のビルド
 npm run e2e         # 実エンジンへのブラウザの接続確認（Playwright・Edge。接続層と Vite を別のポートで自動起動）
+# 本番ビルドで: npm run build のあと、web で KYUURA_E2E_PREVIEW=1 npx playwright test e2e/card-images.spec.ts
 ```
 
 - フロントの単体テストは模擬の応答を使います。実エンジンとの接続確認（`server/tests`・`web/e2e`）とは別です
+- カード画像の単体テストは、実際の renderer の変換（`src/cards/realRenderer.test.ts`。jsdom には Canvas 2D がないので描画はしない）と、模擬の描画で非同期の扱いを確かめる部品のテスト（`CardImages.test.tsx`・`AppCardImages.test.tsx`）に分けています。実際の描画は `e2e/card-images.spec.ts`（実 renderer・実エンジン。素材画像・カード定義の遅れと失敗はブラウザの通信の差し替えで作る）
+- `e2e/local-flow.spec.ts` の決定待ち・停止・サドン・デスは検証用の固定例、それ以外とカード画像の確認は通常の操作（作成 → 初期配置）です
 - エンジン側の全体テスト・状態の監査・lockstep・大規模対戦は実行しません
 
 ## エンジンの更新の手順
@@ -162,11 +213,20 @@ npm run e2e         # 実エンジンへのブラウザの接続確認（Playwri
 5. 検証用の固定例を作り直す: 新しい固定コミットを checkout したエンジンの作業ツリーを用意し（エンジンのテストのモジュールは配布物に入らないため）、`server/.venv/Scripts/python server/tools/build_scenarios.py --engine <作業ツリー>`（macOS・Linux は `server/.venv/bin/python`）。差分を確かめる
 6. `npm test`・`npm run typecheck`・`npm run e2e` を通す
 7. 新しい操作の種類（U7-3 以後）が加わったら、[docs/engine-contract.md](docs/engine-contract.md) の「U7-3 以後への対応」に従う
+8. カード画像: 同梱データの形式（`kyuura_cards.json` の `format`）・記録の項目が変わっていないかを確かめる。`python -m kyuura_gui_server.card_definitions`（`server` で実行）で `omitted` が 0 であること、`server/tests/test_card_definitions.py` が通ることを確かめる。形式が変わったら `contract/kyuura-gui-card-definitions-v1.json` と写す項目（`card_definitions.py`・`web/src/cards/definitions.ts`）を直し、`schema_version` を上げる
+
+## renderer の更新の手順
+
+1. renderer の README・`src/lib/index.ts` の公開の export・`fromEngineCard` の入力の型（`EngineCardRecord`）・`renderToCanvas` の約束（`true`・`false`・reject、キャンセルとピクセル）の差分を読む。main の先頭へは自動で追従しない
+2. 公開済みの完全なコミットを決め、`web` で `npm install --save-exact "github:moheronemy/kyuura-card-renderer#<40 桁>"`。`npm approve-scripts kyuura-card-renderer` で `allowScripts` を新しいコミットに直す（`prepare` の内容を確かめてから）
+3. `contract/kyuura-gui-card-definitions-v1.json` の `renderer.commit` を直す（`server/tests/test_card_definitions.py` が `package.json`・lockfile と照らす）
+4. `npm test`・`npm run typecheck`・`npm run build`・`npx playwright test e2e/card-images.spec.ts`（開発サーバーと `KYUURA_E2E_PREVIEW=1` の本番ビルド）を通す
 
 ## 制限
 
 - 単一の対戦だけ。永続化・オンラインの再接続・認証・通信の暗号化・重複の排除はない
 - エンジンの対戦ログ（`visible_log`）は client_api 形式 1 の応答に含まれないため、ログ欄は閲覧者に届いた公開の更新の要約（段階・番・入力待ち・公開の枚数・停止・結果）
-- カード画像は使わない（テキストの表示）。カード名はエンジンの同梱のカードデータの表
+- カード画像は非公式のカード風の画像（イラスト枠は白・エネルギーは仮の表示・ベイビィはたねの枠）。実際のカードの画像ではない。描けないときは文字の表示。カード名はエンジンの同梱のカードデータの表
+- 本番ビルドは Web フォント（Noto Sans JP の文字の範囲ごとのファイル）と素材画像を含むため大きい（約 21 MB・548 ファイル。フォントは使う文字の範囲だけを読み込む）
 - デッキの検査はエンジンの `deck_problems` の結果をそのまま表示する。広いデッキビルダーはない
 - パッケージの公開・外部公開・デプロイはしない
