@@ -1,0 +1,17 @@
+{
+  "$comment": "GUI 接続層の拡張の口 GET /api/card-definitions の識別と、カード画像の描画に使う kyuura-card-renderer の固定。エンジンの client_api の入口ではない（接続層が、導入済みの kyuura-engine の同梱データ kyuura_engine/data/kyuura_cards.json を読む）。Python のテスト（server/tests/test_card_definitions.py）と TypeScript（web/src/cards）が同じこの表を読む。",
+  "schema": "kyuura-gui-card-definitions",
+  "schema_version": 1,
+  "source": {
+    "package": "kyuura_engine",
+    "resource": "data/kyuura_cards.json",
+    "format": "kyuura-engine card extract 1"
+  },
+  "card_id_pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,31}$",
+  "categories": ["pokemon", "trainer", "energy"],
+  "renderer": {
+    "package": "kyuura-card-renderer",
+    "repository": "https://github.com/moheronemy/kyuura-card-renderer",
+    "commit": "af882310059c7f33bc371d31b859b09f5428f6d1"
+  }
+}
