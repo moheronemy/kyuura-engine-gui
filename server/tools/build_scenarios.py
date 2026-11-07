@@ -2,11 +2,12 @@
 
 エンジンのテストの既存の固定例（tests/helpers.py の PIKACHU_DECK・PIKACHU_DECK_B、tests/sudden_death_games.py の
 swap_policy_command。seed 9）を、固定コミットのエンジンの作業ツリーから読み、受理された操作の列を書き出す。
-エンジンのテストのモジュールは pip の導入物に入らないので、作業ツリー（既定は venv の src/kyuura-engine。
-requirements.txt の -e で入る固定コミットの clone）を --engine で渡す。
+エンジンのテストのモジュールは配布物（通常のインストール）に入らないので、固定コミットを checkout したエンジンの
+作業ツリーを --engine で渡す（例: git clone したあと git checkout <contract の engine.commit>）。作業ツリーのコミットが
+contract/kyuura-client-api-v1.json の engine.commit と違えば止まる。
 
-    server/.venv/Scripts/python server/tools/build_scenarios.py            # Windows
-    server/.venv/bin/python server/tools/build_scenarios.py                # macOS・Linux
+    server/.venv/Scripts/python server/tools/build_scenarios.py --engine <エンジンの作業ツリー>   # Windows
+    server/.venv/bin/python server/tools/build_scenarios.py --engine <エンジンの作業ツリー>       # macOS・Linux
 
 エンジンの固定コミットを変えたら、作り直して差分を確かめる（README「エンジンの更新」）。
 """
@@ -22,15 +23,15 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 SERVER = HERE.parent
 OUT = SERVER / "kyuura_gui_server" / "scenarios"
-DEFAULT_ENGINE = SERVER / ".venv" / "src" / "kyuura-engine"
-PINNED = "d0c5cfa9483aacae0cce2fd8d28166b1d8465500"
+CONTRACT = SERVER.parent / "contract" / "kyuura-client-api-v1.json"
+PINNED = json.loads(CONTRACT.read_text(encoding="utf-8"))["engine"]["commit"]
 SEED = 9
 HALT_SEED = 1
 
 
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--engine", type=Path, default=DEFAULT_ENGINE, help="固定コミットのエンジンの作業ツリー")
+    parser.add_argument("--engine", type=Path, required=True, help="固定コミットを checkout したエンジンの作業ツリー")
     args = parser.parse_args(argv)
     head = subprocess.run(["git", "-C", str(args.engine), "rev-parse", "HEAD"], capture_output=True, text=True, check=True).stdout.strip()
     if head != PINNED:

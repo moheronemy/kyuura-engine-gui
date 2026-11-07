@@ -1,6 +1,6 @@
 {
-  "$comment": "GUI が前提にする kyuura-engine の client_api の契約の値（固定コミット d0c5cfa・v0.164.0）。TypeScript の型・実行時検証（web/src/api）と、Python のテスト（server/tests/test_contract.py）が同じこの表を読み、エンジンの定数と照らす。エンジンを更新したら、ここを直してから両方のテストを通す（README「エンジンの更新」）。",
-  "engine": {"commit": "d0c5cfa9483aacae0cce2fd8d28166b1d8465500", "version": "0.164.0"},
+  "$comment": "GUI が前提にする kyuura-engine の client_api の契約の値（エンジンの版 0.164.0。導入する完全なコミットは engine.commit）。TypeScript の型・実行時検証（web/src/api）と、Python のテスト（server/tests/test_contract.py）が同じこの表を読み、エンジンの定数と照らす。エンジンを更新したら、ここを直してから両方のテストを通す（README「エンジンの更新」）。",
+  "engine": {"commit": "ffcc5cab5df1ebde0faed3fd23b481295374e1f9", "version": "0.164.0"},
   "contract": "kyuura-client-api",
   "format": 1,
   "legal_actions_format": 1,

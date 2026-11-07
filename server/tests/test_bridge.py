@@ -13,7 +13,6 @@ from kyuura_gui_server.safety import forbidden_paths
 
 from .conftest import ENVELOPE, act, tokens
 
-PINNED = "d0c5cfa9483aacae0cce2fd8d28166b1d8465500"
 
 
 def test_pinned_engine_is_used(bridge):

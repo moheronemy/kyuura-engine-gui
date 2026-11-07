@@ -1,6 +1,6 @@
 {
  "source": "kyuura-engine tests/helpers.py PIKACHU_DECK・PIKACHU_DECK_B、tests/sudden_death_games.py swap_policy_command（seed 9）",
- "engine_commit": "d0c5cfa9483aacae0cce2fd8d28166b1d8465500",
+ "engine_commit": "ffcc5cab5df1ebde0faed3fd23b481295374e1f9",
  "engine_version": "0.164.0",
  "decks": [
   [

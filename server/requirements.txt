@@ -1,9 +1,7 @@
-# ローカル接続層の依存（実行時）。導入: scripts/setup.mjs または README の手順。
+# ローカル接続層の依存（実行時）。導入: npm run setup（scripts/setup.mjs）または README の手順。
 #
-# kyuura-engine は v0.164 の最終コミット d0c5cfa9483aacae0cce2fd8d28166b1d8465500 に固定する。
-# 編集可能モード（-e）で入れるのは、エンジンの pyproject.toml が packages = ["kyuura_engine"] だけを
-# 指定していて、通常のインストール（wheel）では kyuura_engine.resolution が入らず import に失敗するため
-# （README「エンジンの固定と既知の問題」）。-e は固定コミットを venv の src/ に clone して使う。
--e git+https://github.com/moheronemy/kyuura-engine@d0c5cfa9483aacae0cce2fd8d28166b1d8465500#egg=kyuura-engine
+# kyuura-engine は完全なコミットハッシュで固定し、Git の URL から通常のインストールで入れる。
+# 版の番号（0.164.0）は同じ番号で中身の違う配布物があるため、固定にはコミットを使う（README「エンジンの固定」）。
+kyuura-engine @ git+https://github.com/moheronemy/kyuura-engine@ffcc5cab5df1ebde0faed3fd23b481295374e1f9
 fastapi==0.162.0
 uvicorn==0.54.0
