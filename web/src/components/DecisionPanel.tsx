@@ -11,12 +11,32 @@
 // - 個数で数える段（total_units。にげる）: カードの枚数（count）と出すエネルギーの個数（units の合計）を分けて表示する。
 //   個数が範囲に入っていても合法とは書かない。送る前に check の答え（今の入力・今の取っ手への答え）を必須にする
 // - check の答えは、今の入力と同じ入力への答えだけを表示・送信の条件に使う（入力を変えたら前の答えは使わない）
+// U7-4（ワザの宣言。段の role で組み立てる。カード名・ワザの名前で分けない）:
+// - 1 段目（role: attack）: エンジンが返したワザの名前・必要なエネルギー・印刷のダメージの表示・説明・持ち方（route・provider・payer・
+//   grantors）を表示する。印刷のダメージは与えるダメージの予測ではない（弱点・抵抗力・効果を GUI で計算しない）
+// - 2 段目（role: declaration_options）: 1 段目のワザの options_by_choice の組だけ。0 個でよく、選んだ順のまま送る。重なり・併用の可否は
+//   GUI で決めず、エンジンの check が確かめる。ワザを変えたら 2 段目の選択を捨てる（check の答えも今の入力と違うので使わない）
+// - 対象・トラッシュ・山札から選ぶカード・写すワザ・コインの結果は、ここで聞かない（受理のあとのエンジンの決定で答える）
+// - 送る前に、今の入力・今の取っ手への check が通っていることを必須にする（check_before_submit_kinds。受理の保証ではない）
 import { useId, useMemo, useState } from "react";
-import { EXECUTABLE_PROCESSABILITY } from "../api/contract";
+import { ATTACK_KINDS, CHECK_BEFORE_SUBMIT_KINDS, EXECUTABLE_PROCESSABILITY } from "../api/contract";
 import type { Choice, FieldSlot, InputOption, InputStage, Observation, OptionStage } from "../api/types";
 import { CardBack, CardFace } from "../cards/CardImages";
 import { choicesKey, type Selection } from "../state/useEndpointSession";
-import { KIND_LABELS, ORDER_TEXT, PLACEMENT_TEXT, PROCESSABILITY_TEXT, REFUSAL_TEXT, labelOf, playerLabel, reasonsText, roleLabel } from "../labels";
+import {
+  ADDON_LABELS,
+  ENERGY_LABELS,
+  KIND_LABELS,
+  ORDER_TEXT,
+  PLACEMENT_TEXT,
+  PROCESSABILITY_TEXT,
+  REFUSAL_TEXT,
+  ROUTE_LABELS,
+  labelOf,
+  playerLabel,
+  reasonsText,
+  roleLabel,
+} from "../labels";
 import { DisclosureBadge, ProcessabilityBadge } from "./Badges";
 
 type Names = (cardId: string) => string | undefined;
@@ -76,6 +96,18 @@ const KNOWN_OPTION_KEYS = new Set([
   "zone",
   "bench_index",
   "face_down",
+  // U7-4（ワザ・宣言といっしょに選ぶもの。専用の表示で示す）
+  "attack_index",
+  "route",
+  "provider",
+  "payer",
+  "grantors",
+  "name_ja",
+  "cost",
+  "damage",
+  "text_ja",
+  "addon",
+  "power",
 ]);
 
 function zonePlace(option: InputOption): string | null {
@@ -87,6 +119,8 @@ function zonePlace(option: InputOption): string | null {
 /** 選択肢の表示名（表示だけ。送るのは id）。 */
 export function optionLabel(option: InputOption, stage: OptionStage, observation: Observation | null, names: Names): string {
   const place = zonePlace(option);
+  if (typeof option.attack_index === "number" && typeof option.name_ja === "string") return `［${option.name_ja}］`; // U7-4: エンジンが返したワザの名前
+  if (typeof option.addon === "string") return addonLabel(option, observation, names);
   if (option.face_down) return `裏向きのポケモン${place ? `（${place}）` : ""}`; // 本人のうらのカード: カード ID は来ない
   if (typeof option.card_id === "string") {
     const name = names(option.card_id);
@@ -105,6 +139,53 @@ function optionExtras(option: InputOption): string[] {
   return Object.entries(option)
     .filter(([k]) => !KNOWN_OPTION_KEYS.has(k))
     .map(([k, v]) => `${k}: ${typeof v === "object" ? JSON.stringify(v) : String(v)}`);
+}
+
+/** U7-4: 宣言といっしょに選ぶものの表示名（addon の種類と、エンジンが返した場所・名前だけ）。 */
+export function addonLabel(option: InputOption, observation: Observation | null, names: Names): string {
+  const kind = labelOf(ADDON_LABELS, option.addon);
+  if (option.addon === "stadium_coin" && typeof option.card_id === "string") return `${kind}（${names(option.card_id) ?? option.card_id}）`;
+  const where = typeof option.pokemon === "number" ? (pokemonPlace(observation, option.pokemon) ?? `ポケモン番号 ${option.pokemon}`) : null;
+  if (option.addon === "with_power" && typeof option.power === "string") return `［${option.power}］ — ${kind}${where ? `（${where}）` : ""}`;
+  return `${kind}${where ? `（${where}）` : ""}`;
+}
+
+/** U7-4: 必要なエネルギー（cost の値ごとの個数。印刷の値）。 */
+export function costText(cost: readonly string[]): string {
+  if (cost.length === 0) return "なし（0 個）";
+  const counts = new Map<string, number>();
+  for (const c of cost) counts.set(c, (counts.get(c) ?? 0) + 1);
+  return `${[...counts].map(([c, n]) => `${labelOf(ENERGY_LABELS, c)} ${n} 個`).join("・")}（計 ${cost.length} 個）`;
+}
+
+function pokemonRef(observation: Observation | null, id: number): string {
+  return pokemonPlace(observation, id) ?? `ポケモン番号 ${id}`;
+}
+
+/** U7-4: ワザの選べるものの中身（印刷の情報と、エンジンが返した持ち方）。表示だけで、送る値は id。 */
+function AttackDetails({ option, observation }: { option: InputOption; observation: Observation | null }) {
+  return (
+    <span className="attack-details">
+      <span className="small">必要なエネルギー: {costText(option.cost ?? [])}</span>
+      <span className="small">
+        ダメージの表示（印刷）: {option.damage ? <strong>{option.damage}</strong> : "なし"}
+        <span className="muted">（印刷のままの表示です。弱点・抵抗力・効果を含めた与えるダメージではありません）</span>
+      </span>
+      <span className="small attack-text">{option.text_ja ?? "説明なし"}</span>
+      {option.face_down ? (
+        <span className="small">あなたのうらのバトル場のポケモン（本人だけが知るカード）のワザです。エンジンがおもてにしてから確かめます。</span>
+      ) : (
+        <span className="small">
+          出どころ: {labelOf(ROUTE_LABELS, option.route)} <code className="muted">route: {option.route}</code>
+        </span>
+      )}
+      {option.provider !== undefined ? <span className="small">ワザを持つポケモン: {pokemonRef(observation, option.provider)}</span> : null}
+      {option.payer !== undefined ? <span className="small">エネルギーを払うポケモン: {pokemonRef(observation, option.payer)}</span> : null}
+      {option.grantors?.length ? (
+        <span className="small">許可を与えるポケモン: {option.grantors.map((g) => pokemonRef(observation, g)).join("・")}</span>
+      ) : null}
+    </span>
+  );
 }
 
 export function optionUnavailable(option: InputOption): string | null {
@@ -239,7 +320,8 @@ export function DecisionPanel({ selection, observation, names, busy, blocked, on
   const check = selection.check && selection.check.choices === choicesKey(choices) ? selection.check.response : null;
   const staleCheck = selection.check !== null && check === null;
   // 個数で数える段がある操作（にげる）は、今の入力が check を通ってから送る（個数の表示だけで合法と決めない）
-  const needsCheck = stages.some((s) => s.input === "choose_option" && s.total_units !== undefined);
+  // ワザ（check_before_submit_kinds）も同じ（check を通っても、宣言の受理・完走の保証ではない）
+  const needsCheck = CHECK_BEFORE_SUBMIT_KINDS.has(candidate.kind) || stages.some((s) => s.input === "choose_option" && s.total_units !== undefined);
   const executable = EXECUTABLE_PROCESSABILITY.has(candidate.processability);
   const canSend = !withheld && satisfied && !busy && !blocked && executable && (!needsCheck || check?.valid === true);
 
@@ -263,6 +345,11 @@ export function DecisionPanel({ selection, observation, names, busy, blocked, on
       ) : null}
 
       {!withheld && stages.length === 0 ? <p>この操作に入力はありません。</p> : null}
+      {ATTACK_KINDS.has(candidate.kind) ? (
+        <p className="small">
+          ここで選ぶのは、ワザと、宣言といっしょに選ぶもの（あれば）だけです。ワザの対象・トラッシュするエネルギー・山札から選ぶカード・写すワザは、受理のあとにエンジンが決定として聞きます。コインはエンジンが投げます（結果は入力しません）。
+        </p>
+      ) : null}
 
       {stages.map((stage) => {
         if (stage.input !== "choose_option") {
@@ -363,6 +450,9 @@ function OptionStageInput({
   const byId = new Map((stage.options ?? options).map((o) => [o.id, o]));
   const orderText = ORDER_TEXT[stage.order] ?? `順序: ${stage.order}`;
   const units = stage.total_units ? unitsOf(stage, picked) : null;
+  // U7-4: 段の role で組み立てる（ワザの宣言の種類だけ。ほかの種類の同じ名前の role には使わない）
+  const attackStage = ATTACK_KINDS.has(kind) && stage.role === "attack";
+  const declaration = ATTACK_KINDS.has(kind) && stage.role === "declaration_options";
   const inUnits = stage.total_units && units !== null ? units >= stage.total_units.min && units <= stage.total_units.max : null;
   return (
     <fieldset className="stage">
@@ -393,8 +483,13 @@ function OptionStageInput({
       {stage.confused ? <p className="small warn">こんらん: 受理のあとにコインを投げます（にげるのに失敗することがあります）。</p> : null}
       {stage.decline ? <p className="small">辞退できます（何も選ばずに送れます）。</p> : null}
       {orderText && stage.count.max > 1 ? <p className="small">{orderText}</p> : null}
-      {waitingFor !== null ? (
+      {declaration && (stage.options ?? []).length === 0 ? (
+        // 宣言といっしょに選べるものが 1 つもない（count 0〜0）: 余分な入力を求めない
+        <p className="small muted">宣言といっしょに選べるものはありません（ワザだけを送ります）。</p>
+      ) : waitingFor !== null ? (
         <p className="callout info small">段 {waitingFor} を選ぶと、その選択と組になるものだけを選べます（組はエンジンの options_by_choice）。</p>
+      ) : declaration && options.length === 0 ? (
+        <p className="small muted">このワザといっしょに選べるものはありません（0 個のまま送れます）。</p>
       ) : options.length === 0 ? (
         <p className="callout info">
           選べるものがありません（エンジンの応答のまま表示しています）。
@@ -438,6 +533,7 @@ function OptionStageInput({
                   {option.units !== undefined ? <span className="small">{option.units} 個</span> : null}
                   {option.special ? <span className="small">特殊エネルギー</span> : null}
                   {checked && !single ? <span className="order-no">{picked.indexOf(option.id) + 1}番目</span> : null}
+                  {attackStage ? <AttackDetails option={option} observation={observation} /> : null}
                 </span>
               </label>
               <span className="option-meta">

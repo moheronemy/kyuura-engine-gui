@@ -56,7 +56,7 @@ def test_enumerations_match_engine():
             L.CANDIDATE_NOT_EXECUTABLE, L.INPUT_BOUNDARY_UNCONFIRMED] == EXPECTED["refusal_codes"]
     assert list(C.ERROR_MESSAGES) == EXPECTED["client_error_codes"]
     assert list(L.IMPLEMENTED_KINDS) == EXPECTED["implemented_kinds"]
-    assert set(EXPECTED["gui_operable_kinds"]) <= set(EXPECTED["implemented_kinds"])  # 画面を持たない種類は表示だけ
+    assert EXPECTED["gui_operable_kinds"] == EXPECTED["implemented_kinds"]  # U7-4 で use_attack の画面を加えた（画面を持たない種類は表示だけ）
     assert list(L.TURN_KINDS) == EXPECTED["turn_basic_kinds"] == [L.KIND_PLAY_BASIC, L.KIND_ATTACH_ENERGY, L.KIND_EVOLVE, L.KIND_RETREAT]
     assert list(L.MAIN_KINDS) == EXPECTED["main_kinds"]
     assert EXPECTED["attack_kinds"] == [L.KIND_USE_ATTACK]

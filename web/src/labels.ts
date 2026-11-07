@@ -84,7 +84,7 @@ export const PROCESSABILITY_TEXT: Record<string, Explained> = {
   },
   unverified: {
     label: "未確認",
-    description: "保証はありません（例: 本人のうらのカードの進化・にげる）。最終の判定はエンジンが送信のときに行います。",
+    description: "保証はありません（例: 本人のうらのカードの進化・にげる・ワザ）。最終の判定はエンジンが送信のときに行います。",
   },
 };
 
@@ -190,6 +190,8 @@ export const REASON_LABELS: Record<string, string> = {
   decision_not_supported: "この版が扱えない決定",
   input_boundary_unconfirmed: "入力の情報境界が未確認",
   no_eligible_card: "出せるカードがない",
+  preflight_not_evaluated: "エンジンの宣言の前の先読み（コインの結果・ワザの途中の決定を試す）を評価していない（エンジンが宣言を断ることがある）",
+  no_printed_attack: "うらのカードに印刷のワザがない（この版は入力の形を作らない）",
 };
 
 export function reasonsText(reasons: readonly string[]): string {
@@ -218,6 +220,25 @@ const ROLE_LABELS: Record<string, string> = {
   "evolve:target": "進化させるポケモン（自分の場）",
   "retreat:new_active": "入れ替えるベンチのポケモン",
   "retreat:discard": "トラッシュするエネルギー",
+  "use_attack:attack": "ワザ",
+  "use_attack:declaration_options": "宣言といっしょに選ぶもの（任意。0 個でもよい）",
+};
+
+/** ワザの持ち方（route）。エンジンが返した値の説明で、カード名・画像からワザを補わない。 */
+export const ROUTE_LABELS: Record<string, string> = {
+  form: "今の姿のカードのワザ",
+  recall: "「思い出させる」で使う進化前のワザ",
+  psylink: "［サイコリンク］で持つ、自分の場のポケモンのワザ",
+  prehistoric: "［げんしのきおく］で使う、進化前のカードのワザ",
+  puppet: "［にんぎょうつかい］で使うワザ",
+  mimic: "［ものまね］で使う、相手の対戦ポケモンのワザ",
+};
+
+/** 宣言といっしょに選ぶもの（addon）の種類。表示だけで、選べるか・組み合わせはエンジンが決める。 */
+export const ADDON_LABELS: Record<string, string> = {
+  stadium_coin: "場のスタジアムのコインを投げる",
+  attack_power: "ワザを使うポケモン自身の、ワザといっしょに使う特殊能力",
+  with_power: "自分の場のポケモンの、ワザといっしょに使う特殊能力",
 };
 
 export function roleLabel(kind: string, role: string): string {

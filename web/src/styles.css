@@ -711,3 +711,17 @@ details > summary {
 .option {
   flex-wrap: wrap;
 }
+
+/* U7-4: ワザの選べるものの中身（印刷の情報と持ち方）。狭い画面では折り返す */
+.attack-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex-basis: 100%;
+  min-width: 0;
+}
+
+.attack-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
