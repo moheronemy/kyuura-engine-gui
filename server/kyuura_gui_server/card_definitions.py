@@ -187,7 +187,9 @@ def build(raw: bytes) -> dict[str, Any]:
             "resource": SOURCE_RESOURCE,
             "format": SOURCE_FORMAT,
             "engine_version": kyuura_engine.__version__,
-            "sha256": hashlib.sha256(raw).hexdigest(),
+            # 同梱データの内容の識別。バイト列は導入のしかた（改行など）で変わるので、読んだ JSON を正規化した形（キーの順・区切り・
+            # UTF-8）の sha256 にする。同じ内容なら導入の環境によらず同じ値
+            "sha256": hashlib.sha256(json.dumps(data, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest(),
         },
         "card_count": len(cards),
         "omitted": omitted,
