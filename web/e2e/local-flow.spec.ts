@@ -16,6 +16,9 @@ function candidate(area: Locator, label: string): Locator {
 
 async function submitAndExpect(area: Locator, outcome: RegExp) {
   await area.locator(".decision").getByRole("button", { name: "送信" }).click();
+  // 前の送信の通知が先頭に残っていることがあるので、受理で入力のパネルが閉じ、候補を取り直し終えるまで待つ
+  await expect(area.locator(".decision")).toHaveCount(0);
+  await expect(area.locator(".console")).toHaveAttribute("aria-busy", "false");
   await expect(area.getByRole("region", { name: "診断と結果" }).locator(".callout").first()).toContainText(outcome);
 }
 
@@ -59,6 +62,7 @@ test("準備を終えて番を終えるまで（両プレイヤーの初期配�
     while ((await mulligan.count()) > 0) {
       await mulligan.getByRole("button", { name: "この操作を選ぶ" }).click();
       const select = viewer(page).locator(".decision select");
+      await expect(select.locator("option").nth(1)).toBeAttached(); // 入力（値の範囲）が届くまで待つ
       const options = await select.locator("option").allTextContents();
       await select.selectOption(options[options.length - 1]!.trim());
       await submitAndExpect(viewer(page), /受理/);
