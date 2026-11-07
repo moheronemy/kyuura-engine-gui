@@ -1,0 +1,14 @@
+# Python
+server/.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Node
+node_modules/
+web/dist/
+web/test-results/
+web/playwright-report/
+
+# Local tool settings
+.claude/settings.local.json

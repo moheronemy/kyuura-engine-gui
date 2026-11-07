@@ -1,0 +1,1192 @@
+{
+ "source": "kyuura-engine tests/helpers.py PIKACHU_DECK・PIKACHU_DECK_B、tests/sudden_death_games.py swap_policy_command（seed 9）",
+ "engine_commit": "d0c5cfa9483aacae0cce2fd8d28166b1d8465500",
+ "engine_version": "0.164.0",
+ "decks": [
+  [
+   "PMCG1-035",
+   "PMCG1-035",
+   "PMCG1-035",
+   "PMCG1-035",
+   "PMCG1-060",
+   "PMCG1-060",
+   "PMCG1-060",
+   "PMCG1-060",
+   "PMCG1-037",
+   "PMCG1-037",
+   "PMCG1-037",
+   "PMCG1-037",
+   "PMCG1-065",
+   "PMCG1-065",
+   "PMCG1-065",
+   "PMCG1-065",
+   "PMCG1-061",
+   "PMCG1-061",
+   "PMCG1-061",
+   "PMCG1-061",
+   "PMCG1-081",
+   "PMCG1-081",
+   "PMCG1-081",
+   "PMCG1-081",
+   "PMCG1-079",
+   "PMCG1-079",
+   "PMCG1-079",
+   "PMCG1-079",
+   "PMCG1-074",
+   "PMCG1-074",
+   "PMCG1-100",
+   "PMCG1-100",
+   "PMCG1-100",
+   "PMCG1-100",
+   "PMCG1-100",
+   "PMCG1-100",
+   "PMCG1-100",
+   "PMCG1-100",
+   "PMCG1-100",
+   "PMCG1-100",
+   "PMCG1-100",
+   "PMCG1-100",
+   "PMCG1-100",
+   "PMCG1-100",
+   "PMCG1-100",
+   "PMCG1-100",
+   "PMCG1-100",
+   "PMCG1-100",
+   "PMCG1-100",
+   "PMCG1-100",
+   "PMCG1-100",
+   "PMCG1-100",
+   "PMCG1-100",
+   "PMCG1-100",
+   "PMCG1-100",
+   "PMCG1-100",
+   "PMCG1-100",
+   "PMCG1-100",
+   "PMCG1-100",
+   "PMCG1-100"
+  ],
+  [
+   "PMCG1-035",
+   "PMCG1-035",
+   "PMCG1-035",
+   "PMCG1-035",
+   "PMCG1-052",
+   "PMCG1-052",
+   "PMCG1-052",
+   "PMCG1-052",
+   "PMCG1-053",
+   "PMCG1-053",
+   "PMCG1-053",
+   "PMCG1-053",
+   "PMCG1-058",
+   "PMCG1-058",
+   "PMCG1-058",
+   "PMCG1-058",
+   "PMCG1-060",
+   "PMCG1-060",
+   "PMCG1-060",
+   "PMCG1-060",
+   "PMCG1-081",
+   "PMCG1-081",
+   "PMCG1-079",
+   "PMCG1-079",
+   "PMCG1-100",
+   "PMCG1-100",
+   "PMCG1-100",
+   "PMCG1-100",
+   "PMCG1-100",
+   "PMCG1-100",
+   "PMCG1-100",
+   "PMCG1-100",
+   "PMCG1-100",
+   "PMCG1-100",
+   "PMCG1-100",
+   "PMCG1-100",
+   "PMCG1-100",
+   "PMCG1-100",
+   "PMCG1-100",
+   "PMCG1-100",
+   "PMCG1-100",
+   "PMCG1-100",
+   "PMCG1-102",
+   "PMCG1-102",
+   "PMCG1-102",
+   "PMCG1-102",
+   "PMCG1-102",
+   "PMCG1-102",
+   "PMCG1-102",
+   "PMCG1-102",
+   "PMCG1-102",
+   "PMCG1-102",
+   "PMCG1-102",
+   "PMCG1-102",
+   "PMCG1-102",
+   "PMCG1-102",
+   "PMCG1-102",
+   "PMCG1-102",
+   "PMCG1-102",
+   "PMCG1-102"
+  ]
+ ],
+ "seed": 9,
+ "commands": [
+  {
+   "type": "place_starting_pokemon",
+   "player": 0,
+   "active": 19,
+   "bench": [
+    14,
+    1
+   ]
+  },
+  {
+   "type": "place_starting_pokemon",
+   "player": 1,
+   "active": 75,
+   "bench": [
+    73,
+    66,
+    74,
+    71
+   ]
+  },
+  {
+   "type": "report_janken_result",
+   "winner": 1
+  },
+  {
+   "type": "attach_energy",
+   "player": 1,
+   "energy": 84,
+   "target": 75
+  },
+  {
+   "type": "end_turn",
+   "player": 1
+  },
+  {
+   "type": "play_basic_to_bench",
+   "player": 0,
+   "card": 16
+  },
+  {
+   "type": "attach_energy",
+   "player": 0,
+   "energy": 31,
+   "target": 19
+  },
+  {
+   "type": "use_attack",
+   "player": 0,
+   "attack_index": 0
+  },
+  {
+   "type": "play_basic_to_bench",
+   "player": 1,
+   "card": 62
+  },
+  {
+   "type": "attach_energy",
+   "player": 1,
+   "energy": 88,
+   "target": 75
+  },
+  {
+   "type": "end_turn",
+   "player": 1
+  },
+  {
+   "type": "attach_energy",
+   "player": 0,
+   "energy": 36,
+   "target": 19
+  },
+  {
+   "type": "use_attack",
+   "player": 0,
+   "attack_index": 0
+  },
+  {
+   "type": "attach_energy",
+   "player": 1,
+   "energy": 99,
+   "target": 75
+  },
+  {
+   "type": "end_turn",
+   "player": 1
+  },
+  {
+   "type": "play_basic_to_bench",
+   "player": 0,
+   "card": 18
+  },
+  {
+   "type": "attach_energy",
+   "player": 0,
+   "energy": 54,
+   "target": 19
+  },
+  {
+   "type": "use_attack",
+   "player": 0,
+   "attack_index": 0
+  },
+  {
+   "type": "attach_energy",
+   "player": 1,
+   "energy": 113,
+   "target": 75
+  },
+  {
+   "type": "use_attack",
+   "player": 1,
+   "attack_index": 0
+  },
+  {
+   "type": "attach_energy",
+   "player": 0,
+   "energy": 49,
+   "target": 19
+  },
+  {
+   "type": "use_attack",
+   "player": 0,
+   "attack_index": 0
+  },
+  {
+   "type": "attach_energy",
+   "player": 1,
+   "energy": 93,
+   "target": 75
+  },
+  {
+   "type": "use_attack",
+   "player": 1,
+   "attack_index": 0
+  },
+  {
+   "type": "attach_energy",
+   "player": 0,
+   "energy": 47,
+   "target": 19
+  },
+  {
+   "type": "play_trainer",
+   "player": 0,
+   "card": 26
+  },
+  {
+   "type": "resolve_decision",
+   "player": 0,
+   "decision": 1,
+   "choices": [
+    1
+   ]
+  },
+  {
+   "type": "use_attack",
+   "player": 0,
+   "attack_index": 0
+  },
+  {
+   "type": "attach_energy",
+   "player": 1,
+   "energy": 100,
+   "target": 75
+  },
+  {
+   "type": "use_attack",
+   "player": 1,
+   "attack_index": 0
+  },
+  {
+   "type": "attach_energy",
+   "player": 0,
+   "energy": 40,
+   "target": 19
+  },
+  {
+   "type": "use_attack",
+   "player": 0,
+   "attack_index": 0
+  },
+  {
+   "type": "use_attack",
+   "player": 1,
+   "attack_index": 0
+  },
+  {
+   "type": "attach_energy",
+   "player": 0,
+   "energy": 33,
+   "target": 19
+  },
+  {
+   "type": "use_attack",
+   "player": 0,
+   "attack_index": 0
+  },
+  {
+   "type": "attach_energy",
+   "player": 1,
+   "energy": 115,
+   "target": 75
+  },
+  {
+   "type": "use_attack",
+   "player": 1,
+   "attack_index": 1
+  },
+  {
+   "type": "play_basic_to_bench",
+   "player": 0,
+   "card": 13
+  },
+  {
+   "type": "attach_energy",
+   "player": 0,
+   "energy": 53,
+   "target": 19
+  },
+  {
+   "type": "use_attack",
+   "player": 0,
+   "attack_index": 0
+  },
+  {
+   "type": "attach_energy",
+   "player": 1,
+   "energy": 95,
+   "target": 75
+  },
+  {
+   "type": "use_attack",
+   "player": 1,
+   "attack_index": 1
+  },
+  {
+   "type": "attach_energy",
+   "player": 0,
+   "energy": 34,
+   "target": 19
+  },
+  {
+   "type": "use_attack",
+   "player": 0,
+   "attack_index": 0
+  },
+  {
+   "type": "attach_energy",
+   "player": 1,
+   "energy": 89,
+   "target": 75
+  },
+  {
+   "type": "use_attack",
+   "player": 1,
+   "attack_index": 1
+  },
+  {
+   "type": "attach_energy",
+   "player": 0,
+   "energy": 46,
+   "target": 19
+  },
+  {
+   "type": "use_attack",
+   "player": 0,
+   "attack_index": 0
+  },
+  {
+   "type": "take_prize",
+   "player": 0,
+   "index": 0
+  },
+  {
+   "type": "promote_active",
+   "player": 1,
+   "pokemon": 73
+  },
+  {
+   "type": "play_basic_to_bench",
+   "player": 1,
+   "card": 63
+  },
+  {
+   "type": "attach_energy",
+   "player": 1,
+   "energy": 112,
+   "target": 73
+  },
+  {
+   "type": "use_attack",
+   "player": 1,
+   "attack_index": 0
+  },
+  {
+   "type": "attach_energy",
+   "player": 0,
+   "energy": 30,
+   "target": 19
+  },
+  {
+   "type": "use_attack",
+   "player": 0,
+   "attack_index": 0
+  },
+  {
+   "type": "use_attack",
+   "player": 1,
+   "attack_index": 0
+  },
+  {
+   "type": "use_attack",
+   "player": 0,
+   "attack_index": 0
+  },
+  {
+   "type": "attach_energy",
+   "player": 1,
+   "energy": 105,
+   "target": 73
+  },
+  {
+   "type": "use_attack",
+   "player": 1,
+   "attack_index": 0
+  },
+  {
+   "type": "attach_energy",
+   "player": 0,
+   "energy": 45,
+   "target": 19
+  },
+  {
+   "type": "use_attack",
+   "player": 0,
+   "attack_index": 0
+  },
+  {
+   "type": "attach_energy",
+   "player": 1,
+   "energy": 87,
+   "target": 73
+  },
+  {
+   "type": "use_attack",
+   "player": 1,
+   "attack_index": 1
+  },
+  {
+   "type": "attach_energy",
+   "player": 0,
+   "energy": 57,
+   "target": 19
+  },
+  {
+   "type": "use_attack",
+   "player": 0,
+   "attack_index": 0
+  },
+  {
+   "type": "attach_energy",
+   "player": 1,
+   "energy": 103,
+   "target": 73
+  },
+  {
+   "type": "use_attack",
+   "player": 1,
+   "attack_index": 1
+  },
+  {
+   "type": "take_prize",
+   "player": 1,
+   "index": 0
+  },
+  {
+   "type": "promote_active",
+   "player": 0,
+   "pokemon": 14
+  },
+  {
+   "type": "play_basic_to_bench",
+   "player": 0,
+   "card": 6
+  },
+  {
+   "type": "play_trainer",
+   "player": 0,
+   "card": 25
+  },
+  {
+   "type": "resolve_decision",
+   "player": 0,
+   "decision": 6,
+   "choices": [
+    2
+   ]
+  },
+  {
+   "type": "end_turn",
+   "player": 0
+  },
+  {
+   "type": "play_trainer",
+   "player": 1,
+   "card": 83
+  },
+  {
+   "type": "resolve_decision",
+   "player": 1,
+   "decision": 7,
+   "choices": [
+    5
+   ]
+  },
+  {
+   "type": "use_attack",
+   "player": 1,
+   "attack_index": 1
+  },
+  {
+   "type": "end_turn",
+   "player": 0
+  },
+  {
+   "type": "use_attack",
+   "player": 1,
+   "attack_index": 1
+  },
+  {
+   "type": "take_prize",
+   "player": 1,
+   "index": 0
+  },
+  {
+   "type": "promote_active",
+   "player": 0,
+   "pokemon": 1
+  },
+  {
+   "type": "play_basic_to_bench",
+   "player": 0,
+   "card": 9
+  },
+  {
+   "type": "end_turn",
+   "player": 0
+  },
+  {
+   "type": "attach_energy",
+   "player": 1,
+   "energy": 102,
+   "target": 73
+  },
+  {
+   "type": "play_trainer",
+   "player": 1,
+   "card": 82
+  },
+  {
+   "type": "resolve_decision",
+   "player": 1,
+   "decision": 10,
+   "choices": [
+    5
+   ]
+  },
+  {
+   "type": "use_attack",
+   "player": 1,
+   "attack_index": 1
+  },
+  {
+   "type": "take_prize",
+   "player": 1,
+   "index": 0
+  },
+  {
+   "type": "promote_active",
+   "player": 0,
+   "pokemon": 16
+  },
+  {
+   "type": "play_basic_to_bench",
+   "player": 0,
+   "card": 12
+  },
+  {
+   "type": "attach_energy",
+   "player": 0,
+   "energy": 42,
+   "target": 16
+  },
+  {
+   "type": "play_trainer",
+   "player": 0,
+   "card": 22
+  },
+  {
+   "type": "use_attack",
+   "player": 0,
+   "attack_index": 0
+  },
+  {
+   "type": "use_attack",
+   "player": 1,
+   "attack_index": 1
+  },
+  {
+   "type": "use_attack",
+   "player": 0,
+   "attack_index": 0
+  },
+  {
+   "type": "attach_energy",
+   "player": 1,
+   "energy": 101,
+   "target": 73
+  },
+  {
+   "type": "use_attack",
+   "player": 1,
+   "attack_index": 1
+  },
+  {
+   "type": "attach_energy",
+   "player": 0,
+   "energy": 50,
+   "target": 16
+  },
+  {
+   "type": "use_attack",
+   "player": 0,
+   "attack_index": 0
+  },
+  {
+   "type": "attach_energy",
+   "player": 1,
+   "energy": 111,
+   "target": 73
+  },
+  {
+   "type": "use_attack",
+   "player": 1,
+   "attack_index": 1
+  },
+  {
+   "type": "attach_energy",
+   "player": 0,
+   "energy": 55,
+   "target": 16
+  },
+  {
+   "type": "use_attack",
+   "player": 0,
+   "attack_index": 0
+  },
+  {
+   "type": "attach_energy",
+   "player": 1,
+   "energy": 85,
+   "target": 73
+  },
+  {
+   "type": "use_attack",
+   "player": 1,
+   "attack_index": 1
+  },
+  {
+   "type": "use_attack",
+   "player": 0,
+   "attack_index": 0
+  },
+  {
+   "type": "take_prize",
+   "player": 0,
+   "index": 0
+  },
+  {
+   "type": "promote_active",
+   "player": 1,
+   "pokemon": 66
+  },
+  {
+   "type": "play_basic_to_bench",
+   "player": 1,
+   "card": 78
+  },
+  {
+   "type": "end_turn",
+   "player": 1
+  },
+  {
+   "type": "attach_energy",
+   "player": 0,
+   "energy": 37,
+   "target": 16
+  },
+  {
+   "type": "use_attack",
+   "player": 0,
+   "attack_index": 0
+  },
+  {
+   "type": "attach_energy",
+   "player": 1,
+   "energy": 86,
+   "target": 66
+  },
+  {
+   "type": "end_turn",
+   "player": 1
+  },
+  {
+   "type": "use_attack",
+   "player": 0,
+   "attack_index": 0
+  },
+  {
+   "type": "attach_energy",
+   "player": 1,
+   "energy": 109,
+   "target": 66
+  },
+  {
+   "type": "use_attack",
+   "player": 1,
+   "attack_index": 0
+  },
+  {
+   "type": "attach_energy",
+   "player": 0,
+   "energy": 48,
+   "target": 16
+  },
+  {
+   "type": "use_attack",
+   "player": 0,
+   "attack_index": 0
+  },
+  {
+   "type": "take_prize",
+   "player": 0,
+   "index": 0
+  },
+  {
+   "type": "promote_active",
+   "player": 1,
+   "pokemon": 74
+  },
+  {
+   "type": "play_basic_to_bench",
+   "player": 1,
+   "card": 77
+  },
+  {
+   "type": "attach_energy",
+   "player": 1,
+   "energy": 104,
+   "target": 74
+  },
+  {
+   "type": "use_attack",
+   "player": 1,
+   "attack_index": 0
+  },
+  {
+   "type": "attach_energy",
+   "player": 0,
+   "energy": 56,
+   "target": 16
+  },
+  {
+   "type": "use_attack",
+   "player": 0,
+   "attack_index": 0
+  },
+  {
+   "type": "attach_energy",
+   "player": 1,
+   "energy": 91,
+   "target": 74
+  },
+  {
+   "type": "use_attack",
+   "player": 1,
+   "attack_index": 0
+  },
+  {
+   "type": "attach_energy",
+   "player": 0,
+   "energy": 41,
+   "target": 16
+  },
+  {
+   "type": "play_trainer",
+   "player": 0,
+   "card": 27
+  },
+  {
+   "type": "resolve_decision",
+   "player": 0,
+   "decision": 17,
+   "choices": [
+    9
+   ]
+  },
+  {
+   "type": "use_attack",
+   "player": 0,
+   "attack_index": 0
+  },
+  {
+   "type": "attach_energy",
+   "player": 1,
+   "energy": 96,
+   "target": 74
+  },
+  {
+   "type": "use_attack",
+   "player": 1,
+   "attack_index": 0
+  },
+  {
+   "type": "play_trainer",
+   "player": 0,
+   "card": 28
+  },
+  {
+   "type": "play_trainer",
+   "player": 0,
+   "card": 24
+  },
+  {
+   "type": "resolve_decision",
+   "player": 0,
+   "decision": 18,
+   "choices": [
+    9
+   ]
+  },
+  {
+   "type": "use_attack",
+   "player": 0,
+   "attack_index": 0
+  },
+  {
+   "type": "attach_energy",
+   "player": 1,
+   "energy": 106,
+   "target": 74
+  },
+  {
+   "type": "use_attack",
+   "player": 1,
+   "attack_index": 1
+  },
+  {
+   "type": "use_attack",
+   "player": 0,
+   "attack_index": 0
+  },
+  {
+   "type": "attach_energy",
+   "player": 1,
+   "energy": 92,
+   "target": 74
+  },
+  {
+   "type": "use_attack",
+   "player": 1,
+   "attack_index": 1
+  },
+  {
+   "type": "take_prize",
+   "player": 1,
+   "index": 0
+  },
+  {
+   "type": "promote_active",
+   "player": 0,
+   "pokemon": 18
+  },
+  {
+   "type": "play_basic_to_bench",
+   "player": 0,
+   "card": 4
+  },
+  {
+   "type": "attach_energy",
+   "player": 0,
+   "energy": 58,
+   "target": 18
+  },
+  {
+   "type": "use_attack",
+   "player": 0,
+   "attack_index": 0
+  },
+  {
+   "type": "attach_energy",
+   "player": 1,
+   "energy": 90,
+   "target": 74
+  },
+  {
+   "type": "use_attack",
+   "player": 1,
+   "attack_index": 1
+  },
+  {
+   "type": "attach_energy",
+   "player": 0,
+   "energy": 35,
+   "target": 18
+  },
+  {
+   "type": "use_attack",
+   "player": 0,
+   "attack_index": 0
+  },
+  {
+   "type": "take_prize",
+   "player": 0,
+   "index": 0
+  },
+  {
+   "type": "promote_active",
+   "player": 1,
+   "pokemon": 71
+  },
+  {
+   "type": "play_basic_to_bench",
+   "player": 1,
+   "card": 70
+  },
+  {
+   "type": "attach_energy",
+   "player": 1,
+   "energy": 94,
+   "target": 71
+  },
+  {
+   "type": "end_turn",
+   "player": 1
+  },
+  {
+   "type": "attach_energy",
+   "player": 0,
+   "energy": 51,
+   "target": 18
+  },
+  {
+   "type": "play_trainer",
+   "player": 0,
+   "card": 20
+  },
+  {
+   "type": "use_attack",
+   "player": 0,
+   "attack_index": 0
+  },
+  {
+   "type": "end_turn",
+   "player": 1
+  },
+  {
+   "type": "use_attack",
+   "player": 0,
+   "attack_index": 0
+  },
+  {
+   "type": "end_turn",
+   "player": 1
+  },
+  {
+   "type": "attach_energy",
+   "player": 0,
+   "energy": 38,
+   "target": 18
+  },
+  {
+   "type": "use_attack",
+   "player": 0,
+   "attack_index": 0
+  },
+  {
+   "type": "attach_energy",
+   "player": 1,
+   "energy": 117,
+   "target": 71
+  },
+  {
+   "type": "use_attack",
+   "player": 1,
+   "attack_index": 0
+  },
+  {
+   "type": "attach_energy",
+   "player": 0,
+   "energy": 59,
+   "target": 18
+  },
+  {
+   "type": "use_attack",
+   "player": 0,
+   "attack_index": 0
+  },
+  {
+   "type": "play_trainer",
+   "player": 1,
+   "card": 81
+  },
+  {
+   "type": "use_attack",
+   "player": 1,
+   "attack_index": 0
+  },
+  {
+   "type": "attach_energy",
+   "player": 0,
+   "energy": 32,
+   "target": 18
+  },
+  {
+   "type": "use_attack",
+   "player": 0,
+   "attack_index": 0
+  },
+  {
+   "type": "take_prize",
+   "player": 0,
+   "index": 0
+  },
+  {
+   "type": "promote_active",
+   "player": 1,
+   "pokemon": 62
+  },
+  {
+   "type": "play_basic_to_bench",
+   "player": 1,
+   "card": 79
+  },
+  {
+   "type": "attach_energy",
+   "player": 1,
+   "energy": 110,
+   "target": 62
+  },
+  {
+   "type": "use_attack",
+   "player": 1,
+   "attack_index": 0
+  },
+  {
+   "type": "attach_energy",
+   "player": 0,
+   "energy": 44,
+   "target": 18
+  },
+  {
+   "type": "play_trainer",
+   "player": 0,
+   "card": 21
+  },
+  {
+   "type": "use_attack",
+   "player": 0,
+   "attack_index": 0
+  },
+  {
+   "type": "use_attack",
+   "player": 1,
+   "attack_index": 0
+  },
+  {
+   "type": "take_prize",
+   "player": 1,
+   "index": 0
+  },
+  {
+   "type": "promote_active",
+   "player": 0,
+   "pokemon": 13
+  },
+  {
+   "type": "play_basic_to_bench",
+   "player": 0,
+   "card": 7
+  },
+  {
+   "type": "end_turn",
+   "player": 0
+  },
+  {
+   "type": "attach_energy",
+   "player": 1,
+   "energy": 119,
+   "target": 62
+  },
+  {
+   "type": "use_attack",
+   "player": 1,
+   "attack_index": 0
+  },
+  {
+   "type": "attach_energy",
+   "player": 0,
+   "energy": 43,
+   "target": 13
+  },
+  {
+   "type": "use_attack",
+   "player": 0,
+   "attack_index": 0
+  },
+  {
+   "type": "attach_energy",
+   "player": 1,
+   "energy": 97,
+   "target": 62
+  },
+  {
+   "type": "use_attack",
+   "player": 1,
+   "attack_index": 1
+  },
+  {
+   "type": "resolve_decision",
+   "player": 1,
+   "decision": 27,
+   "choices": [
+    1
+   ]
+  },
+  {
+   "type": "take_prize",
+   "player": 1,
+   "index": 0
+  },
+  {
+   "type": "take_prize",
+   "player": 0,
+   "index": 0
+  }
+ ],
+ "points": {
+  "decision": {
+   "commands": 48,
+   "phase": "take_prize",
+   "decision_kind": "take_prize"
+  },
+  "sudden_death": {
+   "commands": 194,
+   "phase": "sudden_death",
+   "decision_kind": null
+  }
+ }
+}
