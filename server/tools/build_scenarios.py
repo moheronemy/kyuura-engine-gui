@@ -9,7 +9,10 @@ contract/kyuura-client-api-v1.json の engine.commit と違えば止まる。
     server/.venv/Scripts/python server/tools/build_scenarios.py --engine <エンジンの作業ツリー>   # Windows
     server/.venv/bin/python server/tools/build_scenarios.py --engine <エンジンの作業ツリー>       # macOS・Linux
 
-エンジンの固定コミットを変えたら、作り直して差分を確かめる（README「エンジンの更新」）。
+エンジンの固定コミットを変えたら、まず作り直さずに tools/scenario_views.py で記録のエンジンと新しいエンジンの観測を比べる
+（README「エンジンの更新」）。同じなら JSON の compatibility に確かめた結果を追記するだけで、engine_commit（この記録を作った
+エンジン）は書き換えない。操作の列・到達点・観測が変わる場合にだけ、このスクリプトで作り直し、views_sha256 を
+tools/scenario_views.py の値で入れ直し、差分を確かめる（作り直すと compatibility・views_sha256 は消えるので入れ直す）。
 """
 
 from __future__ import annotations

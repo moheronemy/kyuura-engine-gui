@@ -2,6 +2,20 @@
  "source": "kyuura-engine tests/helpers.py PIKACHU_DECK・PIKACHU_DECK_B、tests/sudden_death_games.py swap_policy_command（seed 9）",
  "engine_commit": "ffcc5cab5df1ebde0faed3fd23b481295374e1f9",
  "engine_version": "0.164.0",
+ "$engine_commit": "この記録を作ったエンジン（tools/build_scenarios.py）。新しいエンジンで確かめた結果は compatibility に追記する（ここは書き換えない）",
+ "compatibility": [
+  {
+   "engine_commit": "b4e62d9487c8438d26bbe862077195203627f16b",
+   "engine_version": "0.165.0",
+   "checked": "2026-11-07",
+   "result": "操作の列・到達点は同じ（来歴の追記だけ。記録し直していない）",
+   "method": "server/tools/scenario_views.py を記録のエンジン（engine_commit）と新しいエンジンの環境で実行し比べた。各時点の全入口（プレイヤー0・1・観戦者・ホスト）の view は同じ。candidates の違いは coverage.implemented_kinds に U7-3 の 4 種類が加わったことだけ"
+  }
+ ],
+ "views_sha256": {
+  "decision": "9e4ddf6882a7f5523c64c2a82b2db311961322d1836a39aae856992cc1cfa460",
+  "sudden_death": "cf44d165fa3058dc79b5bf644da2e8f7690b314534b5b6215fa50e8ccd4c2fbd"
+ },
  "decks": [
   [
    "PMCG1-035",

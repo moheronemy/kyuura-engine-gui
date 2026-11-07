@@ -14,14 +14,34 @@ seed 9 の対戦。エンジンの v0.2f 以来の固定例）で受理された
 
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 from typing import Any
 
 from kyuura_engine import apply_command, command_from_dict, new_game
-from kyuura_engine.client_api import ClientHub
+from kyuura_engine.client_api import CONTRACT, FORMAT, ClientHub
 
 DATA = Path(__file__).resolve().parent / "scenarios"
+_VOLATILE = frozenset({"game", "revision"})  # 対戦ごとに変わる取っ手の識別子（比べない）
+
+
+def _strip(value):
+    if isinstance(value, dict):
+        return {k: _strip(v) for k, v in value.items() if k not in _VOLATILE}
+    if isinstance(value, list):
+        return [_strip(v) for v in value]
+    return value
+
+
+def views(hub: ClientHub) -> dict[str, Any]:
+    """全入口（プレイヤー0・1・観戦者・ホスト）の view の応答（取っ手の識別子を除く）。"""
+    entries = {"player0": hub.player(0), "player1": hub.player(1), "spectator": hub.spectator(), "host": hub.host()}
+    return {name: _strip(entry.handle({"contract": CONTRACT, "format": FORMAT, "type": "view"})) for name, entry in entries.items()}
+
+
+def digest(value: Any) -> str:
+    return hashlib.sha256(json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
 
 
 class ScenarioError(RuntimeError):
@@ -54,11 +74,22 @@ def build(scenario_id: str) -> tuple[ClientHub | None, dict[str, Any] | None]:
     data = _load(spec["file"])
     decks = data["decks"]
     if spec["point"] == "start":
-        return ClientHub.start(decks[0], decks[1], data["seed"])
+        hub, notice = ClientHub.start(decks[0], decks[1], data["seed"])
+        _verify_views(data, scenario_id, hub)
+        return hub, notice
     point = data["points"][spec["point"]]
     state = new_game(decks[0], decks[1], data["seed"])
     for command in data["commands"][: point["commands"]]:
         state = apply_command(state, command_from_dict(command))
     if state.phase.value != point["phase"] or (state.decision.kind if state.decision is not None else None) != point.get("decision_kind"):
         raise ScenarioError("固定例の再生の結果が記録と合わない（エンジンの版を確かめる）")
-    return ClientHub.from_state(state), None  # 再生はホストの側の準備（start の知らせはない）
+    hub = ClientHub.from_state(state)
+    _verify_views(data, scenario_id, hub)
+    return hub, None  # 再生はホストの側の準備（start の知らせはない）
+
+
+def _verify_views(data: dict[str, Any], scenario_id: str, hub: ClientHub | None) -> None:
+    """記録した時点の全入口の観測（views_sha256）と同じか。違えば固定例を使わない（エンジンを更新したら tools/scenario_views.py で比べる）。"""
+    expected = data.get("views_sha256", {}).get(scenario_id)
+    if hub is None or expected is None or digest(views(hub)) != expected:
+        raise ScenarioError("固定例の観測が記録と合わない（エンジンの版を確かめる）")
