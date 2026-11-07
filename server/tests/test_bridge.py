@@ -24,9 +24,7 @@ def test_pinned_engine_is_used(bridge):
 
 def test_full_local_flow_until_game_over(bridge):
     """new_game → 両者の初期配置 → 補償 → ホストのジャンケン → 番を終えるだけで山札切れの終局まで（通常の対戦機能の完成ではない）。"""
-    created = bridge.create(mode="decks", decks=bridge.preset_decks())
-    assert created["ok"] and created["start"]["outcome"] == "accepted"
-    t = tokens(created["match"])
+    t = _match_that_did_not_halt_at_start(bridge)
     trace = []
     for _ in range(400):
         view = bridge.seat(t["spectator"], "view")
@@ -54,7 +52,7 @@ def test_full_local_flow_until_game_over(bridge):
 
 
 def test_seat_and_host_entries_are_separate(bridge):
-    t = tokens(bridge.create(mode="decks", decks=bridge.preset_decks())["match"])
+    t = _match_that_did_not_halt_at_start(bridge)
     # ホストの識別子はプレイヤーの口で、プレイヤーの識別子はホストの口で使えない
     assert bridge.client.post(f"/api/seat/{t['host']}", json={**ENVELOPE, "type": "view"}).json()["error"]["code"] == "GUI_SEAT_UNKNOWN"
     assert bridge.client.post(f"/api/host/{t[0]}", json={**ENVELOPE, "type": "view"}).json()["error"]["code"] == "GUI_SEAT_UNKNOWN"
@@ -150,7 +148,7 @@ def test_same_match_requests_are_serialized():
 
 def test_new_match_discards_old_and_updates_are_bounded(bridge, monkeypatch):
     monkeypatch.setattr(local_match, "MAX_UPDATES_PER_SEAT", 5)
-    first = tokens(bridge.create(mode="decks", decks=bridge.preset_decks())["match"])
+    first = _match_that_did_not_halt_at_start(bridge)
     for _ in range(12):
         if not (act(bridge, first[0]) or act(bridge, first[1]) or act(bridge, first["host"], host=True)):
             break
@@ -215,6 +213,20 @@ def test_forbidden_key_scan():
 
 
 # ---------------------------------------------------------------- 補助
+
+
+def _match_that_did_not_halt_at_start(bridge):
+    """seed は接続層が決める（外から渡せない）。準備の段階でエンジンが止める seed もある（切り直しの補償が記録で決まらない）ので、
+    開始直後に停止した対戦は停止の表示を確かめてから作り直す。"""
+    for _ in range(20):
+        created = bridge.create(mode="decks", decks=bridge.preset_decks())
+        assert created["ok"] and created["start"]["outcome"] == "accepted"
+        t = tokens(created["match"])
+        status = bridge.seat(t["spectator"], "view")["status"]
+        if status["status"] != "halted":
+            return t
+        assert status["halt"]["category"] and status["waiting"] == []
+    raise AssertionError("20 回とも準備で停止した")
 
 
 def _two_presets():

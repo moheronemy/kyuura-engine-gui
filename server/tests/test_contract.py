@@ -14,7 +14,6 @@ from kyuura_engine import client_api as C
 from kyuura_engine import diagnostics as D
 from kyuura_engine import legal_actions as L
 
-from .conftest import tokens
 
 ROOT = Path(__file__).resolve().parents[2]
 EXPECTED = json.loads((ROOT / "contract" / "kyuura-client-api-v1.json").read_text(encoding="utf-8"))
@@ -61,8 +60,9 @@ def test_enumerations_match_engine():
 def test_coverage_of_a_real_turn(bridge):
     """実際の番の coverage: 番を終えるだけを出し、ほかの 12 種類は not_covered（partial）。"""
     from .conftest import act
+    from .test_bridge import _match_that_did_not_halt_at_start
 
-    t = tokens(bridge.create(mode="decks", decks=bridge.preset_decks())["match"])
+    t = _match_that_did_not_halt_at_start(bridge)
     for _ in range(20):
         r0 = bridge.seat(t[0], "candidates")["response"]
         r1 = bridge.seat(t[1], "candidates")["response"]
