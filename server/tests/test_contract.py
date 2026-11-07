@@ -23,7 +23,7 @@ EXPECTED = json.loads((ROOT / "contract" / "kyuura-client-api-v1.json").read_tex
 def test_engine_identity():
     """導入元は direct_url.json の vcs_info で確かめる（site-packages で git rev-parse をしない）。"""
     summary = verify_engine_source(EXPECTED["engine"]["commit"], EXPECTED["engine"]["version"])
-    assert summary["commit_id"] == EXPECTED["engine"]["commit"] and summary["version"] == kyuura_engine.__version__ == EXPECTED["engine"]["version"] == "0.165.0"
+    assert summary["commit_id"] == EXPECTED["engine"]["commit"] and summary["version"] == kyuura_engine.__version__ == EXPECTED["engine"]["version"] == "0.166.0"
     assert "site-packages" in Path(summary["module"]).parts and ".venv/src" not in Path(summary["module"]).as_posix()
     reqs = (ROOT / "server" / "requirements.txt").read_text(encoding="utf-8")
     assert f"kyuura-engine @ git+https://github.com/moheronemy/kyuura-engine@{EXPECTED['engine']['commit']}" in reqs
@@ -55,11 +55,45 @@ def test_enumerations_match_engine():
     assert [L.CANDIDATES_STALE, L.CANDIDATES_WRONG_GAME, L.CANDIDATES_WRONG_ACTOR, L.CANDIDATE_UNKNOWN, L.CANDIDATE_INPUT_INVALID,
             L.CANDIDATE_NOT_EXECUTABLE, L.INPUT_BOUNDARY_UNCONFIRMED] == EXPECTED["refusal_codes"]
     assert list(C.ERROR_MESSAGES) == EXPECTED["client_error_codes"]
-    assert list(L.IMPLEMENTED_KINDS) == EXPECTED["implemented_kinds"] == EXPECTED["gui_operable_kinds"]
+    assert list(L.IMPLEMENTED_KINDS) == EXPECTED["implemented_kinds"]
+    assert set(EXPECTED["gui_operable_kinds"]) <= set(EXPECTED["implemented_kinds"])  # 画面を持たない種類は表示だけ
     assert list(L.TURN_KINDS) == EXPECTED["turn_basic_kinds"] == [L.KIND_PLAY_BASIC, L.KIND_ATTACH_ENERGY, L.KIND_EVOLVE, L.KIND_RETREAT]
     assert list(L.MAIN_KINDS) == EXPECTED["main_kinds"]
-    assert [k for k in L.MAIN_KINDS if k not in (L.KIND_END_TURN, *L.TURN_KINDS)] == EXPECTED["turn_kinds_not_covered"]
-    assert {L.REASON_REACTIONS, L.REASON_FACE_DOWN, L.REASON_STOPS} <= set(EXPECTED["reason_codes"])
+    assert EXPECTED["attack_kinds"] == [L.KIND_USE_ATTACK]
+    assert [k for k in L.MAIN_KINDS if k not in (L.KIND_END_TURN, *L.TURN_KINDS, L.KIND_USE_ATTACK)] == EXPECTED["turn_kinds_not_covered"]
+    assert {L.REASON_REACTIONS, L.REASON_FACE_DOWN, L.REASON_STOPS, L.REASON_PREFLIGHT, L.REASON_CONTINUATION,
+            L.REASON_NO_PRINTED_ATTACK} <= set(EXPECTED["reason_codes"])
+    assert set(EXPECTED["check_before_submit_kinds"]) <= set(EXPECTED["implemented_kinds"])
+
+
+def test_attack_enumerations_match_engine():
+    """U7-4 のワザの入力の値（route・addon・cost の値・段の role）が、固定版のエンジンの定数と同じ。"""
+    from kyuura_engine import effects as E
+    from kyuura_engine.cards import EnergyType
+
+    assert [E.ROUTE_FORM, E.ROUTE_RECALL, E.ROUTE_LINK, E.ROUTE_PREHISTORIC, E.ROUTE_PUPPET, E.ROUTE_MIMIC] == EXPECTED["attack_routes"]
+    assert [L.ADDON_STADIUM_COIN, L.ADDON_ATTACK_POWER, L.ADDON_WITH_POWER] == EXPECTED["declaration_addons"]
+    assert [e.value for e in EnergyType] == EXPECTED["energy_types"]
+    assert EXPECTED["stage_roles"] == {L.KIND_USE_ATTACK: ["attack", "declaration_options"]}
+
+
+def test_attack_option_keys_cover_engine_source():
+    """ワザ・宣言といっしょに選ぶものの選べるものの項目の表（知らない項目は画面が止める）が、固定版のエンジンが作る項目を含む。"""
+    import inspect
+
+    attack = "".join(inspect.getsource(f) for f in (L._attack_candidate, L._attack_public, L._face_down_attack_candidate))
+    for key in ("id", "card", "card_id", "attack_index", "route", "grantors", "name_ja", "cost", "damage", "text_ja", "face_down"):
+        assert f'"{key}"' in attack, key
+    assert '("provider", "payer")' in attack  # getattr で加える 2 つ
+    assert {"id", "card", "card_id", "attack_index", "route", "provider", "payer", "grantors", "name_ja", "cost", "damage", "text_ja",
+            "face_down", "eligible", "processability", "reasons"} == set(EXPECTED["attack_option_keys"])
+    addon = inspect.getsource(L._addon_specs) + inspect.getsource(L._pokemon_option)
+    for key in ("addon", "card", "card_id", "pokemon", "power", "zone", "bench_index", "face_down"):
+        assert f'"{key}"' in addon, key
+    assert {"id", "addon", "card", "card_id", "pokemon", "zone", "bench_index", "face_down", "power", "eligible", "processability",
+            "reasons"} == set(EXPECTED["addon_option_keys"])
+    option = inspect.getsource(L._option)  # eligible・processability・reasons は _option が加える
+    assert all(f'"{key}"' in option for key in ("eligible", "processability", "reasons"))
 
 
 def test_stage_keys_cover_engine_source():
@@ -77,7 +111,7 @@ def test_stage_keys_cover_engine_source():
 
 
 def test_coverage_of_a_real_turn(fixed_bridge):
-    """実際の番の coverage（seed 固定の new_game）: scope_kinds は評価した種類（番を終える・基本の 4 種類）と未対応の 8 種類。
+    """実際の番の coverage（seed 固定の new_game）: scope_kinds は評価した種類（番を終える・基本の 4 種類・ワザ）と未対応の 7 種類。
     offered_kinds は候補に出した種類だけ（評価してゲーム上できない種類は出さない）。番の候補は partial。"""
     from .conftest import reach_first_turn
 
