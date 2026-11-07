@@ -25,9 +25,9 @@ process.on("SIGINT", () => stopAll(0));
 process.on("SIGTERM", () => stopAll(0));
 
 start("server", python, ["-m", "kyuura_gui_server", "--port", port], { cwd: join(ROOT, "server") });
-start("web", process.platform === "win32" ? "npm.cmd" : "npm", ["run", "dev"], {
+start("web", "npm run dev", [], {
   cwd: join(ROOT, "web"),
-  shell: process.platform === "win32",
+  shell: true, // Windows の npm は .cmd（引数は固定の文字列だけ）
   env: { ...process.env, KYUURA_GUI_SERVER_PORT: port },
 });
 console.log("ブラウザで http://127.0.0.1:5173/ を開いてください（ローカル専用）。");

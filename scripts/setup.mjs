@@ -7,7 +7,8 @@ import { ROOT, VENV, VENV_PYTHON } from "./venv.mjs";
 
 function run(cmd, args, opts = {}) {
   console.log(`> ${cmd} ${args.join(" ")}`);
-  const r = spawnSync(cmd, args, { cwd: ROOT, stdio: "inherit", shell: process.platform === "win32" && cmd === "npm", ...opts });
+  // Windows の npm は .cmd なのでシェルで起動する（引数は固定の文字列だけ）
+  const r = cmd === "npm" ? spawnSync([cmd, ...args].join(" "), { cwd: ROOT, stdio: "inherit", shell: true, ...opts }) : spawnSync(cmd, args, { cwd: ROOT, stdio: "inherit", ...opts });
   if (r.status !== 0) process.exit(r.status ?? 1);
 }
 
