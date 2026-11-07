@@ -23,7 +23,7 @@ EXPECTED = json.loads((ROOT / "contract" / "kyuura-client-api-v1.json").read_tex
 def test_engine_identity():
     """導入元は direct_url.json の vcs_info で確かめる（site-packages で git rev-parse をしない）。"""
     summary = verify_engine_source(EXPECTED["engine"]["commit"], EXPECTED["engine"]["version"])
-    assert summary["commit_id"] == EXPECTED["engine"]["commit"] and summary["version"] == kyuura_engine.__version__ == "0.164.0"
+    assert summary["commit_id"] == EXPECTED["engine"]["commit"] and summary["version"] == kyuura_engine.__version__ == EXPECTED["engine"]["version"] == "0.165.0"
     assert "site-packages" in Path(summary["module"]).parts and ".venv/src" not in Path(summary["module"]).as_posix()
     reqs = (ROOT / "server" / "requirements.txt").read_text(encoding="utf-8")
     assert f"kyuura-engine @ git+https://github.com/moheronemy/kyuura-engine@{EXPECTED['engine']['commit']}" in reqs
@@ -55,26 +55,41 @@ def test_enumerations_match_engine():
     assert [L.CANDIDATES_STALE, L.CANDIDATES_WRONG_GAME, L.CANDIDATES_WRONG_ACTOR, L.CANDIDATE_UNKNOWN, L.CANDIDATE_INPUT_INVALID,
             L.CANDIDATE_NOT_EXECUTABLE, L.INPUT_BOUNDARY_UNCONFIRMED] == EXPECTED["refusal_codes"]
     assert list(C.ERROR_MESSAGES) == EXPECTED["client_error_codes"]
-    assert [L.KIND_TAKE_PRIZE, L.KIND_PROMOTE_ACTIVE, L.KIND_ANSWER_DECISION, L.KIND_END_TURN, L.KIND_PLACE_STARTING, L.KIND_MULLIGAN_DRAW,
-            L.KIND_REPORT_JANKEN, L.KIND_START_SUDDEN_DEATH] == EXPECTED["implemented_kinds"]
+    assert list(L.IMPLEMENTED_KINDS) == EXPECTED["implemented_kinds"] == EXPECTED["gui_operable_kinds"]
+    assert list(L.TURN_KINDS) == EXPECTED["turn_basic_kinds"] == [L.KIND_PLAY_BASIC, L.KIND_ATTACH_ENERGY, L.KIND_EVOLVE, L.KIND_RETREAT]
+    assert list(L.MAIN_KINDS) == EXPECTED["main_kinds"]
+    assert [k for k in L.MAIN_KINDS if k not in (L.KIND_END_TURN, *L.TURN_KINDS)] == EXPECTED["turn_kinds_not_covered"]
+    assert {L.REASON_REACTIONS, L.REASON_FACE_DOWN, L.REASON_STOPS} <= set(EXPECTED["reason_codes"])
 
 
-def test_coverage_of_a_real_turn(bridge):
-    """実際の番の coverage: 番を終えるだけを出し、ほかの 12 種類は not_covered（partial）。"""
-    from .conftest import act
-    from .test_bridge import _match_that_did_not_halt_at_start
+def test_stage_keys_cover_engine_source():
+    """入力の段の項目の表（知らない項目は画面が止める）が、固定版のエンジンが作る段の項目をすべて含む。"""
+    import ast
+    import inspect
 
-    t = _match_that_did_not_halt_at_start(bridge)
-    for _ in range(20):
-        r0 = bridge.seat(t[0], "candidates")["response"]
-        r1 = bridge.seat(t[1], "candidates")["response"]
-        turn = next((r for r in (r0, r1) if r["candidates"] and r["candidates"][0]["kind"] == "end_turn"), None)
-        if turn is not None:
-            break
-        if not (act(bridge, t[0]) or act(bridge, t[1]) or act(bridge, t["host"], host=True)):
-            raise AssertionError("番に届かない")
+    tree = ast.parse(inspect.getsource(L))
+    keys = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Dict) and any(isinstance(k, ast.Constant) and k.value == "input" for k in node.keys)                 and any(isinstance(k, ast.Constant) and k.value == "count" for k in node.keys):
+            keys |= {k.value for k in node.keys if isinstance(k, ast.Constant)}
+    keys.add("name")  # 値の段に後から加える（stage["name"] = ...）
+    assert keys <= set(EXPECTED["stage_keys"]), keys - set(EXPECTED["stage_keys"])
+
+
+def test_coverage_of_a_real_turn(fixed_bridge):
+    """実際の番の coverage（seed 固定の new_game）: scope_kinds は評価した種類（番を終える・基本の 4 種類）と未対応の 8 種類。
+    offered_kinds は候補に出した種類だけ（評価してゲーム上できない種類は出さない）。番の候補は partial。"""
+    from .conftest import reach_first_turn
+
+    t = reach_first_turn(fixed_bridge)
+    turn = fixed_bridge.seat(t[0], "candidates")["response"]
     cov = turn["coverage"]
     assert cov["implemented_kinds"] == EXPECTED["implemented_kinds"]
-    assert cov["offered_kinds"] == ["end_turn"] and cov["completeness"] == "partial"
+    assert cov["completeness"] == "partial"
+    assert cov["scope_kinds"] == EXPECTED["main_kinds"]
     assert cov["not_covered_kinds"] == EXPECTED["turn_kinds_not_covered"]
-    assert turn["candidates"][0]["processability"] == "may_stop_later" and turn["candidates"][0]["input_disclosure"] == "no_input"
+    assert cov["offered_kinds"] == [c["kind"] for c in turn["candidates"]] == ["end_turn", "play_basic", "attach_energy"]
+    end = next(c for c in turn["candidates"] if c["kind"] == "end_turn")
+    assert end["processability"] == "may_stop_later" and end["input_disclosure"] == "no_input"
+    for c in turn["candidates"][1:]:
+        assert c["input_disclosure"] == "confirmed" and c["processability"] in EXPECTED["processability"]
