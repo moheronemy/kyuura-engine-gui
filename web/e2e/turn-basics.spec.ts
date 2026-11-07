@@ -1,4 +1,4 @@
-// U7-3 の番の基本の操作 4 種類を、実際の接続層 + 固定版のエンジン（0.165.0）+ 実際の renderer で確かめる。
+// U7-3 の番の基本の操作 4 種類を、実際の接続層 + 固定版のエンジン（0.165.0 で作り、0.166.0 で同じ操作の列を確かめる）+ 実際の renderer で確かめる。
 // 対戦は通常の new_game から画面の操作だけで進める（構築盤面・検証用の固定例ではない）。接続層はテスト専用の設定で seed を固定して
 // 起動している（playwright.config.ts。seed・操作の列はブラウザへ返らない）。ランダムな対戦を作り直して探すことはしない。
 // 候補は公開の kind の表示名で選び、入力の段の選択肢はエンジンが返した選べるもの・組だけから選ぶ。
@@ -86,8 +86,9 @@ test("通常の new_game（seed 固定）から: ベンチに出す → エネ�
   const area = viewer(page);
   // coverage: 評価した種類・候補に出した種類・未対応を分ける（番は partial）
   await expect(area.getByLabel("評価して候補に出さなかった種類")).toContainText("進化させる");
-  await expect(area.getByLabel("未対応の操作")).toContainText("ワザを使う");
+  await expect(area.getByLabel("未対応の操作")).toContainText("トレーナーを使う"); // U7-4 でワザは評価する種類になった（attacks.spec.ts）
   await expect(area.getByLabel("未対応の操作")).not.toContainText("にげる");
+  await expect(area.getByLabel("未対応の操作")).not.toContainText("ワザを使う");
 
   // 1. ベンチに出す（画像を押すと、その選択肢の radio を選ぶだけ）
   await expect(mine(page).locator(".bench-slot")).toContainText("ベンチ（0）");

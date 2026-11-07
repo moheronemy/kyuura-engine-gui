@@ -75,7 +75,8 @@ test("準備を終えて番を終えるまで（両プレイヤーの初期配�
   await selectSeat(page, "プレイヤー0");
   const status = viewer(page).getByRole("region", { name: "対戦の状態" });
   await expect(status).toContainText("プレイヤー0の番");
-  await expect(viewer(page).getByLabel("未対応の操作")).toContainText("ワザを使う");
+  await expect(viewer(page).getByLabel("未対応の操作")).toContainText("トレーナーを使う"); // U7-4 でワザは評価する種類になった
+  await expect(viewer(page).getByLabel("未対応の操作")).not.toContainText("ワザを使う");
   await expect(viewer(page).getByText("partial", { exact: true })).toBeVisible();
   await candidate(viewer(page), "番を終える").getByRole("button", { name: "この操作を選ぶ" }).click();
   await submitAndExpect(viewer(page), /受理/);
