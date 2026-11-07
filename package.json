@@ -1,0 +1,15 @@
+{
+  "name": "kyuura-engine-gui",
+  "private": true,
+  "description": "kyuura-engine のローカル確認用 GUI（React・TypeScript）と Python のローカル接続層（FastAPI）。ローカル専用で、公開サーバーではない。",
+  "scripts": {
+    "setup": "node scripts/setup.mjs",
+    "dev": "node scripts/dev.mjs",
+    "test": "npm run test:server && npm run test:web",
+    "test:server": "node scripts/py.mjs -m pytest server/tests -c server/pytest.ini",
+    "test:web": "npm --prefix web test",
+    "typecheck": "npm --prefix web run typecheck",
+    "build": "npm --prefix web run build",
+    "e2e": "npm --prefix web run e2e"
+  }
+}
