@@ -28,8 +28,9 @@ export default defineConfig({
       timeout: 60_000,
     },
     {
-      command: "npx vite",
-      env: { KYUURA_GUI_SERVER_PORT: serverPort, KYUURA_GUI_WEB_PORT: webPort },
+      // KYUURA_E2E_PREVIEW=1 なら本番ビルド（先に npm run build）を vite preview で配る
+      command: process.env.KYUURA_E2E_PREVIEW === "1" ? "npx vite preview" : "npx vite",
+      env:{ KYUURA_GUI_SERVER_PORT: serverPort, KYUURA_GUI_WEB_PORT: webPort },
       url: `http://127.0.0.1:${webPort}/`,
       reuseExistingServer: false,
       timeout: 60_000,

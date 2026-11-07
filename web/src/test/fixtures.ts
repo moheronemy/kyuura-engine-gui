@@ -183,6 +183,7 @@ export function commonRoutes(call: Call): unknown | undefined {
   if (call.path === "/api/decks/presets") return PRESETS;
   if (call.path === "/api/cards") return { gui_server: 1, ok: true, cards: [{ id: "PMCG1-058", name_ja: "エビワラー", category: "pokemon", stage: "basic", hp: 70 }] };
   if (call.path === "/api/scenarios") return { gui_server: 1, ok: true, scenarios: [] };
+  if (call.path === "/api/card-definitions") return CARD_DEFINITIONS;
   if (call.path === "/api/local-match") return MATCH;
   if (call.path.endsWith("/updates?after=0") || /\/updates\?after=\d+$/.test(call.path)) return EMPTY_UPDATES;
   return undefined;
@@ -190,6 +191,102 @@ export function commonRoutes(call: Call): unknown | undefined {
 
 export function deferred<T>() {
   let resolve!: (v: T) => void;
-  const promise = new Promise<T>((r) => (resolve = r));
-  return { promise, resolve };
+  let reject!: (e: unknown) => void;
+  const promise = new Promise<T>((r, j) => {
+    resolve = r;
+    reject = j;
+  });
+  return { promise, resolve, reject };
+}
+
+// ---------------------------------------------------------------- 公開カード定義（接続層の拡張の口）と模擬の描画
+
+const text = (ja: string | null, en: string | null = null) => ({ ja, en });
+
+/** 固定版のエンジンの同梱データの形に合わせた記録（接続層が写す項目だけ）。 */
+export function pokemonRecord(id: string, name: string, extra: Record<string, unknown> = {}) {
+  return {
+    id,
+    jp_set: "PMCG1",
+    category: "pokemon",
+    name: text(name),
+    pokemon: {
+      stage: "basic",
+      evolves_from: null,
+      hp: 70,
+      types: ["fighting"],
+      weaknesses: [{ type: "psychic" }],
+      resistances: [],
+      retreat_cost: 2,
+      rules_text: null,
+      powers: [],
+      attacks: [{ name: text("ジャブ"), cost: ["fighting"], damage: { display: "20" }, text: text(null) }],
+      ...extra,
+    },
+    trainer: null,
+    energy: null,
+    jp_print: { level: 33, rarity: "●(C)" },
+  };
+}
+
+export const TRAINER_RECORD = { id: "PMCG1-091", jp_set: "PMCG1", category: "trainer", name: text("ポケモン交換おじさん"), pokemon: null, trainer: { text: text("説明") }, energy: null, jp_print: null };
+export const ENERGY_RECORD = { id: "PMCG1-102", jp_set: "PMCG1", category: "energy", name: text("基本闘エネルギー"), pokemon: null, trainer: null, energy: { kind: "basic", provides: ["fighting"], text: text(null) }, jp_print: null };
+
+export function cardDefinitions(cards: unknown[], extra: Record<string, unknown> = {}) {
+  return {
+    gui_server: 1,
+    ok: true,
+    kind: "card_definitions",
+    schema: "kyuura-gui-card-definitions",
+    schema_version: 1,
+    source: { package: "kyuura_engine", resource: "data/kyuura_cards.json", format: "kyuura-engine card extract 1", engine_version: "0.164.0", sha256: "0".repeat(64) },
+    card_count: cards.length,
+    omitted: 0,
+    cards,
+    ...extra,
+  };
+}
+
+/** 全体の表には非公開のカード（SECRET-1）の定義もある。表にあることは、表面を描いてよいことを意味しない。 */
+export const CARD_DEFINITIONS = cardDefinitions([pokemonRecord("PMCG1-058", "エビワラー"), pokemonRecord("SECRET-1", "ひみつのポケモン"), pokemonRecord("T-1", "テスト"), TRAINER_RECORD, ENERGY_RECORD]);
+
+export interface RenderCall {
+  canvas: HTMLCanvasElement;
+  item: unknown;
+  cardId: string | null;
+  scale: number;
+  resolve(drawn: boolean): void;
+  reject(error: unknown): void;
+}
+
+/**
+ * 模擬の描画（jsdom には Canvas 2D がない）。要求ごとに終わり方をテストが決める。
+ * toItem は記録の id を持つだけの内容を返す（どのカードを描こうとしたかを確かめるため）。
+ */
+export function mockRenderer(opts: { back?: Promise<string>; toItem?: (record: { id: string }) => unknown } = {}) {
+  const calls: RenderCall[] = [];
+  const cancelled: HTMLCanvasElement[] = [];
+  const items: string[] = [];
+  let backCalls = 0;
+  const renderer = {
+    toItem(record: { id: string }) {
+      items.push(record.id);
+      if (opts.toItem) return opts.toItem(record);
+      return { kind: "card", cardId: record.id };
+    },
+    render(canvas: HTMLCanvasElement, item: unknown, scale: number) {
+      const d = deferred<boolean>();
+      const cardId = typeof item === "object" && item !== null && "cardId" in item ? String(item.cardId) : null;
+      calls.push({ canvas, item, cardId, scale, resolve: d.resolve, reject: d.reject });
+      return d.promise;
+    },
+    cancel(canvas: HTMLCanvasElement) {
+      cancelled.push(canvas);
+    },
+    backImage() {
+      backCalls += 1;
+      return opts.back ?? Promise.resolve("data:image/png;base64,QkFDSw==");
+    },
+  };
+  return { renderer: renderer as unknown as import("../cards/renderer").CardRenderer, calls, cancelled, items, backCalls: () => backCalls };
 }
