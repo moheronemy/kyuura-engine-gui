@@ -10,6 +10,17 @@
    "checked": "2026-11-07",
    "result": "操作の列・到達点は同じ（来歴の追記だけ。記録し直していない）",
    "method": "server/tools/scenario_views.py を記録のエンジン（engine_commit）と新しいエンジンの環境で実行し比べた。各時点の全入口（プレイヤー0・1・観戦者・ホスト）の view は同じ。candidates の違いは coverage.implemented_kinds に U7-3 の 4 種類が加わったことだけ"
+  },
+  {
+   "engine_commit": "9506d6305e90ec262fbe77740d9aa57f04b980b6",
+   "engine_version": "0.166.0",
+   "checked": "2026-11-08",
+   "result": "操作の列・到達点は同じ（来歴の追記だけ。記録し直していない）",
+   "method": "server/tools/scenario_views.py の --full を 0.165.0（b4e62d9）と 0.166.0（9506d63）の環境で実行し、応答の全体を項目ごとに比べた。各時点の全入口（プレイヤー0・1・観戦者・ホスト）の view は同じ（views_sha256 も同じ）",
+   "candidates_difference": {
+    "added_attack_candidates": "なし（どの時点も番の中ではないので、use_attack の候補は出ない）",
+    "other": "coverage.implemented_kinds に use_attack が加わった（U7-4 の種類の追加）。ほかの項目の違いはない"
+   }
   }
  ],
  "views_sha256": {
