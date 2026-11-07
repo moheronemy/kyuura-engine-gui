@@ -29,3 +29,15 @@ export const GUI_OPERABLE_KINDS = new Set<string>(expected.gui_operable_kinds);
 export const STAGE_KEYS = new Set<string>(expected.stage_keys);
 export const PAIR_KEYS = new Set<string>(expected.pair_keys);
 export const ZONES = expected.zones as readonly string[];
+export const STATUS_VALUES = expected.status_values as readonly string[];
+export const NEXT_KINDS = expected.next_kinds as readonly string[];
+// U7-4: ワザの宣言。段の role の並び・route・addon・cost の値・選べるものの項目は契約の表のとおりで、ほかは操作を止める（validate.ts）
+export const ATTACK_KINDS = new Set<string>(expected.attack_kinds);
+export const STAGE_ROLES = expected.stage_roles as Readonly<Record<string, readonly string[]>>;
+export const ATTACK_ROUTES = expected.attack_routes as readonly string[];
+export const DECLARATION_ADDONS = expected.declaration_addons as readonly string[];
+export const ENERGY_TYPES = expected.energy_types as readonly string[];
+export const ATTACK_OPTION_KEYS = new Set<string>(expected.attack_option_keys);
+export const ADDON_OPTION_KEYS = new Set<string>(expected.addon_option_keys);
+/** 今の入力・今の取っ手への check が通ってから送信する種類（GUI の決まり。check は受理の保証ではない）。 */
+export const CHECK_BEFORE_SUBMIT_KINDS = new Set<string>(expected.check_before_submit_kinds);

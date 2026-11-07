@@ -213,8 +213,27 @@ export interface InputOption {
   pokemon?: number;
   zone?: "active" | "bench";
   bench_index?: number;
-  /** U7-3: 本人のうらのポケモン（card_id はない）。 */
+  /** U7-3: 本人のうらのポケモン（場のポケモンの選べるものでは card_id はない）。U7-4: うらのバトル場のポケモンのワザ（card_id は本人が知るカード）。 */
   face_down?: true;
+  /** U7-4（role: attack）: ワザの位置（印刷したカードの何番目のワザか）。入力の値ではない（送るのは id）。 */
+  attack_index?: number;
+  /** U7-4: ワザの持ち方（form・recall・psylink・prehistoric・puppet・mimic）。うらのバトル場のポケモンのワザにはない。 */
+  route?: string;
+  /** U7-4: ワザを供給する場のポケモンの番号（［サイコリンク］など）。 */
+  provider?: number;
+  /** U7-4: 必要なエネルギーを払うポケモンの番号（［にんぎょうつかい］）。 */
+  payer?: number;
+  /** U7-4: 許可を与える特殊能力を持つ場のポケモンの番号。 */
+  grantors?: number[];
+  /** U7-4: 印刷のワザの名前・必要なエネルギー・ダメージの表示（印刷のまま。与えるダメージの予測ではない）・説明。 */
+  name_ja?: string;
+  cost?: string[];
+  damage?: string | null;
+  text_ja?: string | null;
+  /** U7-4（role: declaration_options）: 宣言といっしょに選ぶものの種類。 */
+  addon?: string;
+  /** U7-4（addon: with_power）: 特殊能力の名前。 */
+  power?: string;
   [key: string]: unknown;
 }
 

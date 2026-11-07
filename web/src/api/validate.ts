@@ -1,16 +1,25 @@
 // 実行時の検証。ブラウザが受け取った JSON を、契約の識別・形式の版・表示と操作に使う項目の形で確かめてから型に入れる。
 // 合わなければ ProtocolError（画面は「不明な応答」を表示し、操作を止める）。全応答を any で通さない。
 import {
+  ADDON_OPTION_KEYS,
+  ATTACK_KINDS,
+  ATTACK_OPTION_KEYS,
+  ATTACK_ROUTES,
   CONTRACT,
+  DECLARATION_ADDONS,
+  ENERGY_TYPES,
   FORMAT,
   GUI_SERVER_FORMAT,
   INPUT_DISCLOSURE,
   INPUT_KINDS,
   LEGAL_ACTIONS_FORMAT,
+  NEXT_KINDS,
   OUTCOMES,
   PAIR_KEYS,
   PROCESSABILITY,
   STAGE_KEYS,
+  STAGE_ROLES,
+  STATUS_VALUES,
   ZONES,
 } from "./contract";
 import type {
@@ -271,9 +280,74 @@ function option(value: unknown, where: string): InputOption {
   if ("bench_index" in o && int(o.bench_index, `${where}.bench_index`) < 0) fail(`${where}.bench_index`);
   if ("face_down" in o) {
     if (o.face_down !== true) fail(`${where}.face_down`);
-    if ("card_id" in o) fail(`${where}: うらのポケモンにカード ID がある`); // 情報境界（エンジンは出さない）
+    // 情報境界: 場のポケモンの選べるもの（うらのポケモン）にカード ID は来ない。U7-4 のうらのバトル場のポケモンのワザだけは、
+    // 本人が知る本当のカードの印刷のワザなので、本人の候補にカード ID がある（attack_index のある選べるものだけ）
+    if ("card_id" in o && !("attack_index" in o)) fail(`${where}: うらのポケモンにカード ID がある`);
   }
   return o as unknown as InputOption;
+}
+
+function intList(value: unknown, where: string): number[] {
+  return arr(value, where).map((v, i) => int(v, `${where}[${i}]`));
+}
+
+/** U7-4: ワザ（role: attack）の選べるもの。表示に使う項目の形と、知らない項目がないことを確かめる。 */
+function attackOption(o: InputOption, where: string): void {
+  for (const key of Object.keys(o)) if (!ATTACK_OPTION_KEYS.has(key)) fail(`${where}.${key}: 知らないワザの項目`);
+  int(o.card, `${where}.card`);
+  str(o.card_id, `${where}.card_id`);
+  if (int(o.attack_index, `${where}.attack_index`) < 0) fail(`${where}.attack_index`);
+  // route はエンジンが返した持ち方の表示。うらのバトル場のポケモンのワザ（face_down）にはない
+  if ("route" in o) oneOf(o.route, ATTACK_ROUTES, `${where}.route`);
+  else if (o.face_down !== true) fail(`${where}.route`);
+  if ("provider" in o) int(o.provider, `${where}.provider`);
+  if ("payer" in o) int(o.payer, `${where}.payer`);
+  if ("grantors" in o) intList(o.grantors, `${where}.grantors`);
+  str(o.name_ja, `${where}.name_ja`);
+  arr(o.cost, `${where}.cost`).forEach((c, i) => oneOf(c, ENERGY_TYPES, `${where}.cost[${i}]`));
+  if (!("damage" in o) || (o.damage !== null && typeof o.damage !== "string")) fail(`${where}.damage`);
+  if (!("text_ja" in o) || (o.text_ja !== null && typeof o.text_ja !== "string")) fail(`${where}.text_ja`);
+  if (!("eligible" in o)) fail(`${where}.eligible`);
+}
+
+/** U7-4: 宣言といっしょに選ぶもの（role: declaration_options）の選べるもの。addon ごとに要る項目を確かめる。 */
+function addonOption(o: InputOption, where: string): void {
+  for (const key of Object.keys(o)) if (!ADDON_OPTION_KEYS.has(key)) fail(`${where}.${key}: 知らない宣言の項目`);
+  const addon = oneOf(o.addon, DECLARATION_ADDONS, `${where}.addon`);
+  if (!("eligible" in o)) fail(`${where}.eligible`);
+  if (addon === "stadium_coin") {
+    int(o.card, `${where}.card`);
+    str(o.card_id, `${where}.card_id`);
+  } else {
+    int(o.pokemon, `${where}.pokemon`);
+  }
+  if (addon === "with_power") {
+    str(o.power, `${where}.power`);
+    oneOf(o.zone, ZONES, `${where}.zone`);
+  } else if ("power" in o) fail(`${where}.power`);
+}
+
+/**
+ * 段の role で形が決まる種類（U7-4 の use_attack）: role の並びが契約の表と同じで、段ごとの選べるものの形を確かめる。
+ * ほかの種類の段に、その種類の role が来たら止める（role だけで古い画面へ通さない）。
+ */
+function kindStages(kind: string, stages: InputStage[]): void {
+  const expectedRoles = STAGE_ROLES[kind];
+  const special = new Set(Object.values(STAGE_ROLES).flat());
+  if (!expectedRoles) {
+    for (const s of stages) if (s.input === "choose_option" && s.role !== undefined && special.has(s.role)) fail(`stages[${s.stage}].role: ${kind} の段ではない`);
+    return;
+  }
+  const roles = stages.map((s) => (s.input === "choose_option" ? s.role : undefined));
+  if (roles.length !== expectedRoles.length || roles.some((r, i) => r !== expectedRoles[i])) fail(`stages: ${kind} の段の並び`);
+  if (!ATTACK_KINDS.has(kind)) return;
+  const [first, second] = stages as OptionStage[];
+  if (!first?.options || !second?.options || first.count.min !== 1 || first.count.max !== 1) fail("stages[1]: ワザの段");
+  first.options.forEach((op, j) => attackOption(op, `stages[1].options[${j}]`));
+  if (second.depends_on_stage !== first.stage || !second.options_by_choice) fail("stages[2].depends_on_stage");
+  // 1 段目のすべてのワザに組の表がある（ないワザに GUI がいっしょに選ぶものを推測しない）
+  for (const op of first.options) if (!(op.id in second.options_by_choice)) fail(`stages[2].options_by_choice.${op.id}`);
+  second.options.forEach((op, j) => addonOption(op, `stages[2].options[${j}]`));
 }
 
 function stage(value: unknown, i: number): InputStage {
@@ -364,7 +438,9 @@ export function inputsResponse(value: unknown): InputsResponse {
     str(r.candidate, "response.candidate");
     str(r.kind, "response.kind");
     if ("withheld" in r) refusal(r.withheld, "response.withheld");
-    stagesConsistent(arr(r.stages, "response.stages").map((s, i) => stage(s, i)));
+    const stages = arr(r.stages, "response.stages").map((s, i) => stage(s, i));
+    stagesConsistent(stages);
+    if (!("withheld" in r)) kindStages(r.kind as string, stages);
   }
   return o as unknown as InputsResponse;
 }
@@ -388,7 +464,20 @@ export function submitResponse(value: unknown): SubmitResponse {
     const d = obj(o.result, "result");
     if (!(d.role === "actor" || d.role === "host")) fail("result.role");
     str(d.outcome, "result.outcome");
-    str(d.status, "result.status");
+    // 結果の表示（決定待ち・停止・終局）に使う値。知らない状態は推測で言い換えず、不明な応答として止める
+    oneOf(d.status, STATUS_VALUES, "result.status");
+    arr(d.next, "result.next").forEach((n, i) => {
+      const no = obj(n, `result.next[${i}]`);
+      oneOf(no.kind, NEXT_KINDS, `result.next[${i}].kind`);
+      if (!(no.player === 0 || no.player === 1 || no.player === null || no.player === undefined)) fail(`result.next[${i}].player`);
+    });
+    if (d.halt != null) {
+      const h = obj(d.halt, "result.halt");
+      if (h.message != null) str(h.message, "result.halt.message");
+      if (h.category != null) str(h.category, "result.halt.category");
+    }
+    if (d.category != null) str(d.category, "result.category");
+    if (d.message != null) str(d.message, "result.message");
   }
   return o as unknown as SubmitResponse;
 }
