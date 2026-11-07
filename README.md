@@ -71,7 +71,7 @@ cd server && .venv/bin/python -m kyuura_gui_server.engine_source
 
 - **kyuura-card-renderer** の完全なコミット: `af882310059c7f33bc371d31b859b09f5428f6d1`（エンジンを 0.165.0 に更新したときも変えていない。同じ Canvas では最後に始めた要求だけが描く、非同期の描画の修正を含む）。renderer の main の先頭へは自動で追従しない
 - 依存の定義: `web/package.json` の `"kyuura-card-renderer": "github:moheronemy/kyuura-card-renderer#af882310059c7f33bc371d31b859b09f5428f6d1"`。`web/package-lock.json` も同じコミット。導入のときに renderer の `prepare`（`npm run build:lib`。tsc で `dist-lib/` を作り、素材画像を写す）が動く。npm の `allowScripts` で、このコミットの `prepare` だけを許可している
-- 固定の記録: [`contract/kyuura-gui-card-definitions-v1.json`](contract/kyuura-gui-card-definitions-v1.json) の `renderer.commit`（接続層のテストが `package.json`・lockfile と照らす）
+- 固定の記録: [`contract/kyuura-gui-card-definitions-v2.json`](contract/kyuura-gui-card-definitions-v2.json) の `renderer.commit`（接続層のテストが `package.json`・lockfile と照らす）
 - 使う公開 API（パッケージの入口の export だけ。`src/` の中を直接 import しない）: `fromEngineCard`・`renderToCanvas`・`cancelRenderToCanvas`・型 `EngineCardRecord`・`RenderableCard` など（`web/src/cards/renderer.ts`）
 - `renderToCanvas` の戻り値: `true` は描いた、`false` は同じ Canvas へのあとの要求・キャンセルで無効になった（エラーではない）、reject は有効な要求の読み込み・描画の失敗
 - `dist-lib` はバンドルしていない ESM（素材画像と Web フォントの CSS を import する）なので、Vite が扱う。Vitest でも Vite の変換を通す（`vite.config.ts` の `test.server.deps.inline`）
@@ -147,7 +147,7 @@ cd web && npm run dev
 
 `GET /api/card-definitions` は **GUI の接続層の拡張の口**です（エンジンの client_api にある入口ではありません）。接続層が、導入済みの kyuura-engine の同梱データ `kyuura_engine/data/kyuura_cards.json` を `importlib.resources` で読み（ソースの checkout・`.venv/src` には依存しない）、描画に使う項目だけを写して返します。
 
-- 識別: `schema: "kyuura-gui-card-definitions"`・`schema_version: 1`、`source`（`format: "kyuura-engine card extract 1"`・`engine_version`・同梱データの内容の `sha256`。バイト列ではなく読んだ JSON を正規化した形から作るので、導入の環境の改行などで変わらない。0.164.0 と 0.165.0 で同じ値）。表は [`contract/kyuura-gui-card-definitions-v1.json`](contract/kyuura-gui-card-definitions-v1.json)
+- 識別: `schema: "kyuura-gui-card-definitions"`・`schema_version: 1`、`source`（`format: "kyuura-engine card extract 1"`・`engine_version`・同梱データの内容の `sha256`。バイト列ではなく読んだ JSON を正規化した形から作るので、導入の環境の改行などで変わらない。0.164.0 と 0.165.0 で同じ値）。表は [`contract/kyuura-gui-card-definitions-v2.json`](contract/kyuura-gui-card-definitions-v2.json)
 - 記録の項目: `id`・`jp_set`・`category`・`name`・`pokemon`（段階・進化元・HP・タイプ・弱点・抵抗力・にげる・ルール文・ポケモンパワー・ワザ）・`trainer`（文）・`energy`（基本／特殊・タイプ・文）・`jp_print`（LV・レアリティ）。出典の記録・メモ・URL などは写さない
 - **全体の表**（固定版のエンジンでは 1374 件）を返す。対戦の状態（山札・サイド・手札の配分・デッキリスト）を読まず、対戦で使っているカードだけの表は作らない（対戦の構成が分かってしまうため）。プロセスの中で 1 回だけ作り、使い回す
 - 形の合わない記録・同じ ID の重なった記録は表に入れず `omitted` に数える（画面は「カード定義にないカード」）。同梱データを読めなければ `GUI_CARD_DATA_UNAVAILABLE`（503）
@@ -237,13 +237,13 @@ npm run e2e         # 実エンジンへのブラウザの接続確認（Playwri
 5. 検証用の固定例の互換性を確かめる: 古いエンジンの環境と新しいエンジンの環境で `server/tools/scenario_views.py` を実行し、各時点の全入口の観測（`views`）を比べる。同じなら固定例の JSON の `compatibility` に確かめた結果を追記する（記録を作ったエンジン `engine_commit` は書き換えない）。違うときだけ、新しい固定コミットを checkout したエンジンの作業ツリーで `server/tools/build_scenarios.py --engine <作業ツリー>` で作り直し、`views_sha256` を入れ直して差分を確かめる。e2e の seed（21）で同じ操作に届くかも `server/tests/test_turn_basics.py` で確かめる（届かなければ seed を探し直し、`conftest.py` と `playwright.config.ts` をそろえる）
 6. `npm test`・`npm run typecheck`・`npm run e2e` を通す
 7. 新しい操作の種類（U7-3 以後）が加わったら、[docs/engine-contract.md](docs/engine-contract.md) の「U7-3 以後への対応」に従う
-8. カード画像: 同梱データの形式（`kyuura_cards.json` の `format`）・記録の項目が変わっていないかを確かめる。`python -m kyuura_gui_server.card_definitions`（`server` で実行）で `omitted` が 0 であること、`server/tests/test_card_definitions.py` が通ることを確かめる。形式が変わったら `contract/kyuura-gui-card-definitions-v1.json` と写す項目（`card_definitions.py`・`web/src/cards/definitions.ts`）を直し、`schema_version` を上げる
+8. カード画像: 同梱データの形式（`kyuura_cards.json` の `format`）・記録の項目が変わっていないかを確かめる。`python -m kyuura_gui_server.card_definitions`（`server` で実行）で `omitted` が 0 であること、`server/tests/test_card_definitions.py` が通ることを確かめる。形式が変わったら `contract/kyuura-gui-card-definitions-v2.json` と写す項目（`card_definitions.py`・`web/src/cards/definitions.ts`）を直し、`schema_version` を上げる
 
 ## renderer の更新の手順
 
 1. renderer の README・`src/lib/index.ts` の公開の export・`fromEngineCard` の入力の型（`EngineCardRecord`）・`renderToCanvas` の約束（`true`・`false`・reject、キャンセルとピクセル）の差分を読む。main の先頭へは自動で追従しない
 2. 公開済みの完全なコミットを決め、`web` で `npm install --save-exact "github:moheronemy/kyuura-card-renderer#<40 桁>"`。`npm approve-scripts kyuura-card-renderer` で `allowScripts` を新しいコミットに直す（`prepare` の内容を確かめてから）
-3. `contract/kyuura-gui-card-definitions-v1.json` の `renderer.commit` を直す（`server/tests/test_card_definitions.py` が `package.json`・lockfile と照らす）
+3. `contract/kyuura-gui-card-definitions-v2.json` の `renderer.commit` を直す（`server/tests/test_card_definitions.py` が `package.json`・lockfile と照らす）
 4. `npm test`・`npm run typecheck`・`npm run build`・`npx playwright test e2e/card-images.spec.ts`（開発サーバーと `KYUURA_E2E_PREVIEW=1` の本番ビルド）を通す
 
 ## 制限

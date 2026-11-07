@@ -1,11 +1,14 @@
 {
   "$comment": "GUI 接続層の拡張の口 GET /api/card-definitions の識別と、カード画像の描画に使う kyuura-card-renderer の固定。エンジンの client_api の入口ではない（接続層が、導入済みの kyuura-engine の同梱データ kyuura_engine/data/kyuura_cards.json を読む）。Python のテスト（server/tests/test_card_definitions.py）と TypeScript（web/src/cards）が同じこの表を読む。",
   "schema": "kyuura-gui-card-definitions",
-  "schema_version": 1,
+  "schema_version": 2,
+  "$schema_version": "2: source.sha256 は同梱データのバイト列ではなく、読んだ JSON を正規化した形から作り、その方式を source.sha256_method で示す。1（バイト列の sha256。方式の識別がなかった）とは値の意味が違うので、1 と 2 の sha256 を同じ意味として比べない",
   "source": {
     "package": "kyuura_engine",
     "resource": "data/kyuura_cards.json",
-    "format": "kyuura-engine card extract 1"
+    "format": "kyuura-engine card extract 1",
+    "sha256_method": "kyuura-gui canonical-json 1",
+    "$sha256_method": "読んだ JSON を、キーを並べ替え（sort_keys）、区切りをカンマとコロンだけにし（空白なし）、ASCII に直さず（ensure_ascii=False）、UTF-8 にしたバイト列の sha256。正規化はこの直列化だけで、値・記録の追加・削除・並びの違いは別の値になる（内容の違いを隠さない）"
   },
   "card_id_pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,31}$",
   "categories": ["pokemon", "trainer", "energy"],

@@ -5,7 +5,7 @@
 // - 印刷の値の表で、今の HP・ダメージなどの対戦中の状態ではない
 import type { EngineAttack, EngineCardRecord, EnginePower, EngineText } from "kyuura-card-renderer";
 import type { Transport } from "../api/transport";
-import spec from "../../../contract/kyuura-gui-card-definitions-v1.json";
+import spec from "../../../contract/kyuura-gui-card-definitions-v2.json";
 
 export const CARD_DEFINITIONS_SCHEMA = spec.schema;
 export const CARD_DEFINITIONS_SCHEMA_VERSION = spec.schema_version;
@@ -108,8 +108,8 @@ export function cardRecord(v: unknown): EngineCardRecord {
 }
 
 export interface CardDefinitions {
-  /** 出典の識別（エンジンの版・同梱データの sha256）。 */
-  source: { format: string; engine_version: string; sha256: string };
+  /** 出典の識別（エンジンの版・同梱データの sha256 とその方式。方式の違う sha256 は比べない）。 */
+  source: { format: string; engine_version: string; sha256_method: string; sha256: string };
   /** 形の合わない記録・同じ ID が重なった記録の数（その ID は未知のカードとして扱う）。 */
   omitted: number;
   get(cardId: string): EngineCardRecord | undefined;
@@ -129,6 +129,8 @@ export function cardDefinitionsResponse(value: unknown): CardDefinitions {
   if (typeof source !== "object" || source === null) fail("source");
   const s = source as Obj;
   if (s.format !== spec.source.format || typeof s.engine_version !== "string" || typeof s.sha256 !== "string") fail("source");
+  // sha256 の方式（schema_version 2）。知らない方式の値は、同じ意味として扱わない
+  if (s.sha256_method !== spec.source.sha256_method) fail("source.sha256_method");
   if (!Array.isArray(o.cards)) fail("cards");
   const byId = new Map<string, EngineCardRecord>();
   const duplicated = new Set<string>();
@@ -156,7 +158,7 @@ export function cardDefinitionsResponse(value: unknown): CardDefinitions {
     byId.set(record.id, record);
   }
   return {
-    source: { format: s.format as string, engine_version: s.engine_version as string, sha256: s.sha256 as string },
+    source: { format: s.format as string, engine_version: s.engine_version as string, sha256_method: s.sha256_method as string, sha256: s.sha256 as string },
     omitted,
     get: (cardId) => (isCardId(cardId) ? byId.get(cardId) : undefined),
     size: byId.size,

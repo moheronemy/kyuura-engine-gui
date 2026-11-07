@@ -12,7 +12,7 @@ from kyuura_gui_server import card_definitions as cd
 from kyuura_gui_server.safety import forbidden_paths
 
 ROOT = Path(__file__).resolve().parents[2]
-CONTRACT = json.loads((ROOT / "contract" / "kyuura-gui-card-definitions-v1.json").read_text(encoding="utf-8"))
+CONTRACT = json.loads((ROOT / "contract" / "kyuura-gui-card-definitions-v2.json").read_text(encoding="utf-8"))
 RECORD_KEYS = {"id", "jp_set", "category", "name", "pokemon", "trainer", "energy", "jp_print"}
 POKEMON_KEYS = {"stage", "evolves_from", "hp", "types", "weaknesses", "resistances", "retreat_cost", "rules_text", "powers", "attacks"}
 
@@ -51,6 +51,27 @@ def test_table_does_not_depend_on_matches(bridge):
     after = bridge.client.get("/api/card-definitions").content
     assert before == after  # 対戦の構成・状態で変わらない（同じ 1 つの表）
     assert cd.catalog() is cd.catalog()  # 有限のキャッシュ（1 件）で、要求ごとに作り直さない
+
+
+def test_source_digest_names_its_method():
+    """sha256 の方式を示す（schema_version 2）。改行・キーの順・空白だけが違う同じ内容は同じ値、値・記録・並びが違えば別の値
+    （広い正規化で内容の違いを隠さない）。"""
+    body = cd.catalog()
+    assert CONTRACT["schema_version"] == body["schema_version"] == 2
+    assert body["source"]["sha256_method"] == CONTRACT["source"]["sha256_method"] == "kyuura-gui canonical-json 1"
+    raw = resources.files("kyuura_engine").joinpath("data/kyuura_cards.json").read_bytes()
+    assert body["source"]["sha256"] == cd.canonical_sha256(json.loads(raw.decode("utf-8")))
+    base = {"format": CONTRACT["source"]["format"], "cards": [_record(id="A-1"), _record(id="B-1")]}
+    same = json.dumps(base, indent=3, sort_keys=False).replace("\n", "\r\n").encode("utf-8")
+    assert cd.build(same)["source"]["sha256"] == cd.build(json.dumps(base).encode("utf-8"))["source"]["sha256"]
+    changed = [
+        {**base, "cards": [_record(id="A-1", name={"ja": "テスト2", "en": None}), _record(id="B-1")]},  # 写さない項目でない値
+        {**base, "cards": [_record(id="A-1", notes=["別"]), _record(id="B-1")]},  # 写さない項目でも内容の違い
+        {**base, "cards": [_record(id="B-1"), _record(id="A-1")]},  # 並び
+        {**base, "cards": [_record(id="A-1")]},  # 記録の削除
+    ]
+    digests = {cd.build(json.dumps(d).encode("utf-8"))["source"]["sha256"] for d in [base, *changed]}
+    assert len(digests) == 5
 
 
 def test_reads_installed_package_data_not_source_checkout():

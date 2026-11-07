@@ -27,13 +27,14 @@ from typing import Any
 
 import kyuura_engine
 
-CONTRACT_PATH = Path(__file__).resolve().parents[2] / "contract" / "kyuura-gui-card-definitions-v1.json"
+CONTRACT_PATH = Path(__file__).resolve().parents[2] / "contract" / "kyuura-gui-card-definitions-v2.json"
 _CONTRACT = json.loads(CONTRACT_PATH.read_text(encoding="utf-8"))
 SCHEMA: str = _CONTRACT["schema"]
 SCHEMA_VERSION: int = _CONTRACT["schema_version"]
 SOURCE_PACKAGE: str = _CONTRACT["source"]["package"]
 SOURCE_RESOURCE: str = _CONTRACT["source"]["resource"]
 SOURCE_FORMAT: str = _CONTRACT["source"]["format"]
+SHA256_METHOD: str = _CONTRACT["source"]["sha256_method"]  # "kyuura-gui canonical-json 1"（下の canonical_sha256）
 CATEGORIES = frozenset(_CONTRACT["categories"])
 CARD_ID = re.compile(_CONTRACT["card_id_pattern"])
 MAX_TEXT = 2000  # 1 つの文の長さの上限（同梱データの最長より十分大きい）
@@ -158,6 +159,12 @@ def _read_source() -> bytes:
         raise CardDataUnavailable("同梱のカードデータを読めない") from None
 
 
+def canonical_sha256(data: Any) -> str:
+    """方式 "kyuura-gui canonical-json 1": キーを並べ替え・区切りに空白なし・ASCII に直さない・UTF-8 の直列化の sha256。
+    正規化はこの直列化だけ（改行・キーの順・空白の違いだけを消す）。値・記録・並びが違えば別の値になる。"""
+    return hashlib.sha256(json.dumps(data, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest()
+
+
 def build(raw: bytes) -> dict[str, Any]:
     """同梱データのバイト列から、返す表（schema・出典の識別・カード）を作る。"""
     try:
@@ -187,9 +194,10 @@ def build(raw: bytes) -> dict[str, Any]:
             "resource": SOURCE_RESOURCE,
             "format": SOURCE_FORMAT,
             "engine_version": kyuura_engine.__version__,
-            # 同梱データの内容の識別。バイト列は導入のしかた（改行など）で変わるので、読んだ JSON を正規化した形（キーの順・区切り・
-            # UTF-8）の sha256 にする。同じ内容なら導入の環境によらず同じ値
-            "sha256": hashlib.sha256(json.dumps(data, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")).hexdigest(),
+            # 同梱データの内容の識別。バイト列は導入のしかた（改行など）で変わりうるので、読んだ JSON を正規化した形の sha256 にし、
+            # 方式を sha256_method で示す（schema_version 1 のバイト列の sha256 とは比べない）
+            "sha256_method": SHA256_METHOD,
+            "sha256": canonical_sha256(data),
         },
         "card_count": len(cards),
         "omitted": omitted,

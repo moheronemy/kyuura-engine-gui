@@ -7,7 +7,7 @@ describe("公開カード定義の取得とスキーマ", () => {
   it("封筒・schema・出典を確かめて、記録を組み立て直す", async () => {
     const defs = await loadCardDefinitions({ request: async (method, path) => (method === "GET" && path === "/api/card-definitions" ? CARD_DEFINITIONS : null) });
     expect(defs.size).toBe(7);
-    expect(defs.source).toEqual({ format: "kyuura-engine card extract 1", engine_version: "0.165.0", sha256: "0".repeat(64) });
+    expect(defs.source).toEqual({ format: "kyuura-engine card extract 1", engine_version: "0.166.0", sha256_method: "kyuura-gui canonical-json 1", sha256: "0".repeat(64) });
     const record = defs.get("PMCG1-058");
     expect(record?.pokemon?.hp).toBe(70);
     expect(record?.jp_print).toEqual({ level: 33, rarity: "●(C)" });
@@ -24,7 +24,10 @@ describe("公開カード定義の取得とスキーマ", () => {
     ["封筒", { ...CARD_DEFINITIONS, gui_server: 2 }],
     ["種類", { ...CARD_DEFINITIONS, kind: "cards" }],
     ["schema", { ...CARD_DEFINITIONS, schema: "other" }],
-    ["schema の版", { ...CARD_DEFINITIONS, schema_version: 2 }],
+    ["schema の版（1: バイト列の sha256 の版）", { ...CARD_DEFINITIONS, schema_version: 1 }],
+    ["schema の版（知らない版）", { ...CARD_DEFINITIONS, schema_version: 3 }],
+    ["sha256 の方式がない", { ...CARD_DEFINITIONS, source: { ...CARD_DEFINITIONS.source, sha256_method: undefined } }],
+    ["sha256 の方式が違う", { ...CARD_DEFINITIONS, source: { ...CARD_DEFINITIONS.source, sha256_method: "bytes" } }],
     ["出典の形式", { ...CARD_DEFINITIONS, source: { ...CARD_DEFINITIONS.source, format: "x" } }],
     ["cards", { ...CARD_DEFINITIONS, cards: {} }],
     ["誤りの封筒", { gui_server: 1, ok: false, error: { code: "GUI_CARD_DATA_UNAVAILABLE", message: "x" } }],
