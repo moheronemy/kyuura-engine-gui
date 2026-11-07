@@ -21,11 +21,22 @@ export interface Notice {
   lines: string[];
 }
 
+/** check の結果。どの入力（choices を JSON にした文字列）への答えかを持つ。今の入力と同じときだけ使う。 */
+export interface CheckResult {
+  choices: string;
+  response: CheckResponse["response"];
+}
+
 export interface Selection {
   candidate: Candidate;
   handle: Handle;
   inputs: InputsResponse | null;
-  check: CheckResponse["response"] | null;
+  check: CheckResult | null;
+}
+
+/** check の結果と比べる入力の鍵（並びを変えない）。 */
+export function choicesKey(choices: Choice[]): string {
+  return JSON.stringify(choices);
 }
 
 export interface SessionState {
@@ -218,7 +229,9 @@ export function useEndpointSession({ client, canAct, gate, onMutated, refreshSig
           await refetchCandidates();
           return;
         }
-        setState((s) => (s.selection?.handle === sel.handle ? { ...s, selection: { ...s.selection, check: answer.response } } : s));
+        // 同じ取っ手の選択にだけ置く。入力の鍵を持たせ、画面は今の入力と同じときだけ使う（遅れた答えは今の入力に効かない）
+        const check = { choices: choicesKey(choices), response: answer.response };
+        setState((s) => (s.selection?.handle === sel.handle ? { ...s, selection: { ...s.selection, check } } : s));
       } catch (error) {
         handleError(error, gen);
       }

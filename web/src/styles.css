@@ -687,3 +687,27 @@ details > summary {
     flex-direction: column;
   }
 }
+
+/* U7-3 の入力: にげるの個数・検査の結果 */
+.units {
+  border-left: 3px solid var(--info);
+  padding: 2px 8px;
+  margin: 4px 0;
+  background: var(--info-bg);
+}
+.units p {
+  margin: 2px 0;
+}
+.check-result {
+  border-radius: 4px;
+  padding: 4px 8px;
+}
+.check-result.ok {
+  background: var(--ok-bg);
+}
+.check-result.warn {
+  background: var(--warn-bg);
+}
+.option {
+  flex-wrap: wrap;
+}

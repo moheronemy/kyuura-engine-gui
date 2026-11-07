@@ -5,12 +5,18 @@
 // - 制約の表示と送信ボタンの可否は、エンジンが返した count・range を読むだけ（合法性の最終の判定はエンジン）
 // - 選択肢に本人へ公開された card_id があるときだけ、そのカードの画像を選択肢のラベルの中に出す。画像を押しても
 //   同じ選択肢の入力（radio・checkbox）を選ぶだけで、画像・カード名から送る値やコマンドを決めない
+// U7-3:
+// - 2 段の操作（depends_on_stage）: 2 段目は、1 段目で選んだ番号の options_by_choice の組だけを、組ごとの eligible・
+//   processability で選べるようにする。1 段目を変えたら 2 段目の選択を捨てる
+// - 個数で数える段（total_units。にげる）: カードの枚数（count）と出すエネルギーの個数（units の合計）を分けて表示する。
+//   個数が範囲に入っていても合法とは書かない。送る前に check の答え（今の入力・今の取っ手への答え）を必須にする
+// - check の答えは、今の入力と同じ入力への答えだけを表示・送信の条件に使う（入力を変えたら前の答えは使わない）
 import { useId, useMemo, useState } from "react";
 import { EXECUTABLE_PROCESSABILITY } from "../api/contract";
-import { CardFace } from "../cards/CardImages";
 import type { Choice, FieldSlot, InputOption, InputStage, Observation, OptionStage } from "../api/types";
-import type { Selection } from "../state/useEndpointSession";
-import { KIND_LABELS, ORDER_TEXT, PLACEMENT_TEXT, PROCESSABILITY_TEXT, labelOf, playerLabel } from "../labels";
+import { CardBack, CardFace } from "../cards/CardImages";
+import { choicesKey, type Selection } from "../state/useEndpointSession";
+import { KIND_LABELS, ORDER_TEXT, PLACEMENT_TEXT, PROCESSABILITY_TEXT, REFUSAL_TEXT, labelOf, playerLabel, reasonsText, roleLabel } from "../labels";
 import { DisclosureBadge, ProcessabilityBadge } from "./Badges";
 
 type Names = (cardId: string) => string | undefined;
@@ -26,7 +32,6 @@ interface Props {
   onCancel(): void;
 }
 
-const ROLE_LABELS: Record<string, string> = { active: "バトル場", bench: "ベンチ" };
 const MEANING_LABELS: Record<string, string> = {
   count: "枚数",
   player: "プレイヤー",
@@ -55,13 +60,37 @@ function pokemonPlace(observation: Observation | null, pokemonId: number): strin
   return null;
 }
 
-const KNOWN_OPTION_KEYS = new Set(["id", "processability", "value", "card", "card_id", "placement", "eligible", "convention"]);
+const KNOWN_OPTION_KEYS = new Set([
+  "id",
+  "processability",
+  "value",
+  "card",
+  "card_id",
+  "placement",
+  "eligible",
+  "convention",
+  "reasons",
+  "special",
+  "units",
+  "pokemon",
+  "zone",
+  "bench_index",
+  "face_down",
+]);
+
+function zonePlace(option: InputOption): string | null {
+  if (option.zone === "active") return "バトル場";
+  if (option.zone === "bench") return `ベンチ${(option.bench_index ?? 0) + 1}`;
+  return null;
+}
 
 /** 選択肢の表示名（表示だけ。送るのは id）。 */
 export function optionLabel(option: InputOption, stage: OptionStage, observation: Observation | null, names: Names): string {
+  const place = zonePlace(option);
+  if (option.face_down) return `裏向きのポケモン${place ? `（${place}）` : ""}`; // 本人のうらのカード: カード ID は来ない
   if (typeof option.card_id === "string") {
     const name = names(option.card_id);
-    return `${name ?? "（カード名表にない）"} ${option.card_id}`;
+    return `${name ?? "（カード名表にない）"} ${option.card_id}${place ? `（${place}）` : ""}`;
   }
   const v = option.value;
   if (stage.meaning === "pokemon" && typeof v === "number") return pokemonPlace(observation, v) ?? `ポケモン番号 ${v}`;
@@ -78,18 +107,47 @@ function optionExtras(option: InputOption): string[] {
     .map(([k, v]) => `${k}: ${typeof v === "object" ? JSON.stringify(v) : String(v)}`);
 }
 
-function stageOptions(stage: OptionStage, stages: InputStage[]): InputOption[] {
-  if (stage.options) return stage.options;
-  const from = stages.find((s) => s.stage === stage.options_from_stage);
-  return from && from.input === "choose_option" && from.options ? from.options : [];
-}
-
 export function optionUnavailable(option: InputOption): string | null {
-  if (option.eligible === false) return PLACEMENT_TEXT[option.placement ?? ""] || "この選択肢は送れません。";
+  if (option.eligible === false && option.placement) return PLACEMENT_TEXT[option.placement] || "この選択肢は送れません。";
   if (!EXECUTABLE_PROCESSABILITY.has(option.processability)) {
     return PROCESSABILITY_TEXT[option.processability]?.description ?? "この選択肢は今は処理できません。";
   }
+  if (option.eligible === false) return "この選択肢は送れません（エンジンの候補の区分）。";
   return null;
+}
+
+/**
+ * 段の今の選べるもの。
+ * - options_from_stage: 指す段の選択肢
+ * - depends_on_stage: 指す段（1 段目）で選んだ番号の options_by_choice の組だけ。組ごとの eligible・processability・reasons を使う
+ * 2 つめの値は、依存の段で 1 段目がまだ選ばれていないとき true。
+ */
+export function stageOptions(stage: OptionStage, stages: InputStage[], picks: Record<number, string[]>): [InputOption[], boolean] {
+  if (stage.depends_on_stage !== undefined) {
+    const chosen = (picks[stage.depends_on_stage] ?? [])[0];
+    if (chosen === undefined) return [[], true];
+    const byId = new Map((stage.options ?? []).map((o) => [o.id, o]));
+    const pairs = stage.options_by_choice?.[chosen] ?? [];
+    const out: InputOption[] = [];
+    for (const pair of pairs) {
+      const base = byId.get(pair.option);
+      if (!base) continue; // 検証済み（validate.ts）なので来ない
+      const merged: InputOption = { ...base, eligible: pair.eligible, processability: pair.processability };
+      if (pair.reasons) merged.reasons = pair.reasons;
+      else delete merged.reasons;
+      out.push(merged);
+    }
+    return [out, false];
+  }
+  if (stage.options) return [stage.options, false];
+  const from = stages.find((s) => s.stage === stage.options_from_stage);
+  return [from && from.input === "choose_option" && from.options ? from.options : [], false];
+}
+
+/** 個数で数える段の、選んだカードの units の合計。 */
+export function unitsOf(stage: OptionStage, picked: string[]): number {
+  const byId = new Map((stage.options ?? []).map((o) => [o.id, o]));
+  return picked.reduce((sum, id) => sum + (byId.get(id)?.units ?? 0), 0);
 }
 
 export function DecisionPanel({ selection, observation, names, busy, blocked, onCheck, onSubmit, onCancel }: Props) {
@@ -153,11 +211,14 @@ export function DecisionPanel({ selection, observation, names, busy, blocked, on
       if (stage.count.max === 1) next = list[0] === id ? [] : [id];
       else next = list.includes(id) ? list.filter((x) => x !== id) : list.length < stage.count.max ? [...list, id] : list;
       const updated = { ...p, [stage.stage]: next };
-      // 段をまたいで重ならない（distinct_across_stages）: 前の段で選んだものを後の段から外す
       for (const other of stages) {
-        if (other.stage !== stage.stage && other.input === "choose_option" && other.distinct_across_stages && updated[other.stage]) {
+        if (other.stage === stage.stage || other.input !== "choose_option") continue;
+        // 段をまたいで重ならない（distinct_across_stages）: 前の段で選んだものを後の段から外す
+        if (other.distinct_across_stages && updated[other.stage]) {
           updated[other.stage] = (updated[other.stage] ?? []).filter((x) => !next.includes(x));
         }
+        // 2 段の操作: 1 段目を変えたら、前の 1 段目に対する 2 段目の選択を捨てる（組が変わる）
+        if (other.depends_on_stage === stage.stage && (list[0] ?? null) !== (next[0] ?? null)) updated[other.stage] = [];
       }
       return updated;
     });
@@ -174,7 +235,13 @@ export function DecisionPanel({ selection, observation, names, busy, blocked, on
   };
 
   const withheld = body.withheld;
-  const canSend = !withheld && satisfied && !busy && !blocked && EXECUTABLE_PROCESSABILITY.has(candidate.processability);
+  // 今の入力への check の答え（入力が変わったら前の答えは使わない。取っ手が変われば選択ごと作り直される）
+  const check = selection.check && selection.check.choices === choicesKey(choices) ? selection.check.response : null;
+  const staleCheck = selection.check !== null && check === null;
+  // 個数で数える段がある操作（にげる）は、今の入力が check を通ってから送る（個数の表示だけで合法と決めない）
+  const needsCheck = stages.some((s) => s.input === "choose_option" && s.total_units !== undefined);
+  const executable = EXECUTABLE_PROCESSABILITY.has(candidate.processability);
+  const canSend = !withheld && satisfied && !busy && !blocked && executable && (!needsCheck || check?.valid === true);
 
   return (
     <section className="panel decision" aria-labelledby={headingId}>
@@ -197,12 +264,29 @@ export function DecisionPanel({ selection, observation, names, busy, blocked, on
 
       {!withheld && stages.length === 0 ? <p>この操作に入力はありません。</p> : null}
 
-      {stages.map((stage) =>
-        stage.input === "choose_option" ? (
+      {stages.map((stage) => {
+        if (stage.input !== "choose_option") {
+          return (
+            <fieldset key={stage.stage} className="stage">
+              <legend>
+                段 {stage.stage}: {labelOf(MEANING_LABELS, stage.meaning)}（{stage.range.min}〜{stage.range.max}
+                {stage.range.unit ?? ""}）
+              </legend>
+              {stage.note ? <p className="small">{stage.note}</p> : null}
+              {stage.remaining !== undefined ? <p className="small">残りの回数: {stage.remaining}</p> : null}
+              {stage.decline ? <p className="small">辞退できます（{stage.range.min} を選べます）。</p> : null}
+              <ValueInput stage={stage} value={values[stage.stage] ?? ""} onChange={(v) => setValues((s) => ({ ...s, [stage.stage]: v }))} />
+            </fieldset>
+          );
+        }
+        const [options, waiting] = stageOptions(stage, stages, picks);
+        return (
           <OptionStageInput
             key={stage.stage}
+            kind={candidate.kind}
             stage={stage}
-            options={stageOptions(stage, stages)}
+            options={options}
+            waitingFor={waiting ? stage.depends_on_stage ?? null : null}
             picked={picks[stage.stage] ?? []}
             elsewhere={stage.distinct_across_stages ? pickedElsewhere(stage.stage) : new Set()}
             observation={observation}
@@ -210,33 +294,24 @@ export function DecisionPanel({ selection, observation, names, busy, blocked, on
             onToggle={(id) => toggle(stage, id)}
             onMove={(i, d) => move(stage.stage, i, d)}
           />
-        ) : (
-          <fieldset key={stage.stage} className="stage">
-            <legend>
-              段 {stage.stage}: {labelOf(MEANING_LABELS, stage.meaning)}（{stage.range.min}〜{stage.range.max}
-              {stage.range.unit ?? ""}）
-            </legend>
-            {stage.note ? <p className="small">{stage.note}</p> : null}
-            {stage.remaining !== undefined ? <p className="small">残りの回数: {stage.remaining}</p> : null}
-            {stage.decline ? <p className="small">辞退できます（{stage.range.min} を選べます）。</p> : null}
-            <ValueInput stage={stage} value={values[stage.stage] ?? ""} onChange={(v) => setValues((s) => ({ ...s, [stage.stage]: v }))} />
-          </fieldset>
-        ),
-      )}
+        );
+      })}
 
-      {selection.check ? (
-        <p role="status" className={selection.check.valid ? "ok" : "warn"}>
-          入力の検査:{" "}
-          {selection.check.valid
-            ? "制約に合っています（受理の保証ではありません。最終の判定はエンジン）"
-            : `制約に合いません ${selection.check.refusal?.code ?? ""} ${selection.check.refusal?.message ?? ""}`}
+      {check ? (
+        <p role="status" className={`check-result ${check.valid ? "ok" : "warn"}`}>
+          入力の検査（今の入力）:{" "}
+          {check.valid
+            ? "エンジンの検査を通りました（受理・完走の保証ではありません。結果は送信の応答で決まります）"
+            : `通りません ${check.refusal?.code ?? ""}${check.refusal ? `（${REFUSAL_TEXT[check.refusal.code] ?? check.refusal.message}）` : ""}`}
         </p>
       ) : null}
+      {staleCheck ? <p className="small muted">入力を変えたので、前の検査の結果は使いません。</p> : null}
 
       {!withheld && !satisfied ? <p className="small muted">選ぶ数・値の制約を満たすと送れます。</p> : null}
-      {!EXECUTABLE_PROCESSABILITY.has(candidate.processability) ? (
-        <p className="small warn">この候補は処理可能性の区分により送れません（ゲーム上の禁止ではありません）。</p>
+      {!withheld && needsCheck && satisfied && check?.valid !== true ? (
+        <p className="small">この操作は、送る前に「入力を検査」で今の入力をエンジンに確かめます。</p>
       ) : null}
+      {!executable ? <p className="small warn">この候補は処理可能性の区分により送れません（ゲーム上の禁止ではありません）。</p> : null}
 
       <div className="actions">
         {!withheld ? (
@@ -261,8 +336,10 @@ export function DecisionPanel({ selection, observation, names, busy, blocked, on
 }
 
 function OptionStageInput({
+  kind,
   stage,
   options,
+  waitingFor,
   picked,
   elsewhere,
   observation,
@@ -270,8 +347,10 @@ function OptionStageInput({
   onToggle,
   onMove,
 }: {
+  kind: string;
   stage: OptionStage;
   options: InputOption[];
+  waitingFor: number | null;
   picked: string[];
   elsewhere: Set<string>;
   observation: Observation | null;
@@ -281,26 +360,49 @@ function OptionStageInput({
 }) {
   const single = stage.count.max === 1;
   const name = useId();
-  const byId = new Map(options.map((o) => [o.id, o]));
+  const byId = new Map((stage.options ?? options).map((o) => [o.id, o]));
   const orderText = ORDER_TEXT[stage.order] ?? `順序: ${stage.order}`;
+  const units = stage.total_units ? unitsOf(stage, picked) : null;
+  const inUnits = stage.total_units && units !== null ? units >= stage.total_units.min && units <= stage.total_units.max : null;
   return (
     <fieldset className="stage">
       <legend>
         段 {stage.stage}
-        {stage.role ? `: ${ROLE_LABELS[stage.role] ?? stage.role}` : ""}
+        {stage.role ? `: ${roleLabel(kind, stage.role)}` : ""}
         {stage.decision_kind ? ` （決定 ${stage.decision_kind}）` : ""}・選ぶ数 {stage.count.min}〜{stage.count.max}
+        {stage.total_units ? " 枚" : ""}
       </legend>
       {stage.note ? <p className="small">{stage.note}</p> : null}
+      {stage.bench ? (
+        <p className="small">
+          ベンチ: {stage.bench.count}/{stage.bench.limit}（今の数と上限。出せるかどうかはエンジンが候補で示します）
+        </p>
+      ) : null}
+      {stage.total_units && units !== null ? (
+        <div className="units" role="status" aria-label="エネルギーの個数">
+          <p className="small">
+            必要なエネルギーの個数（total_units）: <strong>{stage.total_units.min === stage.total_units.max ? stage.total_units.min : `${stage.total_units.min}〜${stage.total_units.max}`}</strong> 個 ／
+            選んでいる合計: <strong>{units}</strong> 個（{picked.length} 枚）
+            {inUnits ? "・個数は範囲内" : "・個数が範囲外"}
+          </p>
+          <p className="small muted">
+            個数はカードの枚数ではありません（1 枚で 2 個を出すカードがあります）。個数が範囲内でも、余る個数・読み方で変わる数などはエンジンの検査が決めます。
+          </p>
+        </div>
+      ) : null}
+      {stage.confused ? <p className="small warn">こんらん: 受理のあとにコインを投げます（にげるのに失敗することがあります）。</p> : null}
       {stage.decline ? <p className="small">辞退できます（何も選ばずに送れます）。</p> : null}
       {orderText && stage.count.max > 1 ? <p className="small">{orderText}</p> : null}
-      {options.length === 0 ? (
+      {waitingFor !== null ? (
+        <p className="callout info small">段 {waitingFor} を選ぶと、その選択と組になるものだけを選べます（組はエンジンの options_by_choice）。</p>
+      ) : options.length === 0 ? (
         <p className="callout info">
           選べるものがありません（エンジンの応答のまま表示しています）。
           {stage.count.min === 0 ? " 0 個のまま送れます。" : " 最小数を満たせないため送れません。"}
         </p>
       ) : null}
       <ul className="options" role="list">
-        {single && stage.count.min === 0 ? (
+        {single && stage.count.min === 0 && waitingFor === null ? (
           <li>
             <label className="option">
               <input type="radio" name={name} checked={picked.length === 0} onChange={() => picked[0] && onToggle(picked[0])} />
@@ -324,11 +426,17 @@ function OptionStageInput({
                   disabled={Boolean(unavailable) || taken || full}
                   onChange={() => onToggle(option.id)}
                 />
-                {typeof option.card_id === "string" ? <CardFace cardId={option.card_id} name={names(option.card_id) ?? option.card_id} size="s" decorative /> : null}
+                {typeof option.card_id === "string" ? (
+                  <CardFace cardId={option.card_id} name={names(option.card_id) ?? option.card_id} size="s" decorative />
+                ) : option.face_down ? (
+                  <CardBack label="裏向きのポケモン" size="s" /> // 本人のうらのポケモン: カード ID・名前を渡さない
+                ) : null}
                 <span className="option-text">
                   <span>{optionLabel(option, stage, observation, names)}</span>
                   <code className="muted small">{option.id}</code>
                   {typeof option.card === "number" ? <code className="muted small">#{option.card}</code> : null}
+                  {option.units !== undefined ? <span className="small">{option.units} 個</span> : null}
+                  {option.special ? <span className="small">特殊エネルギー</span> : null}
                   {checked && !single ? <span className="order-no">{picked.indexOf(option.id) + 1}番目</span> : null}
                 </span>
               </label>
@@ -336,6 +444,7 @@ function OptionStageInput({
                 <ProcessabilityBadge value={option.processability} />
                 {option.placement && option.placement !== "eligible" ? <code className="small">placement: {option.placement}</code> : null}
                 {option.convention ? <code className="small">規約 {option.convention}</code> : null}
+                {option.reasons?.length ? <span className="small muted">理由: {reasonsText(option.reasons)}</span> : null}
                 {extras.length ? <span className="small muted">{extras.join("・")}</span> : null}
               </span>
               {unavailable ? <span className="small warn">{unavailable}</span> : null}

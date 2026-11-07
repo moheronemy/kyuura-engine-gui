@@ -64,11 +64,11 @@ export interface Explained {
 export const PROCESSABILITY_TEXT: Record<string, Explained> = {
   supported: {
     label: "対応",
-    description: "入力の範囲は guarantees に書かれた範囲で保証されます。対戦の完走や、その後の処理までは保証しません。",
+    description: "候補の guarantees に書かれた範囲だけの保証です。受理のあとの全分岐の完走は保証しません（コインなど乱数で決まる続きを含む）。",
   },
   may_stop_later: {
     label: "送れる（後で止まりうる）",
-    description: "送れます。そのあとの処理で止まる・決定を求められることがあります（受理は保証されません）。",
+    description: "送れます。受理のあとの反応・決定・停止を評価していないため、受理のあとに止まる・決定を求められることがあります。",
   },
   unresolved_ruling: {
     label: "未裁定",
@@ -84,7 +84,7 @@ export const PROCESSABILITY_TEXT: Record<string, Explained> = {
   },
   unverified: {
     label: "未確認",
-    description: "処理できるかを確かめられません。送るとエンジンが判定します（受理の保証ではありません）。",
+    description: "保証はありません（例: 本人のうらのカードの進化・にげる）。最終の判定はエンジンが送信のときに行います。",
   },
 };
 
@@ -106,7 +106,7 @@ export const ORDER_TEXT: Record<string, string> = {
 
 export const COMPLETENESS_TEXT: Record<string, string> = {
   complete: "この応答で明示した種類（scope_kinds）の候補がそろっています。全合法手の完成ではありません。",
-  partial: "部分実装です。scope_kinds の一部（not_covered_kinds）はこの API の版では候補に出ません。",
+  partial: "部分実装です。not_covered_kinds の種類は、この API の版では評価も候補の作成もしていません。",
   undetermined: "完全性を判定できません。",
 };
 
@@ -122,7 +122,7 @@ export const EMPTY_REASON_LABELS: Record<string, string> = {
   not_actor: "今はこの閲覧者が操作する場面ではありません。",
   host_operation: "ホストの操作（ジャンケンの結果・サドン・デスの開始）を待っています。",
   game_ended: "終局・停止のため、操作は受け付けられません。",
-  kinds_not_covered: "操作できる種類はありますが、現行 API では未対応です（ゲーム上できないのではありません）。",
+  kinds_not_covered: "操作できる種類はありますが、この API の版では未対応です（ゲーム上できないのではありません）。",
   players_to_act: "プレイヤーの操作を待っています（ホストの操作はありません）。",
 };
 
@@ -175,4 +175,51 @@ export function waitingByLabel(by: 0 | 1 | "players" | "host"): string {
   if (by === "players") return "両プレイヤー（それぞれ）";
   if (by === "host") return "ローカルホスト";
   return playerLabel(by);
+}
+
+/** 処理可能性の理由（reasons）。表示だけ（知らない理由はコードのまま）。 */
+export const REASON_LABELS: Record<string, string> = {
+  reactions_not_evaluated: "受理のあとの反応・決定・停止を評価していない",
+  face_down_reveal_not_evaluated: "うらのカードの本当のカードでは確かめていない（エンジンがおもてにしてから確かめる）",
+  stops_before_acceptance: "エンジンが受け付ける前に止める（未裁定・未対応。ゲーム上の禁止ではない）",
+  checkup_not_evaluated: "番の終わりの処理を評価していない",
+  state_not_supported: "この版が扱えない状態",
+  segment_setup_not_evaluated: "延長戦の準備を評価していない",
+  turn_start_not_evaluated: "番の始まりの処理を評価していない",
+  continuation_not_evaluated: "続きの処理を評価していない",
+  decision_not_supported: "この版が扱えない決定",
+  input_boundary_unconfirmed: "入力の情報境界が未確認",
+  no_eligible_card: "出せるカードがない",
+};
+
+export function reasonsText(reasons: readonly string[]): string {
+  return reasons.map((r) => (REASON_LABELS[r] ? `${REASON_LABELS[r]}（${r}）` : r)).join("・");
+}
+
+/** check・submit の拒否のコード（送り手だけに表示する）。 */
+export const REFUSAL_TEXT: Record<string, string> = {
+  CANDIDATE_INPUT_INVALID: "入力が候補の制約に合いません",
+  CANDIDATE_NOT_EXECUTABLE: "エンジンが受け付ける前に止める入力です（未裁定・未対応など。ゲーム上の禁止ではありません）",
+  CANDIDATES_STALE: "候補が古くなりました（取り直します）",
+  CANDIDATES_WRONG_GAME: "別の対戦の候補です（取り直します）",
+  CANDIDATES_WRONG_ACTOR: "別の主体の候補です（取り直します）",
+  CANDIDATE_UNKNOWN: "知らない候補です（取り直します）",
+  INPUT_BOUNDARY_UNCONFIRMED: "入力の情報境界が未確認の候補です",
+};
+
+/** 入力の段の役割（role）。同じ role でも操作の種類で意味が違うので、種類ごとに決める。 */
+const ROLE_LABELS: Record<string, string> = {
+  "place_starting:active": "バトル場",
+  "place_starting:bench": "ベンチ",
+  "play_basic:bench": "ベンチに出すたねポケモン（手札）",
+  "attach_energy:energy": "つけるエネルギーカード（手札）",
+  "attach_energy:target": "つける先（自分の場のポケモン）",
+  "evolve:evolution_card": "進化カード（手札）",
+  "evolve:target": "進化させるポケモン（自分の場）",
+  "retreat:new_active": "入れ替えるベンチのポケモン",
+  "retreat:discard": "トラッシュするエネルギー",
+};
+
+export function roleLabel(kind: string, role: string): string {
+  return ROLE_LABELS[`${kind}:${role}`] ?? role;
 }
