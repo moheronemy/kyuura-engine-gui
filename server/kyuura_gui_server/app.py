@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import secrets
 
 from fastapi import FastAPI, Request
@@ -63,9 +64,29 @@ def gui_ok(body: dict) -> JSONResponse:
     return JSONResponse({"gui_server": GUI_SERVER_FORMAT, "ok": True, **body})
 
 
-def create_app(registry: MatchRegistry | None = None) -> FastAPI:
+TEST_FIXED_SEED_ENV = "KYUURA_GUI_TEST_FIXED_SEED"
+
+
+def _test_fixed_seed() -> int | None:
+    """テスト専用: 新しい対戦の seed を固定する（``python -m kyuura_gui_server --test-fixed-seed N`` が設定する）。
+
+    実ブラウザの確認（e2e）で、通常の new_game から同じ操作の列で同じ盤面に届くようにするためだけに使う。
+    seed はブラウザへ返さない・受け取らない（固定しても応答の形は同じ）。通常の起動（npm run dev）では使わない。
+    """
+    raw = os.environ.get(TEST_FIXED_SEED_ENV)
+    if raw is None or raw == "":
+        return None
+    if not raw.isdigit() or int(raw) >= 2**31:
+        raise ValueError(f"{TEST_FIXED_SEED_ENV} は 0 以上 2**31 未満の整数")
+    return int(raw)
+
+
+def create_app(registry: MatchRegistry | None = None, *, fixed_seed: int | None = None) -> FastAPI:
     app = FastAPI(title="kyuura-engine-gui local bridge", docs_url=None, redoc_url=None, openapi_url=None)
     app.state.registry = registry or MatchRegistry()
+    app.state.fixed_seed = fixed_seed if fixed_seed is not None else _test_fixed_seed()
+    if app.state.fixed_seed is not None:
+        log.warning("テスト専用: 新しい対戦の seed を固定している（%s）。通常の利用では使わない", TEST_FIXED_SEED_ENV)
 
     @app.middleware("http")
     async def guard(request: Request, call_next):
@@ -158,7 +179,8 @@ def create_app(registry: MatchRegistry | None = None) -> FastAPI:
         # デッキの診断は作成の画面だけへ返す（対戦の観測へ混ぜない）。エンジンの検査（deck_problems）の結果のまま
         diagnostics = [decks.problems(cards) for cards in lists]
         options = {} if CONVENTION_SETS[conventions] is None else {"conventions": CONVENTION_SETS[conventions]}
-        seed = secrets.randbelow(2**31)  # 接続層だけが持つ（ブラウザへ返さない・記録しない）
+        fixed = request.app.state.fixed_seed
+        seed = secrets.randbelow(2**31) if fixed is None else fixed  # 接続層だけが持つ（ブラウザへ返さない・記録しない）
         hub, notice = await run_in_threadpool(lambda: ClientHub.start(lists[0], lists[1], seed, **options))
         del seed
         origin = {"kind": "new_game", "label": "新しいローカル対戦", "conventions": conventions or None}
