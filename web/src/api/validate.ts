@@ -8,7 +8,10 @@ import {
   INPUT_KINDS,
   LEGAL_ACTIONS_FORMAT,
   OUTCOMES,
+  PAIR_KEYS,
   PROCESSABILITY,
+  STAGE_KEYS,
+  ZONES,
 } from "./contract";
 import type {
   Candidate,
@@ -24,6 +27,7 @@ import type {
   LegalActions,
   MatchInfo,
   Observation,
+  OptionStage,
   PlayerObservation,
   PresetDeck,
   Refusal,
@@ -248,32 +252,106 @@ function count(value: unknown, where: string): void {
   if (min < 0 || max < min) fail(where);
 }
 
+function reasons(o: Obj, where: string): void {
+  if ("reasons" in o) strList(o.reasons, `${where}.reasons`);
+}
+
 function option(value: unknown, where: string): InputOption {
   const o = obj(value, where);
   str(o.id, `${where}.id`);
   oneOf(o.processability, PROCESSABILITY, `${where}.processability`);
   if ("eligible" in o) bool(o.eligible, `${where}.eligible`);
   if ("card_id" in o) str(o.card_id, `${where}.card_id`);
+  reasons(o, where);
+  // U7-3 の選べるものの項目（あれば形を確かめる。表示と、にげるの個数の数え方に使う）
+  if ("special" in o) bool(o.special, `${where}.special`);
+  if ("units" in o && int(o.units, `${where}.units`) < 1) fail(`${where}.units`);
+  if ("pokemon" in o) int(o.pokemon, `${where}.pokemon`);
+  if ("zone" in o) oneOf(o.zone, ZONES, `${where}.zone`);
+  if ("bench_index" in o && int(o.bench_index, `${where}.bench_index`) < 0) fail(`${where}.bench_index`);
+  if ("face_down" in o) {
+    if (o.face_down !== true) fail(`${where}.face_down`);
+    if ("card_id" in o) fail(`${where}: うらのポケモンにカード ID がある`); // 情報境界（エンジンは出さない）
+  }
   return o as unknown as InputOption;
 }
 
 function stage(value: unknown, i: number): InputStage {
   const w = `stages[${i}]`;
   const o = obj(value, w);
+  // 知らない項目のある段は、画面が扱えない制約かもしれない（契約名・形式の版が同じでも古い画面へ通さない）
+  for (const key of Object.keys(o)) if (!STAGE_KEYS.has(key)) fail(`${w}.${key}: 知らない入力の項目`);
   int(o.stage, `${w}.stage`);
   const kind = oneOf(o.input, INPUT_KINDS, `${w}.input`);
   count(o.count, `${w}.count`);
   str(o.order, `${w}.order`);
+  if ("role" in o) str(o.role, `${w}.role`);
+  if ("note" in o) str(o.note, `${w}.note`);
   if (kind === "choose_option") {
     if ("options" in o) arr(o.options, `${w}.options`).forEach((op, j) => option(op, `${w}.options[${j}]`));
     else if (!("options_from_stage" in o)) fail(`${w}.options`);
     else int(o.options_from_stage, `${w}.options_from_stage`);
+    if ("depends_on_stage" in o !== "options_by_choice" in o) fail(`${w}.depends_on_stage`);
+    if ("depends_on_stage" in o) {
+      int(o.depends_on_stage, `${w}.depends_on_stage`);
+      const by = obj(o.options_by_choice, `${w}.options_by_choice`);
+      for (const [first, pairs] of Object.entries(by)) {
+        arr(pairs, `${w}.options_by_choice.${first}`).forEach((pv, j) => {
+          const pw = `${w}.options_by_choice.${first}[${j}]`;
+          const po = obj(pv, pw);
+          for (const key of Object.keys(po)) if (!PAIR_KEYS.has(key)) fail(`${pw}.${key}: 知らない組の項目`);
+          str(po.option, `${pw}.option`);
+          bool(po.eligible, `${pw}.eligible`);
+          oneOf(po.processability, PROCESSABILITY, `${pw}.processability`);
+          reasons(po, pw);
+        });
+      }
+    }
+    if ("total_units" in o) {
+      count(o.total_units, `${w}.total_units`);
+      // 個数で数える段は、すべての選べるものに units がある
+      if (!("options" in o) || (o.options as Obj[]).some((op) => !("units" in op))) fail(`${w}.total_units: units のない選べるもの`);
+    }
   } else {
+    if ("depends_on_stage" in o || "options_by_choice" in o || "total_units" in o) fail(`${w}: 値の段に選べるものの項目`);
     const r = obj(o.range, `${w}.range`);
     const min = int(r.min, `${w}.range.min`);
     if (int(r.max, `${w}.range.max`) < min) fail(`${w}.range`);
   }
+  if ("bench" in o) {
+    const b = obj(o.bench, `${w}.bench`);
+    const n = int(b.count, `${w}.bench.count`);
+    if (n < 0 || int(b.limit, `${w}.bench.limit`) < n) fail(`${w}.bench`);
+  }
+  if ("confused" in o) bool(o.confused, `${w}.confused`);
   return o as unknown as InputStage;
+}
+
+/** 段をまたいだ確かめ: 番号は段をまたいで重ならない、依存の段と組が実在の番号を指す。 */
+function stagesConsistent(stages: InputStage[]): void {
+  const seen = new Set<string>();
+  const byNumber = new Map(stages.map((s) => [s.stage, s]));
+  for (const s of stages) {
+    if (s.input !== "choose_option") continue;
+    const ids = new Set((s.options ?? []).map((op) => op.id));
+    if (s.options) {
+      for (const id of ids) {
+        if (seen.has(id)) fail(`stages: 選べるものの番号 ${id} が重なる`);
+        seen.add(id);
+      }
+      if (ids.size !== s.options.length) fail(`stages[${s.stage}]: 選べるものの番号が重なる`);
+    }
+    if (s.depends_on_stage !== undefined) {
+      const parent = byNumber.get(s.depends_on_stage);
+      if (!parent || parent.input !== "choose_option" || !parent.options || parent.stage >= s.stage) fail(`stages[${s.stage}].depends_on_stage`);
+      if (parent.count.max !== 1) fail(`stages[${s.stage}].depends_on_stage: 1 段目が 1 つを選ぶ段でない`);
+      const parentIds = new Set(parent.options.map((op) => op.id));
+      for (const [first, pairs] of Object.entries((s as OptionStage).options_by_choice ?? {})) {
+        if (!parentIds.has(first)) fail(`stages[${s.stage}].options_by_choice.${first}`);
+        for (const pair of pairs) if (!ids.has(pair.option)) fail(`stages[${s.stage}].options_by_choice.${first}: ${pair.option}`);
+      }
+    }
+  }
 }
 
 export function inputsResponse(value: unknown): InputsResponse {
@@ -286,7 +364,7 @@ export function inputsResponse(value: unknown): InputsResponse {
     str(r.candidate, "response.candidate");
     str(r.kind, "response.kind");
     if ("withheld" in r) refusal(r.withheld, "response.withheld");
-    arr(r.stages, "response.stages").forEach((s, i) => stage(s, i));
+    stagesConsistent(arr(r.stages, "response.stages").map((s, i) => stage(s, i)));
   }
   return o as unknown as InputsResponse;
 }

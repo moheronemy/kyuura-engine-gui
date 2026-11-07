@@ -21,3 +21,11 @@ export const OUTCOMES = expected.outcomes as readonly string[];
 export const IMPLEMENTED_KINDS = expected.implemented_kinds as readonly string[];
 export const TURN_KINDS_NOT_COVERED = expected.turn_kinds_not_covered as readonly string[];
 export const REFETCH_REFUSALS = new Set<string>(expected.refetch_refusals);
+export const TURN_BASIC_KINDS = expected.turn_basic_kinds as readonly string[];
+export const MAIN_KINDS = expected.main_kinds as readonly string[];
+/** GUI が入力の画面を持つ種類。ほかの種類の候補は表示だけで選べない（新しい種類を古い入力の画面へ通さない）。 */
+export const GUI_OPERABLE_KINDS = new Set<string>(expected.gui_operable_kinds);
+/** 入力の段の項目。ほかの項目のある段は知らない制約かもしれないので、操作を止める（validate.ts）。 */
+export const STAGE_KEYS = new Set<string>(expected.stage_keys);
+export const PAIR_KEYS = new Set<string>(expected.pair_keys);
+export const ZONES = expected.zones as readonly string[];

@@ -203,7 +203,27 @@ export interface InputOption {
   placement?: string;
   eligible?: boolean;
   convention?: string;
+  /** U7-3: 処理可能性の理由（reactions_not_evaluated など）。 */
+  reasons?: string[];
+  /** U7-3: 手札のエネルギーカード・トラッシュするエネルギーが特殊エネルギーか。 */
+  special?: boolean;
+  /** U7-3: にげるでトラッシュするエネルギー 1 枚が出す個数（無色2個エネルギーは 2）。カードの枚数ではない。 */
+  units?: number;
+  /** U7-3: 場のポケモンの番号・場所。 */
+  pokemon?: number;
+  zone?: "active" | "bench";
+  bench_index?: number;
+  /** U7-3: 本人のうらのポケモン（card_id はない）。 */
+  face_down?: true;
   [key: string]: unknown;
+}
+
+/** U7-3: 2 段の操作の、1 段目の番号ごとの組（2 段目の選べるもの・組ごとの可否）。 */
+export interface PairOption {
+  option: string;
+  eligible: boolean;
+  processability: string;
+  reasons?: string[];
 }
 
 export interface Count {
@@ -226,6 +246,15 @@ export interface OptionStage {
   order_preserved?: boolean;
   decline?: boolean;
   note?: string;
+  /** U7-3: 2 段目が 1 段目の選択に依存する（options_by_choice）。 */
+  depends_on_stage?: number;
+  options_by_choice?: Record<string, PairOption[]>;
+  /** U7-3（にげる）: トラッシュするカードの units の合計の範囲（count は枚数）。 */
+  total_units?: Count;
+  /** U7-3（ベンチに出す）: 今のベンチの数と上限（公開の値）。 */
+  bench?: { count: number; limit: number };
+  /** U7-3（にげる）: こんらん（受理のあとにコイン）。 */
+  confused?: boolean;
 }
 
 export interface ValueStage {
@@ -239,6 +268,7 @@ export interface ValueStage {
   remaining?: number;
   decline?: boolean;
   note?: string;
+  name?: string;
 }
 
 export type InputStage = OptionStage | ValueStage;
