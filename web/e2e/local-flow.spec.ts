@@ -23,18 +23,13 @@ async function submitAndExpect(area: Locator, outcome: RegExp) {
 }
 
 async function createFromDecks(page: Page) {
+  // 接続層は seed を固定して起動している（playwright.config.ts。テスト専用）。作り直しを繰り返さず、1 回の作成で準備に入ることを確かめる
   await page.goto("/");
-  for (let attempt = 0; attempt < 10; attempt += 1) {
-    await expect(page.getByRole("textbox").first()).not.toHaveValue("");
-    await page.getByRole("button", { name: /対戦を作成/ }).click();
-    const status = viewer(page).getByRole("region", { name: "対戦の状態" });
-    await expect(status).toBeVisible();
-    // seed は接続層が決める。準備で停止する seed もあるので、そのときは停止の表示を確かめて作り直す
-    if ((await status.getByText("停止", { exact: true }).count()) === 0) return;
-    await expect(status.getByRole("alert")).toContainText("停止");
-    await page.getByRole("button", { name: "新しい対戦…" }).click();
-  }
-  throw new Error("準備で停止しない対戦を作れなかった");
+  await expect(page.getByRole("textbox").first()).not.toHaveValue("");
+  await page.getByRole("button", { name: /対戦を作成/ }).click();
+  const status = viewer(page).getByRole("region", { name: "対戦の状態" });
+  await expect(status).toBeVisible();
+  await expect(status.getByText("停止", { exact: true })).toHaveCount(0);
 }
 
 async function createScenario(page: Page, label: string) {
@@ -54,7 +49,8 @@ test("準備を終えて番を終えるまで（両プレイヤーの初期配�
     await panel.locator("fieldset").first().getByRole("radio").first().check();
     await submitAndExpect(viewer(page), /受理/);
   }
-  // 切り直しの補償（相手が切り直したときだけ出る）
+  // 切り直しの補償（相手が切り直したときだけ出る）。固定の seed では 1 回通る（到達を確かめる）
+  let mulligans = 0;
   for (const seat of ["プレイヤー0", "プレイヤー1"]) {
     await selectSeat(page, seat);
     await expect(viewer(page).getByRole("region", { name: "操作候補" })).toBeVisible();
@@ -67,8 +63,10 @@ test("準備を終えて番を終えるまで（両プレイヤーの初期配�
       await select.selectOption(options[options.length - 1]!.trim());
       await submitAndExpect(viewer(page), /受理/);
       await expect(viewer(page).getByRole("region", { name: "操作候補" })).toBeVisible();
+      mulligans += 1;
     }
   }
+  expect(mulligans).toBe(1);
   // ホストの別枠: ジャンケンの結果（プレイヤー0の勝ち）
   await candidate(host(page), "ジャンケンの結果を入力").getByRole("button", { name: "この操作を選ぶ" }).click();
   await host(page).locator(".decision").getByRole("radio", { name: "プレイヤー0" }).check();

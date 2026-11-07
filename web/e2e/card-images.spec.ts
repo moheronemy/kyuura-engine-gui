@@ -13,16 +13,13 @@ async function selectSeat(page: Page, label: string) {
 }
 
 async function createFromDecks(page: Page) {
+  // 接続層は seed を固定して起動している（playwright.config.ts。テスト専用）。作り直しを繰り返さず、1 回の作成で準備に入ることを確かめる
   await page.goto("/");
-  for (let attempt = 0; attempt < 10; attempt += 1) {
-    await expect(page.getByRole("textbox").first()).not.toHaveValue("");
-    await page.getByRole("button", { name: /対戦を作成/ }).click();
-    const status = viewer(page).getByRole("region", { name: "対戦の状態" });
-    await expect(status).toBeVisible();
-    if ((await status.getByText("停止", { exact: true }).count()) === 0) return;
-    await page.getByRole("button", { name: "新しい対戦…" }).click(); // 準備で停止する seed（仕様どおりの停止）は作り直す
-  }
-  throw new Error("準備で停止しない対戦を作れなかった");
+  await expect(page.getByRole("textbox").first()).not.toHaveValue("");
+  await page.getByRole("button", { name: /対戦を作成/ }).click();
+  const status = viewer(page).getByRole("region", { name: "対戦の状態" });
+  await expect(status).toBeVisible();
+  await expect(status.getByText("停止", { exact: true })).toHaveCount(0);
 }
 
 /** Canvas が表示されていて、透明でない画素がある（実際に描かれた）。 */

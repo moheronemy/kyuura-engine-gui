@@ -5,6 +5,9 @@ import { defineConfig } from "@playwright/test";
 import { join } from "node:path";
 
 const serverPort = process.env.KYUURA_E2E_SERVER_PORT ?? "8766";
+// テスト専用: 接続層の new_game の seed を固定する（server/tests/conftest.py の FIXED_SEED と同じ）。seed はブラウザへ返らない。
+// プリセットの 1・2 番目のデッキと e2e の選び方で: 補償 1 回 → 番 1 にベンチ・エネルギー → 番 3 に進化・にげる（エンジン 0.165.0・b4e62d9 で確かめた）
+export const E2E_FIXED_SEED = "21";
 const webPort = process.env.KYUURA_E2E_WEB_PORT ?? "5174";
 const python = process.platform === "win32" ? join("..", "server", ".venv", "Scripts", "python.exe") : join("..", "server", ".venv", "bin", "python");
 
@@ -21,7 +24,7 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: `"${python}" -m kyuura_gui_server --port ${serverPort}`,
+      command: `"${python}" -m kyuura_gui_server --port ${serverPort} --test-fixed-seed ${E2E_FIXED_SEED}`,
       cwd: join("..", "server"),
       url: `http://127.0.0.1:${serverPort}/api/health`,
       reuseExistingServer: false,
