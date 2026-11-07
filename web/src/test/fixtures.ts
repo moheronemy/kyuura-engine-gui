@@ -1,5 +1,5 @@
 // UI の単体テスト用の模擬の応答（実エンジンとの接続確認ではない。実エンジンとの確認は e2e/ と server/tests/）。
-// 形は固定版のエンジン（v0.164.0）で実際に得た応答に合わせている。
+// 形は固定版のエンジン（v0.165.0）で実際に得た応答に合わせている（U7-3 の入力の形は test/u73.ts）。
 import type { Transport } from "../api/transport";
 import type { Candidate, InputStage, Observation, PlayerObservation } from "../api/types";
 
@@ -69,10 +69,11 @@ export function view(viewerLabel: 0 | 1 | "spectator" | "host", obs: Observation
 }
 
 export const COVERAGE_TURN = {
-  implemented_kinds: ["take_prize", "promote_active", "answer_decision", "end_turn", "place_starting", "mulligan_draw", "report_janken", "start_sudden_death"],
-  scope_kinds: ["end_turn", "use_attack", "play_trainer"],
+  // 固定版のエンジン（0.165.0）の番の coverage。基本の 4 種類は評価した（scope_kinds）が、この例では候補に出していない
+  implemented_kinds: ["take_prize", "promote_active", "answer_decision", "end_turn", "place_starting", "mulligan_draw", "play_basic", "attach_energy", "evolve", "retreat", "report_janken", "start_sudden_death"],
+  scope_kinds: ["end_turn", "play_basic", "attach_energy", "evolve", "retreat", "use_attack", "play_trainer", "use_power", "use_stadium", "remove_disguise", "discard_from_play", "reveal_face_down", "check_face_up_deck"],
   offered_kinds: ["end_turn"],
-  not_covered_kinds: ["use_attack", "play_trainer"],
+  not_covered_kinds: ["use_attack", "play_trainer", "use_power", "use_stadium", "remove_disguise", "discard_from_play", "reveal_face_down", "check_face_up_deck"],
   withheld_input_candidates: [],
   completeness: "partial",
   completeness_scope: "scope_kinds（この応答に明示した種類だけ。全コマンドの合法手ではない）",
@@ -239,7 +240,7 @@ export function cardDefinitions(cards: unknown[], extra: Record<string, unknown>
     kind: "card_definitions",
     schema: "kyuura-gui-card-definitions",
     schema_version: 1,
-    source: { package: "kyuura_engine", resource: "data/kyuura_cards.json", format: "kyuura-engine card extract 1", engine_version: "0.164.0", sha256: "0".repeat(64) },
+    source: { package: "kyuura_engine", resource: "data/kyuura_cards.json", format: "kyuura-engine card extract 1", engine_version: "0.165.0", sha256: "0".repeat(64) },
     card_count: cards.length,
     omitted: 0,
     cards,
@@ -248,7 +249,7 @@ export function cardDefinitions(cards: unknown[], extra: Record<string, unknown>
 }
 
 /** 全体の表には非公開のカード（SECRET-1）の定義もある。表にあることは、表面を描いてよいことを意味しない。 */
-export const CARD_DEFINITIONS = cardDefinitions([pokemonRecord("PMCG1-058", "エビワラー"), pokemonRecord("SECRET-1", "ひみつのポケモン"), pokemonRecord("T-1", "テスト"), TRAINER_RECORD, ENERGY_RECORD]);
+export const CARD_DEFINITIONS = cardDefinitions([pokemonRecord("PMCG1-058", "エビワラー"), pokemonRecord("PMCG1-029", "ニドラン♂"), pokemonRecord("PMCG1-030", "ニドリーノ", { stage: "stage1", evolves_from: { ja: "ニドラン♂", en: null } }), pokemonRecord("SECRET-1", "ひみつのポケモン"), pokemonRecord("T-1", "テスト"), TRAINER_RECORD, ENERGY_RECORD]);
 
 export interface RenderCall {
   canvas: HTMLCanvasElement;

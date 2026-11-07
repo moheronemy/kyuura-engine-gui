@@ -6,8 +6,8 @@ import { CardDefinitionsError, cardDefinitionsResponse, isCardId, loadCardDefini
 describe("公開カード定義の取得とスキーマ", () => {
   it("封筒・schema・出典を確かめて、記録を組み立て直す", async () => {
     const defs = await loadCardDefinitions({ request: async (method, path) => (method === "GET" && path === "/api/card-definitions" ? CARD_DEFINITIONS : null) });
-    expect(defs.size).toBe(5);
-    expect(defs.source).toEqual({ format: "kyuura-engine card extract 1", engine_version: "0.164.0", sha256: "0".repeat(64) });
+    expect(defs.size).toBe(7);
+    expect(defs.source).toEqual({ format: "kyuura-engine card extract 1", engine_version: "0.165.0", sha256: "0".repeat(64) });
     const record = defs.get("PMCG1-058");
     expect(record?.pokemon?.hp).toBe(70);
     expect(record?.jp_print).toEqual({ level: 33, rarity: "●(C)" });
