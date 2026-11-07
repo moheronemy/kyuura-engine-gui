@@ -1,8 +1,14 @@
-# エンジンの契約と GUI の対応（kyuura-engine d0c5cfa・v0.164.0）
+# エンジンの契約と GUI の対応（kyuura-engine v0.164.0）
 
 GUI が使うエンジンの公開の境界と、その確かめ方・更新の方法の記録です。推測でなく、固定コミットの文書・コードと実際の応答で確かめた内容だけを書きます。
 
-## 1. 参照した資料（固定コミット d0c5cfa）
+## 0. 固定と導入
+
+- 版 0.164.0、導入する完全なコミット `ffcc5cab5df1ebde0faed3fd23b481295374e1f9`（Git の URL からの通常のインストール。`server/requirements.txt`）
+- 契約の確かめ（1〜5 章）は `d0c5cfa` で行った。`d0c5cfa` から `ffcc5ca` までの差分は配布の設定（`pyproject.toml`・`MANIFEST.in`）・文書・配布物の確かめの道具とテストだけで、`kyuura_engine/` の中身は変わっていない。API の契約は変わっていないものとして扱い、接続層のテスト・ブラウザの接続確認を `ffcc5ca` の通常のインストールで通した
+- 導入元は `direct_url.json` の `vcs_info.commit_id` で確かめる（`kyuura_gui_server/engine_source.py`）。site-packages で `git rev-parse` をしない（GUI 自身の HEAD を返しうる）
+
+## 1. 参照した資料（固定コミット d0c5cfa。ffcc5ca で kyuura_engine/ の変更なし）
 
 - `docs/client-api-v0.164.md`（入口・要求と応答・更新・導入）
 - `docs/legal-actions-u7-1.md`（決定への回答・番を終える・取っ手・処理可能性・coverage）
@@ -54,7 +60,7 @@ GUI が使うエンジンの公開の境界と、その確かめ方・更新の�
 
 ## 6. エンジン側の報告事項（エンジンは変更していない）
 
-- **パッケージの指定**: `pyproject.toml` の `packages = ["kyuura_engine"]` に `kyuura_engine.resolution` がなく、wheel での導入（文書の推奨の `pip install "kyuura-engine @ git+…"`）では import に失敗する。GUI は `-e git+…@<commit>` で回避している
+- **パッケージの指定（解決済み）**: `d0c5cfa` までの `pyproject.toml` では `kyuura_engine.resolution` が配布物に入らず、通常のインストールでは import に失敗したため、GUI は編集可能インストールで回避していた。エンジンの配布の修正（`ffcc5ca` に含まれる）で解決し、GUI は通常のインストールに戻した
 - **ログ**: client_api 形式 1 は閲覧者別の対戦ログ（`visible_log`）を返さない。GUI は公開の更新の要約で代えている。ログを出すなら、エンジンの契約に閲覧者別のログ（または閲覧用記録）の要求を加える必要がある
 - **デッキの診断**: `ClientHub.start` の拒否は `INVALID_DECK` だけ。GUI は作成の画面に限り `deck_problems` の結果を表示している
 

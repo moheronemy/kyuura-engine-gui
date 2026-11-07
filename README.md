@@ -33,13 +33,34 @@ scripts/   setup・dev・test の補助（Node）
 
 ## エンジンの固定
 
-- 基準: kyuura-engine **v0.164 の最終コミット `d0c5cfa9483aacae0cce2fd8d28166b1d8465500`**（版 0.164.0。公開済みの `main` に含まれる）
-- 依存の定義: [`server/requirements.txt`](server/requirements.txt)
+- **版**: kyuura-engine 0.164.0（`kyuura_engine.__version__`・配布メタデータの版）。API の契約（`kyuura-client-api`・形式 1）とあわせて、画面が前提にする機能の範囲を表す
+- **完全なコミット**: `ffcc5cab5df1ebde0faed3fd23b481295374e1f9`（公開ブランチ `claude/packaging-subpackages` の先頭）。導入する中身を一意に決める。同じ版の番号 0.164.0 で中身の違う配布物（配布の修正の前と後）があるため、固定にはコミットを使う
+- 依存の定義: [`server/requirements.txt`](server/requirements.txt)（Git の URL からの通常のインストール）
   ```
-  -e git+https://github.com/moheronemy/kyuura-engine@d0c5cfa9483aacae0cce2fd8d28166b1d8465500#egg=kyuura-engine
+  kyuura-engine @ git+https://github.com/moheronemy/kyuura-engine@ffcc5cab5df1ebde0faed3fd23b481295374e1f9
   ```
-- **編集可能モード（`-e`）で入れる理由（エンジン側の既知の問題）**: エンジンの `pyproject.toml` は `[tool.setuptools] packages = ["kyuura_engine"]` だけを指定していて、サブパッケージ `kyuura_engine.resolution` が wheel に入りません。エンジンの文書が推奨する `pip install "kyuura-engine @ git+…@<commit>"` では `import kyuura_engine` が `ImportError: cannot import name 'resolution'` で失敗します。`-e` は固定コミットを `server/.venv/src/kyuura-engine` に clone して使うので動きます。エンジンのリポジトリは変更していません（直すならエンジン側で `packages` に `kyuura_engine.resolution` を加えるか `find_packages` を使う）
-- 版と固定コミットは、接続層のテスト（`server/tests/test_contract.py`）が確かめます
+- 導入元の確かめ: 接続層のテスト（`server/tests/test_contract.py`）と `python -m kyuura_gui_server.engine_source` が、配布メタデータの `direct_url.json`（`vcs_info.vcs` が git・`vcs_info.commit_id` が上のコミット・編集可能でない）と版 0.164.0、読み込んだ `kyuura_engine` が site-packages の導入物であることを確かめる。確認できなければ失敗する
+- 固定先は自動で変えない（エンジンの main の先頭・別のマージコミットへ追従しない）。変えるときは「エンジンの更新の手順」に従う
+
+### 通常の利用と開発用の編集可能インストール
+
+- **通常の利用**（GUI を動かす・テストする）: 上の通常のインストールだけを使う（`npm run setup`）。エンジンのソースの clone は要らない
+- **エンジン自体を同時に開発する場合**だけ、手元のエンジンの作業ツリーを編集可能で入れてよい（`server/.venv` の Python で `python -m pip install -e <エンジンの作業ツリー>`）。この状態では導入元の確かめ（`test_engine_identity`）が「編集可能インストール」として失敗するので、GUI の確認の前に `npm run setup` で通常のインストールへ戻す
+
+### 古い仮想環境からの切り替え
+
+以前の版の GUI（`-e git+…@d0c5cfa…` の編集可能インストール）で作った `server/.venv` は、次のどちらかで切り替える。
+
+1. そのまま入れ直す: `npm run setup`（pip 26.3 で、編集可能の導入が通常の導入に置きかわることを確かめた）。残った古い clone `server/.venv/src/kyuura-engine` はもう読み込まれないので、不要なら消してよい
+2. 作り直す: `server/.venv` を消してから `npm run setup`
+
+どちらも最後に確かめる:
+
+```sh
+# Windows は server\.venv\Scripts\python
+cd server && .venv/bin/python -m kyuura_gui_server.engine_source
+# → {"install": "git", "commit_id": "ffcc5cab5df1ebde0faed3fd23b481295374e1f9", "version": "0.164.0", "module": ".../site-packages/kyuura_engine/__init__.py"}
+```
 
 ## 導入と起動
 
@@ -135,10 +156,10 @@ npm run e2e         # 実エンジンへのブラウザの接続確認（Playwri
 ## エンジンの更新の手順
 
 1. 新しい固定コミットを決め、公開済みの完全なハッシュにする
-2. `server/requirements.txt` のコミットと `contract/kyuura-client-api-v1.json` の `engine` を直し、`npm run setup` で入れ直す
+2. `server/requirements.txt` のコミットと `contract/kyuura-client-api-v1.json` の `engine` を直し、`npm run setup` で入れ直す。`python -m kyuura_gui_server.engine_source` で導入元を確かめる。配布の修正だけのコミットなら、API の契約は変わったものとして扱わない
 3. エンジンの文書（`docs/client-api-*.md`・`docs/legal-actions-*.md`）と `kyuura_engine/client_api.py`・`legal_actions.py` の差分を読む。契約の識別・形式の版（`kyuura-client-api`・1、`kyuura_legal_actions_format` 1、`kyuura_diagnostic_schema` 1）が変わったら、`web/src/api/types.ts`・`validate.ts` を直す（知らない版は画面が「不明な応答」として止まる）
 4. 区分の値（処理可能性・状況・候補の種類・拒否のコードなど）が変わったら `contract/kyuura-client-api-v1.json` を直す。`server/tests/test_contract.py` がエンジンの定数と照らす
-5. 検証用の固定例を作り直す: `server/.venv/Scripts/python server/tools/build_scenarios.py`（macOS・Linux は `server/.venv/bin/python`）。差分を確かめる
+5. 検証用の固定例を作り直す: 新しい固定コミットを checkout したエンジンの作業ツリーを用意し（エンジンのテストのモジュールは配布物に入らないため）、`server/.venv/Scripts/python server/tools/build_scenarios.py --engine <作業ツリー>`（macOS・Linux は `server/.venv/bin/python`）。差分を確かめる
 6. `npm test`・`npm run typecheck`・`npm run e2e` を通す
 7. 新しい操作の種類（U7-3 以後）が加わったら、[docs/engine-contract.md](docs/engine-contract.md) の「U7-3 以後への対応」に従う
 
