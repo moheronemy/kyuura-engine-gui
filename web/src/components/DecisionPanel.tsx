@@ -3,8 +3,11 @@
 // - 選んだ順を保つ（並べ替えない）。順序が未確認でも入力順のまま送る
 // - 0 枚の回答・辞退・空の選択肢も表示し、GUI が独自に決定を飛ばさない（送るのは利用者の操作だけ）
 // - 制約の表示と送信ボタンの可否は、エンジンが返した count・range を読むだけ（合法性の最終の判定はエンジン）
+// - 選択肢に本人へ公開された card_id があるときだけ、そのカードの画像を選択肢のラベルの中に出す。画像を押しても
+//   同じ選択肢の入力（radio・checkbox）を選ぶだけで、画像・カード名から送る値やコマンドを決めない
 import { useId, useMemo, useState } from "react";
 import { EXECUTABLE_PROCESSABILITY } from "../api/contract";
+import { CardFace } from "../cards/CardImages";
 import type { Choice, FieldSlot, InputOption, InputStage, Observation, OptionStage } from "../api/types";
 import type { Selection } from "../state/useEndpointSession";
 import { KIND_LABELS, ORDER_TEXT, PLACEMENT_TEXT, PROCESSABILITY_TEXT, labelOf, playerLabel } from "../labels";
@@ -321,6 +324,7 @@ function OptionStageInput({
                   disabled={Boolean(unavailable) || taken || full}
                   onChange={() => onToggle(option.id)}
                 />
+                {typeof option.card_id === "string" ? <CardFace cardId={option.card_id} name={names(option.card_id) ?? option.card_id} size="s" decorative /> : null}
                 <span className="option-text">
                   <span>{optionLabel(option, stage, observation, names)}</span>
                   <code className="muted small">{option.id}</code>

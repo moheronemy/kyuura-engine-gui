@@ -354,7 +354,7 @@ textarea {
 }
 .bench {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr));
   gap: 6px;
 }
 .pokemon {
@@ -546,6 +546,122 @@ details > summary {
   cursor: pointer;
 }
 
+/* カード画像（非公式のカード風の画像。400×560 の比率） */
+.card-image {
+  --card-w: 84px;
+  display: inline-flex;
+  flex: none;
+  width: var(--card-w);
+  aspect-ratio: 400 / 560;
+  vertical-align: top;
+  border-radius: calc(var(--card-w) * 0.05);
+  overflow: hidden;
+  background: #efeee8;
+}
+.card-image.size-s {
+  --card-w: 56px;
+}
+.card-image.size-l {
+  --card-w: 112px;
+}
+.card-canvas,
+.card-image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.card-canvas[hidden] {
+  display: none;
+}
+.card-fallback {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  width: 100%;
+  padding: 4px;
+  border: 1px dashed var(--line);
+  border-radius: inherit;
+  font-size: 0.7rem;
+  line-height: 1.3;
+  text-align: center;
+  overflow-wrap: anywhere;
+  color: var(--muted);
+}
+.card-fallback-name {
+  color: var(--ink);
+  font-weight: 600;
+}
+.card-fallback[data-state="failed"],
+.card-fallback[data-state="unavailable"] {
+  border-color: var(--warn);
+}
+.card-back .card-fallback {
+  background: #3a4a7a;
+  color: #fff;
+  border: none;
+}
+.card-back-one,
+.card-back-row {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 3px;
+}
+.card-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin: 0;
+  max-width: 120px;
+  text-align: center;
+}
+.card-list.hand-cards li {
+  padding: 4px;
+}
+.piles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 0 0 6px;
+}
+.pile {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+}
+.prize-row {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+.pokemon {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+.pokemon-body {
+  min-width: 0;
+  flex: 1;
+}
+.pokemon-image {
+  margin: 0;
+  text-align: center;
+}
+.middle-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.option .card-image {
+  cursor: pointer;
+}
+.option.disabled .card-image {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 @media (max-width: 900px) {
   .console-grid,
   .deck-grid,
@@ -554,5 +670,20 @@ details > summary {
   }
   .app {
     padding: 8px 10px 32px;
+  }
+}
+
+@media (max-width: 480px) {
+  .card-image {
+    --card-w: 64px;
+  }
+  .card-image.size-s {
+    --card-w: 44px;
+  }
+  .card-image.size-l {
+    --card-w: 84px;
+  }
+  .pokemon {
+    flex-direction: column;
   }
 }
