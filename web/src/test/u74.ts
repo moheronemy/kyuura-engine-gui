@@ -125,7 +125,7 @@ export const FACE_DOWN_ATTACK_STAGES: InputStage[] = [
 ];
 
 /** 送信の結果（client_api の submit の応答）。 */
-function submit(outcome: string, result: Record<string, unknown> | null, extra: Record<string, unknown> = {}) {
+export function submit(outcome: string, result: Record<string, unknown> | null, extra: Record<string, unknown> = {}) {
   return {
     contract: "kyuura-client-api",
     format: 1,

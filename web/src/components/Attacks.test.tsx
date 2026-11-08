@@ -259,7 +259,7 @@ describe("送信の結果の区別（state/outcome.ts）", () => {
     const own = summary(ACCEPTED_AWAITING_OWN);
     expect(own.title).toBe("受理（決定待ち）: ワザを使う");
     expect(own.lines).toContain("次: あなた（プレイヤー0）の決定への回答");
-    expect(summary(ACCEPTED_AWAITING_OTHER).lines).toContain("次: プレイヤー1の決定への回答");
+    expect(summary(ACCEPTED_AWAITING_OTHER).lines).toContain("次: プレイヤー1の決定への回答（相手が答えます。答えるまで待ちます）");
     const halted = summary(ACCEPTED_HALTED);
     expect(halted.title).toBe("受理（そのあと停止）: ワザを使う");
     expect(halted.tone).toBe("warn");
