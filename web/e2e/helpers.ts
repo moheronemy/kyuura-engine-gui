@@ -1,4 +1,4 @@
-// e2e の共通の操作（attacks.spec.ts が使う）。候補は公開の kind の表示名で選び、入力はエンジンが返した選べるものだけから選ぶ。
+// e2e の共通の操作（attacks.spec.ts・u75.spec.ts が使う）。候補は公開の kind の表示名で選び、入力はエンジンが返した選べるものだけから選ぶ。
 import { expect, type Locator, type Page } from "@playwright/test";
 
 export const viewer = (page: Page) => page.locator(".viewer-area");
@@ -47,17 +47,33 @@ export async function expectPainted(canvas: Locator) {
   expect(painted).toBeGreaterThan(50);
 }
 
-/** new_game（seed 固定）→ 両者の初期配置（最初の選べるもの）→ 補償（最大）→ ホストのジャンケン（プレイヤー0）。decks はプレイヤーごとのデッキの文。 */
-export async function setupToFirstTurn(page: Page, opts: { decks?: [string | null, string | null]; mulligans: number }) {
+/** 検証用の固定例から始める（label は固定例の名前）。 */
+export async function createScenario(page: Page, label: string) {
   await page.goto("/");
-  const texts = page.locator(".deck-editor textarea");
-  await expect(texts.first()).not.toHaveValue("");
-  for (const [i, deck] of (opts.decks ?? [null, null]).entries()) {
-    if (deck === null) continue;
-    if (deck.startsWith("preset:")) await page.locator(".deck-editor").nth(i).locator("select").selectOption(deck.slice("preset:".length));
-    else await texts.nth(i).fill(deck);
-  }
+  await page.getByRole("radio", { name: "検証用の固定例から始める" }).check();
+  await page.getByRole("radio", { name: new RegExp(label) }).check();
   await page.getByRole("button", { name: /対戦を作成/ }).click();
+  await expect(viewer(page).getByRole("region", { name: "対戦の状態" })).toBeVisible();
+}
+
+/**
+ * new_game（seed 固定）→ 両者の初期配置（最初の選べるもの）→ 補償（最大）→ ホストのジャンケン（プレイヤー0）。decks はプレイヤーごとのデッキの文。
+ * scenario は new_game から始める固定例の名前（U7-5。デッキと seed は固定例が持ち、画面には返らない）。
+ */
+export async function setupToFirstTurn(page: Page, opts: { decks?: [string | null, string | null]; scenario?: string; mulligans: number }) {
+  if (opts.scenario) {
+    await createScenario(page, opts.scenario);
+  } else {
+    await page.goto("/");
+    const texts = page.locator(".deck-editor textarea");
+    await expect(texts.first()).not.toHaveValue("");
+    for (const [i, deck] of (opts.decks ?? [null, null]).entries()) {
+      if (deck === null) continue;
+      if (deck.startsWith("preset:")) await page.locator(".deck-editor").nth(i).locator("select").selectOption(deck.slice("preset:".length));
+      else await texts.nth(i).fill(deck);
+    }
+    await page.getByRole("button", { name: /対戦を作成/ }).click();
+  }
   await expect(viewer(page).getByRole("region", { name: "対戦の状態" })).toBeVisible();
   for (const seat of ["プレイヤー0", "プレイヤー1"]) {
     await selectSeat(page, seat);

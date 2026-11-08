@@ -11,7 +11,8 @@ async function selectSeat(page: Page, label: string) {
 }
 
 function candidate(area: Locator, label: string): Locator {
-  return area.locator(".candidate-list > li").filter({ hasText: label });
+  // 候補の見出し（種類の表示名）で選ぶ。保証の文などに同じ語がある候補（U7-5 のトレーナーの「番を終える」など）を拾わない
+  return area.locator(".candidate-list > li").filter({ has: area.page().locator(".candidate-head", { hasText: label }) });
 }
 
 async function submitAndExpect(area: Locator, outcome: RegExp) {
@@ -75,7 +76,7 @@ test("準備を終えて番を終えるまで（両プレイヤーの初期配�
   await selectSeat(page, "プレイヤー0");
   const status = viewer(page).getByRole("region", { name: "対戦の状態" });
   await expect(status).toContainText("プレイヤー0の番");
-  await expect(viewer(page).getByLabel("未対応の操作")).toContainText("トレーナーを使う"); // U7-4 でワザは評価する種類になった
+  await expect(viewer(page).getByLabel("未対応の操作")).toContainText("ポケモンパワーを使う"); // U7-4 でワザ、U7-5 でトレーナー・スタジアムは評価する種類になった
   await expect(viewer(page).getByLabel("未対応の操作")).not.toContainText("ワザを使う");
   await expect(viewer(page).getByText("partial", { exact: true })).toBeVisible();
   await candidate(viewer(page), "番を終える").getByRole("button", { name: "この操作を選ぶ" }).click();
