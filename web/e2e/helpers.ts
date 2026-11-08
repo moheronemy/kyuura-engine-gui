@@ -103,12 +103,20 @@ export async function setupToFirstTurn(page: Page, opts: { decks?: [string | nul
   await expect(viewer(page).getByRole("region", { name: "対戦の状態" })).toContainText("プレイヤー0の番");
 }
 
-/** エネルギーをつける: 1 段目の最初 → バトル場。 */
+/** 送る前の check（GUI の決まり）: 送信は無効 → 入力を検査 → 通ったら送る。 */
+export async function checkAndSubmit(page: Page, outcome: RegExp) {
+  await expect(panel(page).getByRole("button", { name: "送信" })).toBeDisabled();
+  await panel(page).getByRole("button", { name: "入力を検査" }).click();
+  await expect(panel(page).locator(".check-result")).toContainText("エンジンの検査を通りました");
+  await submitAndExpect(viewer(page), outcome);
+}
+
+/** エネルギーをつける: 1 段目の最初 → バトル場（送る前に check。GUI の決まり）。 */
 export async function attachToActive(page: Page) {
   await choose(viewer(page), "エネルギーをつける");
   await stage(page, 1).getByRole("radio").first().check();
   await stage(page, 2).getByRole("radio", { name: /バトル場/ }).check();
-  await submitAndExpect(viewer(page), /受理/);
+  await checkAndSubmit(page, /受理/);
 }
 
 export async function endTurn(page: Page, seat: string) {

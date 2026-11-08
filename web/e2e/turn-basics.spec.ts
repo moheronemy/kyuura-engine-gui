@@ -33,6 +33,14 @@ async function submitAndExpect(area: Locator, outcome: RegExp) {
   await expect(area.getByRole("region", { name: "診断と結果" }).locator(".callout").first()).toContainText(outcome);
 }
 
+/** 送る前の check（GUI の決まり）: 送信は無効 → 入力を検査 → 通ったら送る。 */
+async function checkAndSubmit(page: Page, outcome: RegExp) {
+  await expect(panel(page).getByRole("button", { name: "送信" })).toBeDisabled();
+  await panel(page).getByRole("button", { name: "入力を検査" }).click();
+  await expect(panel(page).locator(".check-result")).toContainText("エンジンの検査を通りました");
+  await submitAndExpect(viewer(page), outcome);
+}
+
 async function expectPainted(canvas: Locator) {
   await expect(canvas).toBeVisible();
   const painted = await canvas.evaluate((c: HTMLCanvasElement) => {
@@ -114,7 +122,7 @@ test("通常の new_game（seed 固定）から: ベンチに出す → エネ�
   await expect(panel(page).getByText("前の検査の結果は使いません")).toBeVisible();
   await expect(panel(page).getByRole("button", { name: "送信" })).toBeDisabled();
   await stage(page, 2).getByRole("radio", { name: /バトル場/ }).check();
-  await submitAndExpect(area, /受理/);
+  await checkAndSubmit(page, /受理/); // 送る前に check（GUI の決まり）
   await expect(mine(page).locator(".active-slot")).toContainText("エネルギー（1）");
   // 同じ番の 2 回目は候補に出ない（エンジンの確かめ。GUI は推測しない）
   await expect(candidate(area, "エネルギーをつける")).toHaveCount(0);
@@ -156,7 +164,7 @@ test("通常の new_game（seed 固定）から: ベンチに出す → エネ�
   await choose(area, "エネルギーをつける");
   await stage(page, 1).getByRole("radio").first().check();
   await stage(page, 2).getByRole("radio", { name: /バトル場/ }).check();
-  await submitAndExpect(area, /受理/);
+  await checkAndSubmit(page, /受理/);
   const activeBefore = await mine(page).locator(".active-slot .pokemon").getAttribute("aria-label");
 
   await choose(area, "にげる");
@@ -194,6 +202,6 @@ test("狭い画面: エネルギーをつける 2 段の入力を、画像から
   await expect(target.getByRole("radio")).toBeChecked();
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(0);
-  await submitAndExpect(viewer(page), /受理/);
+  await checkAndSubmit(page, /受理/);
   await expect(mine(page).locator(".active-slot")).toContainText("エネルギー（1）");
 });

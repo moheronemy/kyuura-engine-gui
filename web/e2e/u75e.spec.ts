@@ -34,7 +34,7 @@ test("ロケット団のヒトカゲ: 2 段（元 → エネルギー）。元�
   await choose(viewer(page), "エネルギーをつける");
   await stage(page, 1).getByRole("radio").first().check();
   await stage(page, 2).getByRole("radio", { name: /PMCG1-060/ }).check();
-  await submitAndExpect(viewer(page), /受理/);
+  await checkThenSubmit(page, /受理/); // エネルギーをつける: 送る前に check（GUI の決まり）
 
   await expect(powerCandidate(page, "ほのおをもらう")).toHaveCount(1);
   await powerCandidate(page, "ほのおをもらう").getByRole("button", { name: "この操作を選ぶ" }).click();

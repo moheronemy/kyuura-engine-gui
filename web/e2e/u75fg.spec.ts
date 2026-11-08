@@ -52,6 +52,19 @@ test("カツラ: 前は 2 段 → 3 段目は今の組だけ。1 段目を変え
   await stage(page, 2).getByRole("radio", { name: /バトル場/ }).check();
   await expect(stage(page, 3).getByRole("radio", { name: "選ばない" })).toBeChecked();
   await stage(page, 3).getByRole("radio", { name: /PMCG1-098/ }).first().check();
+  // 送る前の check（GUI の決まり）: 元の入力に戻しても、変える前の遅れた答えでは送れない
+  const send = panel(page).getByRole("button", { name: "送信" });
+  await expect(send).toBeDisabled();
+  await panel(page).getByRole("button", { name: "入力を検査" }).click();
+  await expect(panel(page).locator(".check-result")).toContainText("受理・完走の保証ではありません");
+  await expect(send).toBeEnabled();
+  await stage(page, 3).getByRole("radio", { name: "選ばない" }).check(); // 2 枚目を外す → 送れない
+  await expect(send).toBeDisabled();
+  await panel(page).getByRole("button", { name: "入力を検査" }).click(); // 2 枚目を省く入力も check が要る
+  await expect(panel(page).locator(".check-result")).toContainText("受理・完走の保証ではありません");
+  await expect(send).toBeEnabled();
+  await stage(page, 3).getByRole("radio", { name: /PMCG1-098/ }).first().check(); // 2 枚目を選び直す → 送れない
+  await expect(send).toBeDisabled();
   await panel(page).getByRole("button", { name: "入力を検査" }).click();
   await expect(panel(page).locator(".check-result")).toContainText("受理・完走の保証ではありません");
   const sent = (await panel(page).locator("code", { hasText: /^\[/ }).last().textContent()) ?? "";
