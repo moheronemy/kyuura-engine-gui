@@ -40,8 +40,8 @@ test("ラッキースタジアム: 手札から出す（トレーナー）→ �
   await page.setViewportSize({ width: 390, height: 900 });
   await setupToFirstTurn(page, { scenario: "ラッキースタジアム", mulligans: 0 });
   const area = viewer(page);
-  await expect(area.getByLabel("未対応の操作")).toContainText("表向きの山札のカードを確かめる");
-  await expect(area.getByLabel("未対応の操作")).not.toContainText("トレーナー");
+  await expect(area.getByLabel("未対応の操作")).toHaveCount(0); // v0.172（U7-5f）: 番の MAIN の not_covered_kinds は空（check_face_up_deck は表示だけの種類）
+  await expect(area.getByLabel("評価した種類")).toContainText("手札のトレーナーを使う");
   await playTrainer(page, "PRN-015");
   await expect(area.getByText(/^スタジアム: .+（プレイヤー0）$/)).toBeVisible(); // 盤面の場のスタジアム（観測の値。持ち主）
   await expect(candidate(area, "場のスタジアムを使う")).toContainText("持ち主: プレイヤー0");

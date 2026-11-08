@@ -86,9 +86,9 @@ test("通常の new_game（seed 固定）から: ベンチに出す → エネ�
   const area = viewer(page);
   // coverage: 評価した種類・候補に出した種類・未対応を分ける（番は partial）
   await expect(area.getByLabel("評価して候補に出さなかった種類")).toContainText("進化させる");
-  await expect(area.getByLabel("未対応の操作")).toContainText("表向きの山札のカードを確かめる"); // U7-4 でワザ（attacks.spec.ts）、U7-5 でトレーナー・スタジアム（u75.spec.ts）は評価する種類になった
-  await expect(area.getByLabel("未対応の操作")).not.toContainText("にげる");
-  await expect(area.getByLabel("未対応の操作")).not.toContainText("ワザを使う");
+  await expect(area.getByLabel("未対応の操作")).toHaveCount(0); // v0.172（U7-5f）: 番の MAIN の not_covered_kinds は空（check_face_up_deck は表示だけの種類）
+  await expect(area.getByLabel("評価した種類")).toContainText("にげる");
+  await expect(area.getByLabel("評価した種類")).toContainText("ワザを使う");
 
   // 1. ベンチに出す（画像を押すと、その選択肢の radio を選ぶだけ）
   await expect(mine(page).locator(".bench-slot")).toContainText("ベンチ（0）");

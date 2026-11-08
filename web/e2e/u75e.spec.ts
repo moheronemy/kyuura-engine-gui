@@ -23,8 +23,8 @@ const powerCandidate = (page: Page, name: string) => candidate(viewer(page), "�
 
 test("ロケット団のヒトカゲ: 2 段（元 → エネルギー）。元を変えると後の段を捨てる → 受理 → 観測で移る → 同じ番には出ない", async ({ page }) => {
   await setupToFirstTurn(page, { scenario: "ロケット団のヒトカゲ", mulligans: 0 });
-  await expect(viewer(page).getByLabel("未対応の操作")).toContainText("表向きの山札のカードを確かめる");
-  await expect(viewer(page).getByLabel("未対応の操作")).not.toContainText("特殊能力");
+  await expect(viewer(page).getByLabel("未対応の操作")).toHaveCount(0); // v0.172（U7-5f）: 番の MAIN の not_covered_kinds は空（check_face_up_deck は表示だけの種類）
+  await expect(viewer(page).getByLabel("評価した種類")).toContainText("特殊能力を使う");
   await playBasic(page, "PMCG4-012");
   await playBasic(page, "PMCG1-060");
   await attachToActive(page);

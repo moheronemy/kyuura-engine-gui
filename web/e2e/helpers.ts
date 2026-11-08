@@ -51,7 +51,8 @@ export async function expectPainted(canvas: Locator) {
 export async function createScenario(page: Page, label: string) {
   await page.goto("/");
   await page.getByRole("radio", { name: "検証用の固定例から始める" }).check();
-  await page.getByRole("radio", { name: new RegExp(label) }).check();
+  // 名前の先頭で選ぶ（ほかの固定例の説明に同じカード名があっても混ざらない）
+  await page.getByRole("radio", { name: new RegExp(`^${label}`) }).check(); // 固定例の名前は正規表現の記号を含まない
   await page.getByRole("button", { name: /対戦を作成/ }).click();
   await expect(viewer(page).getByRole("region", { name: "対戦の状態" })).toBeVisible();
 }

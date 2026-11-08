@@ -76,8 +76,9 @@ test("準備を終えて番を終えるまで（両プレイヤーの初期配�
   await selectSeat(page, "プレイヤー0");
   const status = viewer(page).getByRole("region", { name: "対戦の状態" });
   await expect(status).toContainText("プレイヤー0の番");
-  await expect(viewer(page).getByLabel("未対応の操作")).toContainText("表向きの山札のカードを確かめる"); // U7-4 でワザ、U7-5 でトレーナー・スタジアムは評価する種類になった
-  await expect(viewer(page).getByLabel("未対応の操作")).not.toContainText("ワザを使う");
+  await expect(viewer(page).getByLabel("未対応の操作")).toHaveCount(0); // v0.172（U7-5f）: 番の MAIN の not_covered_kinds は空（check_face_up_deck は表示だけの種類）
+  await expect(viewer(page).getByLabel("評価した種類")).toContainText("ワザを使う");
+  await expect(viewer(page).getByLabel("表示だけの種類")).toContainText("表向きの山札のカードを確かめる");
   await expect(viewer(page).getByText("partial", { exact: true })).toBeVisible();
   await candidate(viewer(page), "番を終える").getByRole("button", { name: "この操作を選ぶ" }).click();
   await submitAndExpect(viewer(page), /受理/);
