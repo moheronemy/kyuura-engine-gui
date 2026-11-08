@@ -115,20 +115,26 @@ describe("ベンチに出す", () => {
 
 describe("エネルギーをつける（2 段・options_by_choice）", () => {
   it("1 段目を選ぶまで 2 段目は選べず、選んだら組だけを組ごとの区分で示す", async () => {
-    const { onSubmit, user } = setup("attach_energy", ATTACH_STAGES);
+    const { onSubmit, user, rerenderWithCheck } = setup("attach_energy", ATTACH_STAGES);
     expect(within(stage(2)).queryAllByRole("radio")).toHaveLength(0);
     expect(within(stage(2)).getByText(/段 1 を選ぶと/)).toBeInTheDocument();
     await user.click(within(stage(1)).getByRole("radio", { name: /基本闘エネルギー/ }));
     expect(within(stage(2)).getAllByRole("radio")).toHaveLength(2);
     await user.click(within(stage(2)).getByRole("radio", { name: /ニドラン♂.*ベンチ1/ }));
+    expect(send()).toBeDisabled(); // 2 段の 1 枚でも、check の前は送れない（GUI の方針。エンジンは check なしの submit も受け付ける）
+    await user.click(send());
+    expect(onSubmit).not.toHaveBeenCalled();
+    rerenderWithCheck({ choices: choicesKey(["o1", "o4"]), response: { valid: true, refusal: null } });
     await user.click(send());
     expect(onSubmit).toHaveBeenCalledWith(["o1", "o4"]); // 段の順（エネルギー → つける先）
   });
 
   it("1 段目を変えると 2 段目の選択を捨て、組ごとの eligible・processability に従う（未裁定を禁止と書かない）", async () => {
-    const { user } = setup("attach_energy", ATTACH_STAGES);
+    const { user, rerenderWithCheck } = setup("attach_energy", ATTACH_STAGES);
     await user.click(within(stage(1)).getByRole("radio", { name: /基本闘エネルギー/ }));
     await user.click(within(stage(2)).getByRole("radio", { name: /ニドラン♂/ }));
+    expect(send()).toBeDisabled(); // check の前
+    rerenderWithCheck({ choices: choicesKey(["o1", "o4"]), response: { valid: true, refusal: null } });
     expect(send()).toBeEnabled();
     await user.click(within(stage(1)).getByRole("radio", { name: /無色2個エネルギー/ }));
     expect(within(stage(2)).getAllByRole("radio").every((r) => !(r as HTMLInputElement).checked)).toBe(true);

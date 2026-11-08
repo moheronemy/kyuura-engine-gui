@@ -96,8 +96,10 @@ describe("U7-5f・g（画面全体）", () => {
     await user.click(within(groups(panel)[1]!).getByRole("radio", { name: /PMCG6-027/ }));
     await user.click(within(groups(panel)[2]!).getByRole("radio", { name: /PMCG1-098/ })); // 元の入力 [o1, o3, o6] に戻す
     expect(within(panel).queryByText(/エンジンの検査を通りました/)).toBeNull(); // 変える前に始めた答えは使わない
+    expect(within(panel).getByRole("button", { name: "送信" })).toBeDisabled(); // 改めて check が要る（GUI の方針）
     await user.click(within(panel).getByRole("button", { name: "入力を検査" }));
     expect(await within(panel).findByText(/エンジンの検査を通りました/)).toBeInTheDocument();
+    expect(within(panel).getByRole("button", { name: "送信" })).toBeEnabled();
     expect(transport.calls.filter((c) => c.body?.type === "check").map((c) => c.body?.choices)).toEqual([["o1", "o3", "o6"], ["o1", "o3", "o6"]]);
     expect(transport.calls.filter((c) => c.body?.type === "submit")).toHaveLength(0);
   });

@@ -18,6 +18,7 @@ import {
   SPY,
   WITHHELD_FACE_DOWN,
 } from "../test/u75fg";
+import { choicesKey, type CheckResult } from "../state/useEndpointSession";
 import { DecisionPanel, downstreamOf } from "./DecisionPanel";
 import { CandidatesPanel } from "./Panels";
 
@@ -37,9 +38,9 @@ function setup(candidate: Candidate, stages: InputStage[], extra: Record<string,
   const onCheck = vi.fn();
   const onInputChange = vi.fn();
   const parsed = V.inputsResponse(inputs(candidate.kind, stages, extra));
-  render(
+  const ui = (check: CheckResult | null) => (
     <DecisionPanel
-      selection={{ candidate, handle: { game: "g", revision: "r", candidate: candidate.id }, inputs: parsed, check: null }}
+      selection={{ candidate, handle: { game: "g", revision: "r", candidate: candidate.id }, inputs: parsed, check }}
       actor={0}
       observation={OBS}
       names={(id) => NAMES[id]}
@@ -49,10 +50,15 @@ function setup(candidate: Candidate, stages: InputStage[], extra: Record<string,
       onSubmit={onSubmit}
       onCancel={() => undefined}
       onInputChange={onInputChange}
-    />,
+    />
   );
-  return { onSubmit, onCheck, onInputChange, user: userEvent.setup() };
+  const view = render(ui(null));
+  /** session が今の入力への check の答え（通った）を置いたときの描画。 */
+  const passed = (choices: string[]) => view.rerender(ui({ choices: choicesKey(choices), response: { valid: true, refusal: null } }));
+  return { onSubmit, onCheck, onInputChange, passed, user: userEvent.setup() };
 }
+
+const send = () => screen.getByRole("button", { name: "送信" });
 
 const stage = (n: number) => screen.getAllByRole("group")[n - 1]!;
 
@@ -98,14 +104,16 @@ describe("経路で引く段（options_by_path）の検証", () => {
 
 describe("attach_energy の任意の 3 段目（カツラの 2 枚目）", () => {
   it("今の 1・2 段目の鍵の一覧だけを出し、上流を変えたら 3 段目と検査の結果を捨てる。送る順は段の順", async () => {
-    const { user, onSubmit, onInputChange } = setup(BLAINE_ATTACH, BLAINE_STAGES);
+    const { user, onSubmit, onInputChange, passed } = setup(BLAINE_ATTACH, BLAINE_STAGES);
     expect(screen.getByText(/カツラの効果で、3 段目に 2 枚目のエネルギーカードを選べます/)).toBeInTheDocument();
     expect(within(stage(3)).getByText(/段 1・2 を選ぶと、その組でエンジンが示したものだけ/)).toBeInTheDocument();
     await user.click(within(stage(1)).getAllByRole("radio")[0]!); // o1
     await user.click(within(stage(2)).getByRole("radio", { name: /PMCG6-027/ })); // o3
     expect(within(stage(3)).getAllByRole("radio").map((r) => r.closest("li")?.textContent)).toEqual([expect.stringContaining("選ばない"), expect.stringContaining("o6")]);
     await user.click(within(stage(3)).getByRole("radio", { name: /PMCG1-098/ }));
-    await user.click(screen.getByRole("button", { name: "送信" }));
+    expect(send()).toBeDisabled(); // 2 枚: check の前は送れない（GUI の方針）
+    passed(["o1", "o3", "o6"]);
+    await user.click(send());
     expect(onSubmit).toHaveBeenLastCalledWith(["o1", "o3", "o6"]);
     const changes = onInputChange.mock.calls.length;
     await user.click(within(stage(1)).getAllByRole("radio")[1]!); // 1 段目を o2 に変える → 2・3 段目を捨てる
@@ -115,17 +123,74 @@ describe("attach_energy の任意の 3 段目（カツラの 2 枚目）", () =>
     const third = within(stage(3)).getAllByRole("radio");
     expect(third.map((r) => r.closest("li")?.textContent)).toEqual([expect.stringContaining("選ばない"), expect.stringContaining("o5")]);
     expect(third[0]).toBeChecked(); // 3 段目の前の選択（o6）は残らない
-    await user.click(screen.getByRole("button", { name: "送信" }));
+    expect(send()).toBeDisabled(); // [o1, o3, o6] への答えは今の入力 [o2, o3] に使わない
+    passed(["o2", "o3"]);
+    await user.click(send());
     expect(onSubmit).toHaveBeenLastCalledWith(["o2", "o3"]); // 3 段目を選ばない: 今までどおり 1 枚
+    expect(onSubmit).toHaveBeenCalledTimes(2);
   });
 
-  it("鍵がない組（ベンチのつけ先）では 3 段目を選べず、1 枚で送れる", async () => {
-    const { user, onSubmit } = setup(BLAINE_ATTACH, BLAINE_STAGES);
+  it("鍵がない組（ベンチのつけ先）では 3 段目を選べず、1 枚で送れる（check の前は送れない）", async () => {
+    const { user, onSubmit, passed } = setup(BLAINE_ATTACH, BLAINE_STAGES);
     await user.click(within(stage(1)).getAllByRole("radio")[0]!);
     await user.click(within(stage(2)).getByRole("radio", { name: /PMCG1-014/ }));
     expect(within(stage(3)).getByText(/この段に選べるものがありません/)).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "送信" }));
+    expect(send()).toBeDisabled();
+    await user.click(send());
+    expect(onSubmit).not.toHaveBeenCalled(); // 無効のボタンを押しても送らない
+    passed(["o1", "o4"]);
+    await user.click(send());
     expect(onSubmit).toHaveBeenLastCalledWith(["o1", "o4"]);
+  });
+});
+
+describe("attach_energy の送る前の check（GUI の方針。1 枚・2 枚とも）", () => {
+  // 3 段目の選べるものが 2 つある組（2 枚目を変えられる）
+  const TWO_SECOND = (() => {
+    const s = clone(BLAINE_STAGES) as unknown as Record<string, any>[];
+    s[2]!.options.push({ id: "o7", card: 60, card_id: "PMCG1-098", special: false, eligible: true, processability: "may_stop_later" });
+    s[2]!.options_by_path["o1/o3"].push({ option: "o7", eligible: true, processability: "may_stop_later" });
+    return s as unknown as InputStage[];
+  })();
+
+  it("2 枚目を省く・選ぶ・変える・外すたびに、今の入力への check が通るまで送れない", async () => {
+    const { user, onSubmit, onInputChange, passed } = setup(BLAINE_ATTACH, TWO_SECOND);
+    await user.click(within(stage(1)).getAllByRole("radio")[0]!); // o1
+    await user.click(within(stage(2)).getByRole("radio", { name: /PMCG6-027/ })); // o3
+    expect(send()).toBeDisabled(); // energy2 の段がある候補で 2 枚目を省く: check の前は送れない
+    passed(["o1", "o3"]);
+    expect(send()).toBeEnabled(); // 今の入力 [o1, o3] への check が通った
+    const before = onInputChange.mock.calls.length;
+    const option = (id: string) => within(stage(3)).getAllByRole("radio").find((r) => r.closest("li")?.textContent?.includes(id))!;
+    await user.click(option("o6")); // 2 枚目を選ぶ
+    expect(send()).toBeDisabled();
+    passed(["o1", "o3", "o6"]);
+    expect(send()).toBeEnabled();
+    await user.click(option("o7")); // 2 枚目を変える
+    expect(send()).toBeDisabled();
+    passed(["o1", "o3", "o7"]);
+    expect(send()).toBeEnabled();
+    await user.click(within(stage(3)).getByRole("radio", { name: "選ばない" })); // 2 枚目を外す
+    expect(send()).toBeDisabled();
+    expect(onInputChange.mock.calls.length).toBe(before + 3); // 選ぶ・変える・外すのたびに session へ知らせる（前の答えと届いていない答えを捨てる）
+    passed(["o1", "o3", "o7"]);
+    expect(send()).toBeDisabled(); // 前の入力への答えは使わない
+    passed(["o1", "o3"]);
+    await user.click(within(stage(2)).getByRole("radio", { name: /PMCG1-014/ })); // 2 段目（つけ先）を変える
+    expect(send()).toBeDisabled();
+    passed(["o1", "o4"]);
+    await user.click(within(stage(1)).getAllByRole("radio")[1]!); // 1 段目を変える
+    expect(send()).toBeDisabled();
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it("check の前は、送る前に検査する旨を示し、押しても送らない", async () => {
+    const { user, onSubmit } = setup(BLAINE_ATTACH, BLAINE_STAGES);
+    await user.click(within(stage(1)).getAllByRole("radio")[0]!);
+    await user.click(within(stage(2)).getByRole("radio", { name: /PMCG6-027/ }));
+    expect(screen.getByText(/送る前に「入力を検査」で今の入力をエンジンに確かめます/)).toBeInTheDocument();
+    await user.click(send());
+    expect(onSubmit).not.toHaveBeenCalled();
   });
 });
 
