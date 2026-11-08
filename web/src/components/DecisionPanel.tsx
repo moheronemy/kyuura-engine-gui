@@ -25,9 +25,14 @@
 // - 場のスタジアム（use_stadium）: 候補の stadium（持ち主）と、使う主体（番のプレイヤー）を分けて示す。選ばせるもののない効果は choices []、
 //   エネルギーを選ばせる効果はエネルギーカードとついているポケモン（holder）を示す。回数・使えるかは GUI で決めない（エンジンの候補と check）
 import { useId, useMemo, useState } from "react";
-import { ATTACK_KINDS, CHECK_BEFORE_SUBMIT_KINDS, EXECUTABLE_PROCESSABILITY, STADIUM_KINDS, TRAINER_KINDS } from "../api/contract";
-import type { Choice, FieldSlot, Holder, InputOption, InputStage, Observation, OptionStage, PlayerIndex, StadiumRef } from "../api/types";
-import { CardBack, CardFace } from "../cards/CardImages";
+// U7-5e（特殊能力。候補の pokemon・power と、0〜3 段の依存する段）:
+// - 候補は id で区別する（同じ use_power がいくつも並ぶ）。特殊能力の名前・カード ID から入力の形を推測しない
+// - k 段目は、直前の段で選んだ番号の options_by_choice の組だけ。k 段目を変えたら、それに依存する後のすべての段の選択を捨てる
+//   （check の答えも今の入力と違うので使わない）。全段の組み合わせを GUI で作らない
+// - 相手のうらのカードは、エンジンが示した位置と face_down だけ（カード ID・名前・表の画像を補わない）
+import { ATTACK_KINDS, CHECK_BEFORE_SUBMIT_KINDS, EXECUTABLE_PROCESSABILITY, POWER_KINDS, STADIUM_KINDS, TRAINER_KINDS } from "../api/contract";
+import type { Candidate, Choice, FieldSlot, Holder, InputOption, InputStage, Observation, OptionStage, PlayerIndex, StadiumRef } from "../api/types";
+import { CardBack, CardFace, usePowerText } from "../cards/CardImages";
 import { choicesKey, type Selection } from "../state/useEndpointSession";
 import {
   ADDON_LABELS,
@@ -119,7 +124,27 @@ const KNOWN_OPTION_KEYS = new Set([
   "power",
   // U7-5d（スタジアムで選ぶエネルギーがついているポケモン。専用の表示で示す）
   "holder",
+  // U7-5e（依存する段の前の段の番号。表示しない）
+  "after",
 ]);
+
+/** 場のポケモンの番号の持ち主（観測のバトル場・ベンチ。うらのカードも番号は公開）。 */
+function ownerOf(observation: Observation | null, pokemonId: number): PlayerIndex | null {
+  if (!observation) return null;
+  for (const p of observation.players) {
+    const slots = [p.active, ...p.bench];
+    if (slots.some((slot) => slot != null && (slot as { pokemon_id?: number }).pokemon_id === pokemonId)) return p.player;
+  }
+  return null;
+}
+
+/** 選べるものの場のポケモンが、閲覧者の側か相手の側か（観測の番号から。分からなければ空）。 */
+function sideOf(observation: Observation | null, option: InputOption): string {
+  if (typeof option.pokemon !== "number" || !observation || observation.viewer == null) return "";
+  const owner = ownerOf(observation, option.pokemon);
+  if (owner === null) return "";
+  return owner === observation.viewer ? "自分の" : "相手の";
+}
 
 function zonePlace(option: InputOption): string | null {
   if (option.zone === "active") return "バトル場";
@@ -132,14 +157,15 @@ export function optionLabel(option: InputOption, stage: OptionStage, observation
   const place = zonePlace(option);
   if (typeof option.attack_index === "number" && typeof option.name_ja === "string") return `［${option.name_ja}］`; // U7-4: エンジンが返したワザの名前
   if (typeof option.addon === "string") return addonLabel(option, observation, names);
-  if (option.face_down) return `裏向きのポケモン${place ? `（${place}）` : ""}`; // 本人のうらのカード: カード ID は来ない
+  if (option.face_down) return `${sideOf(observation, option)}裏向きのポケモン${place ? `（${place}）` : ""}`; // うらのカード: カード ID は来ない
   if (option.holder && typeof option.card_id === "string") {
     // U7-5d: エネルギーカード（ついているカードは公開）と、ついている本人の場のポケモン（エンジンが返した holder）
     return `${names(option.card_id) ?? "（カード名表にない）"} ${option.card_id}（ついている: ${holderLabel(option.holder, names)}）`;
   }
   if (typeof option.card_id === "string") {
     const name = names(option.card_id);
-    return `${name ?? "（カード名表にない）"} ${option.card_id}${place ? `（${place}）` : ""}`;
+    const side = place ? sideOf(observation, option) : "";
+    return `${name ?? "（カード名表にない）"} ${option.card_id}${place ? `（${side}${place}）` : ""}`;
   }
   const v = option.value;
   if (stage.meaning === "pokemon" && typeof v === "number") return pokemonPlace(observation, v) ?? `ポケモン番号 ${v}`;
@@ -180,6 +206,28 @@ function StadiumInfo({ stadium, actor, names }: { stadium: StadiumRef; actor: Pl
   );
 }
 
+/** U7-5e: 特殊能力を使うポケモンと特殊能力（候補の pokemon・power）。説明は公開カード定義の印刷（位置と名前が合うときだけ）。 */
+function PowerInfo({ candidate, names }: { candidate: Candidate; names: Names }) {
+  const { pokemon, power } = candidate;
+  const text = usePowerText(power?.card_id ?? "", power?.index ?? -1, power?.name_ja ?? "");
+  if (!pokemon || !power) return null;
+  const place = pokemon.zone === "active" ? "バトル場" : `ベンチ${(pokemon.bench_index ?? 0) + 1}`;
+  return (
+    <div className="power-info" aria-label="特殊能力">
+      <p className="small">
+        特殊能力: <strong>［{power.name_ja}］</strong> ／ 使うポケモン: {names(pokemon.card_id) ?? pokemon.card_id} <code className="muted">{pokemon.card_id}</code>（自分の{place}）
+        {power.card_id !== pokemon.card_id ? (
+          <>
+            <br />
+            印刷したカード: {names(power.card_id) ?? power.card_id} <code className="muted">{power.card_id}</code>（場のポケモンのカードと違う。「ばける」・写した特殊能力など）
+          </>
+        ) : null}
+      </p>
+      <p className="small attack-text">{text ?? "説明なし（公開カード定義に合う説明がない）"}</p>
+    </div>
+  );
+}
+
 /** U7-5: 種類ごとの説明（入力の画面は段の role で同じ部品を使う。ここは何を聞かないかと、受理のあとの続きの説明だけ）。 */
 function kindNote(kind: string, noStages: boolean): string | null {
   if (TRAINER_KINDS.has(kind)) {
@@ -189,6 +237,11 @@ function kindNote(kind: string, noStages: boolean): string | null {
     return noStages
       ? "場のスタジアムの効果を使います（手札から出すのは「手札のトレーナーを使う」）。この効果に選ぶものはありません（choices: [] で送ります）。コイン・効果の決定は受理のあとにエンジンが行います。"
       : "場のスタジアムの効果を使います（手札から出すのは「手札のトレーナーを使う」）。選べるのはエンジンが示したエネルギーカードだけです。コイン・効果の決定は受理のあとにエンジンが行います。";
+  }
+  if (POWER_KINDS.has(kind)) {
+    return noStages
+      ? "この特殊能力に宣言といっしょに選ぶものはありません（choices: [] で送ります）。コインの結果・効果の決定（回復するポケモン・トラッシュするカードなど）は、受理のあとにエンジンが聞きます。回数・使えるかはエンジンが決めます（GUI は数えません）。"
+      : "宣言といっしょに選ぶものを段の順に 1 つずつ選びます。後の段には、前の段で選んだものに続く選べるものだけが出ます。前の段を変えると、後の段の選択と検査の結果は捨てます。コインの結果・効果の決定は、受理のあとにエンジンが聞きます。";
   }
   if (kind === "reveal_face_down") {
     return "おもてにしたあと場に残るか・トラッシュするかは、エンジンが本当のカードで決めます（ここでは予告しません）。結果は受理のあとの観測で表示します。バトル場が空けば、バトル場に出すポケモンを選ぶ決定に続きます。";
@@ -286,6 +339,23 @@ export function stageOptions(stage: OptionStage, stages: InputStage[], picks: Re
   return [from && from.input === "choose_option" && from.options ? from.options : [], false];
 }
 
+/** stageNo に直接・間接に依存する段の番号（depends_on_stage をたどる）。 */
+export function downstreamOf(stages: InputStage[], stageNo: number): Set<number> {
+  const out = new Set<number>();
+  let grew = true;
+  while (grew) {
+    grew = false;
+    for (const s of stages) {
+      if (s.input !== "choose_option" || s.depends_on_stage === undefined || out.has(s.stage)) continue;
+      if (s.depends_on_stage === stageNo || out.has(s.depends_on_stage)) {
+        out.add(s.stage);
+        grew = true;
+      }
+    }
+  }
+  return out;
+}
+
 /** 個数で数える段の、選んだカードの units の合計。 */
 export function unitsOf(stage: OptionStage, picked: string[]): number {
   const byId = new Map((stage.options ?? []).map((o) => [o.id, o]));
@@ -353,14 +423,16 @@ export function DecisionPanel({ selection, actor = null, observation, names, bus
       if (stage.count.max === 1) next = list[0] === id ? [] : [id];
       else next = list.includes(id) ? list.filter((x) => x !== id) : list.length < stage.count.max ? [...list, id] : list;
       const updated = { ...p, [stage.stage]: next };
+      const changed = (list[0] ?? null) !== (next[0] ?? null);
+      const dependents = changed ? downstreamOf(stages, stage.stage) : new Set<number>();
       for (const other of stages) {
         if (other.stage === stage.stage || other.input !== "choose_option") continue;
         // 段をまたいで重ならない（distinct_across_stages）: 前の段で選んだものを後の段から外す
         if (other.distinct_across_stages && updated[other.stage]) {
           updated[other.stage] = (updated[other.stage] ?? []).filter((x) => !next.includes(x));
         }
-        // 2 段の操作: 1 段目を変えたら、前の 1 段目に対する 2 段目の選択を捨てる（組が変わる）
-        if (other.depends_on_stage === stage.stage && (list[0] ?? null) !== (next[0] ?? null)) updated[other.stage] = [];
+        // 依存する段: 前の段を変えたら、それに（直接・間接に）依存するすべての段の選択を捨てる（組・番号が変わる。U7-5e の 3 段を含む）
+        if (dependents.has(other.stage)) updated[other.stage] = [];
       }
       return updated;
     });
@@ -406,6 +478,7 @@ export function DecisionPanel({ selection, actor = null, observation, names, bus
       ) : null}
 
       {candidate.stadium ? <StadiumInfo stadium={candidate.stadium} actor={actor} names={names} /> : null}
+      {POWER_KINDS.has(candidate.kind) ? <PowerInfo candidate={candidate} names={names} /> : null}
       {!withheld && stages.length === 0 ? <p>この操作に入力はありません。</p> : null}
       {kindNote(candidate.kind, stages.length === 0) ? <p className="small">{kindNote(candidate.kind, stages.length === 0)}</p> : null}
       {ATTACK_KINDS.has(candidate.kind) ? (

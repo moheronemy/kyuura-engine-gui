@@ -34,6 +34,8 @@ type FaceItem =
 interface CardImagesValue {
   renderer: CardRenderer;
   face(cardId: string): FaceItem;
+  /** U7-5e: 公開カード定義の、印刷した特殊能力の説明（位置と名前が合うときだけ。合わなければ null）。 */
+  powerText(cardId: string, index: number, nameJa: string): string | null;
 }
 
 const CardImagesContext = createContext<CardImagesValue | null>(null);
@@ -75,6 +77,12 @@ export function CardImagesProvider({ transport, renderer = realRenderer, childre
         if (record) items.set(cardId, result); // 未知の ID はためない（表にない ID でキャッシュを増やさない）
         return result;
       },
+      powerText(cardId, index, nameJa) {
+        if (state.status !== "ready") return null;
+        const power = state.definitions.get(cardId)?.pokemon?.powers[index];
+        // 候補が示した位置と名前が、公開カード定義の印刷と合うときだけ説明を出す（合わないときに別の特殊能力の説明を補わない）
+        return power && power.name.ja === nameJa ? (power.text?.ja ?? null) : null;
+      },
     };
   }, [state, renderer]);
 
@@ -83,6 +91,12 @@ export function CardImagesProvider({ transport, renderer = realRenderer, childre
 
 function useCardImages(): CardImagesValue | null {
   return useContext(CardImagesContext);
+}
+
+/** U7-5e: 印刷した特殊能力の説明（公開カード定義。表示だけ）。定義がない・合わないときは null。 */
+export function usePowerText(cardId: string, index: number, nameJa: string): string | null {
+  const images = useCardImages();
+  return images ? images.powerText(cardId, index, nameJa) : null;
 }
 
 function scaleFor(size: CardSize): number {

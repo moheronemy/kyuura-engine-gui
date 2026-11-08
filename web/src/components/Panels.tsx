@@ -135,6 +135,12 @@ export function CandidatesPanel({
                 <DisclosureBadge value={c.input_disclosure} />
               </div>
               {c.reasons.length ? <p className="small muted">理由: {reasonsText(c.reasons)}</p> : null}
+              {c.power && c.pokemon ? (
+                // U7-5e: 同じ種類の候補がいくつも並ぶので、エンジンが返した特殊能力の名前と使うポケモンを見出しの下に出す（候補は id で区別する）
+                <p className="small power-head">
+                  ［{c.power.name_ja}］ — <code>{c.pokemon.card_id}</code>（{c.pokemon.zone === "active" ? "バトル場" : `ベンチ${(c.pokemon.bench_index ?? 0) + 1}`}）
+                </p>
+              ) : null}
               {c.stadium ? (
                 // U7-5d: 場のスタジアム（公開）。持ち主は出したプレイヤーで、使うのは番のプレイヤー
                 <p className="small">
@@ -210,7 +216,7 @@ export function CoveragePanel({ legal }: { legal: LegalActions }) {
       {cov.not_covered_kinds.length ? (
         <div className="unsupported" aria-label="未対応の操作">
           <h3>未対応の操作（not_covered_kinds）</h3>
-          <p className="small">この API の版（U7-1〜U7-5d）では評価も候補の作成もしない種類です（特殊能力・おもての山札のカードの確かめ）。ゲーム上の禁止ではありません。この GUI では操作として作っていません。</p>
+          <p className="small">この API の版（U7-1〜U7-5e）では評価も候補の作成もしない種類です（おもての山札のカードの確かめ）。ゲーム上の禁止ではありません。この GUI では操作として作っていません。</p>
           <ul className="inline-list">
             {cov.not_covered_kinds.map((k) => (
               <li key={k}>

@@ -15,7 +15,7 @@ export const KIND_LABELS: Record<string, string> = {
   retreat: "にげる",
   use_attack: "ワザを使う",
   play_trainer: "手札のトレーナーを使う",
-  use_power: "ポケモンパワーを使う",
+  use_power: "特殊能力を使う",
   use_stadium: "場のスタジアムを使う",
   remove_disguise: "「ばける」でのせたカードを外す",
   discard_from_play: "化石・人形を場からすてる",
@@ -85,7 +85,7 @@ export const PROCESSABILITY_TEXT: Record<string, Explained> = {
   unverified: {
     label: "未確認",
     description:
-      "保証はありません（例: 本人のうらのカードの進化・にげる・ワザ、使うための条件をエンジンが前もって確かめないトレーナー）。送れますが、使えるかは送るまで分かりません。最終の判定はエンジンが送信のときに行います。",
+      "保証はありません（例: 本人のうらのカードの進化・にげる・ワザ、使うための条件をエンジンが前もって確かめないトレーナー、うらのカードを指定する特殊能力）。送れますが、使えるかは送るまで分かりません。最終の判定はエンジンが送信のときに行います。",
   },
 };
 
@@ -229,6 +229,10 @@ const ROLE_LABELS: Record<string, string> = {
   "reveal_face_down:face_down": "おもてにする自分のうらのカード",
   "play_trainer:trainer": "使うトレーナーカード（手札）",
   "use_stadium:energy": "スタジアムの効果で選ぶエネルギーカード（ついている自分の場のポケモン）",
+  // U7-5e: 特殊能力の宣言の段（意味は特殊能力ごと。エンジンが示した選べるものだけ）
+  "use_power:source": "元のポケモン（source）",
+  "use_power:energy": "エネルギーカード（energy）",
+  "use_power:target": "先のポケモン（target）",
 };
 
 /** ワザの持ち方（route）。エンジンが返した値の説明で、カード名・画像からワザを補わない。 */

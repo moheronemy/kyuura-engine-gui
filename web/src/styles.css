@@ -738,3 +738,10 @@ details > summary {
   min-width: 0;
   overflow-wrap: anywhere;
 }
+
+/* U7-5e: 特殊能力（候補の pokemon・power） */
+.power-info p,
+.power-head {
+  margin: 0.25rem 0;
+  overflow-wrap: anywhere;
+}
