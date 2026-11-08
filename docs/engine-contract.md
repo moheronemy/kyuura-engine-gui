@@ -432,3 +432,22 @@ renderer の `renderToCanvas` は、同じ Canvas では最後に始めた要求
 | 上のすべての実行のあと `checkGate.test.tsx` の import を 1 行にまとめた（中身は同じ）ので、そのファイルと型検査だけをもう 1 回 | 4 件成功・型検査とも終了コード 0 |
 
 実行していないもの: 接続層のテストの残り・単体テストの残り（カード画像・検証）・e2e の残り・preview・クリーンな場所での再構築・依存の更新の確かめ・エンジンの全体テスト。既存の e2e のうち attach_energy を check なしで送っていた `turn-basics.spec.ts`（3 か所）・`u75e.spec.ts`（1 か所）・`helpers.ts` の `attachToActive`（`attacks.spec.ts`・`u75.spec.ts`・`u75e.spec.ts` が使う。2026-11-08 に訂正: 当初は `attacks.spec.ts`（33・68・92・97・136 行）を書き落としていた。attacks も b1037bc の変更のあと実行していなかった）は、送る前に check するように直したが、今回は実行していない。
+
+### 13.9 U7 の総合検証の先行の実行（G0・G1。2026-11-08）
+
+エンジンの計画（`docs/u7-integration-verification-plan.md`。エンジンのブランチ `claude/u7-integration-plan`）の G0・G1 を、作業場所 `kyuura-engine-gui-wt-u75fg`（`b1037bc`・変更なし）で実行した記録。13.8 の「前回」「今回」とは別の実行で、数を足さない。全体の記録はエンジンの `docs/u7-integration-verification-e0-g1.md`。
+
+- G0: `b1037bc`・変更なし。`server/.venv` の kyuura-engine は Git の URL からの通常のインストール（`commit_id` `e26df79…`・0.172.0・編集可能でない・`module` は作業場所の `.venv` の下）。renderer は lockfile の `resolved` が `af88231…`（package 0.1.0）。Playwright 1.65.0・Edge 157。8765・8766・5173・5174・4173 の待ち受けなし
+- G1 の対象（実際の呼び出し先で確かめた。b1037bc の送る前の check の変更のあと実行していなかったもの）: `turn-basics.spec.ts` 2・`u75e.spec.ts` 3・`u75.spec.ts` 6・`attacks.spec.ts` 3（計 14 件）。1 ファイルずつ、`npx playwright test <ファイル> --reporter=list,junit`（`PLAYWRIGHT_JUNIT_OUTPUT_NAME` で JUnit）
+
+| 実行 | ファイル | 結果 | 数え方 |
+|---|---|---|---|
+| 1 回目 | 4 つのファイル名が 1 つの絞り込みとして渡った（実行の道具の引数の誤り） | テスト 0 件・終了コード 1 | 数えない |
+| 2 回目 | `turn-basics.spec.ts` | 2 件成功・終了コード 0 | 数える |
+| 2 回目 | `u75e.spec.ts` | 3 件成功・終了コード 0 | 数える |
+| 2 回目 | `u75.spec.ts` | 中断（6 件のうち 5 件が ✓ のところで、実行の環境がメモリ不足で止めた。JUnit・終了コードなし） | 数えない |
+| 2 回目 | `attacks.spec.ts` | 始めていない | 未実行 |
+
+- 止まったあと、8766・5174 の待ち受けと、接続層・Playwright のプロセスは残っていない（止めたものはない）。重い実行は自動で再開していない
+- 今回の接続層であることの確かめ: 接続層の待ち受けのコマンド行は相対の `..\server\.venv\Scripts\python.exe` で作業場所の場所を含まないので、祖先が今回起動した npx であることで確かめた
+- 残り: `u75.spec.ts`・`attacks.spec.ts`（G1）と G2 以降（残りの e2e・接続層・単体・preview・クリーンな場所）は未実行
