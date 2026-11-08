@@ -9,6 +9,8 @@ const serverPort = process.env.KYUURA_E2E_SERVER_PORT ?? "8766";
 // プリセットの 1・2 番目のデッキと e2e の選び方で: 補償 1 回 → 番 1 にベンチ・エネルギー → 番 3 に進化・にげる（エンジン 0.165.0・b4e62d9 で確かめ、
 // 0.166.0・9506d63 でも同じ）。U7-4: 番 1 にジャブ → 番 3 にジャブできぜつ → サイド → 終局、ファイヤーのデッキ 対 プリセットの 1 番目で
 // 番 3 にドライアップ → 対象の決定 → 受理のあと停止（0.166.0・9506d63 で確かめた。attacks.spec.ts・server/tests/test_attacks.py）
+// 0.170.0・0885d66 でも同じ（プリセットの番 1 に play_trainer の候補が加わる）。U7-5 の e2e（u75.spec.ts）は検証用の固定例から始め、固定例が自分の
+// デッキと seed を持つ（server/kyuura_gui_server/scenarios.py。この seed は使わない）
 export const E2E_FIXED_SEED = "21";
 const webPort = process.env.KYUURA_E2E_WEB_PORT ?? "5174";
 const python = process.platform === "win32" ? join("..", "server", ".venv", "Scripts", "python.exe") : join("..", "server", ".venv", "bin", "python");

@@ -1,22 +1,25 @@
-# エンジンの契約と GUI の対応（kyuura-engine v0.166.0・U7-4）
+# エンジンの契約と GUI の対応（kyuura-engine v0.170.0・U7-5a〜d）
 
 GUI が使うエンジンの公開の境界と、その確かめ方・更新の方法の記録です。推測でなく、固定コミットの文書・コードと実際の応答で確かめた内容だけを書きます。
 
 ## 0. 固定と導入
 
-- 版 0.166.0、導入する完全なコミット `9506d6305e90ec262fbe77740d9aa57f04b980b6`（公開ブランチ `claude/u7-4-attacks` の「版を 0.166.0 にする」。通常のインストールとワザの宣言を確かめたコミット。Git の URL からの通常のインストール。`server/requirements.txt`）。文書だけが違う後続のコミット・エンジンの main へは自動で変えない。renderer の固定（`af88231`）は変えていない
-- `b4e62d9`（0.165.0）から `9506d63` までの差分: `kyuura_engine/legal_actions.py`（U7-4 のワザの候補・入力・検査）・`resolution/flow.py`（ワザの宣言の前の確かめを `check_use_attack` に分けた。処理は同じ）・版の番号・文書・テスト。同梱のカードデータ（`kyuura_engine/data`）は変わっていない（バイト列も同じ）。契約の識別・形式の版は同じで、応答は加える方向だけ（10 章）
+- 版 0.170.0、導入する完全なコミット `0885d664913bc8e57279ed9e44ac51cc97d5a6bf`（公開ブランチ `claude/u7-5d-stadium` の「版を 0.170.0 にする」。U7-5a〜d を含む。Git の URL からの通常のインストール。`server/requirements.txt`）。文書だけが違う後続のコミット・後続の特殊能力（U7-5e 以降）・エンジンの main へは自動で変えない。renderer の固定（`af88231`）は変えていない
+- `9506d63`（0.166.0）から `0885d66` までの差分: `kyuura_engine/legal_actions.py`（U7-5a〜d の候補・入力・検査）・`engine.py`（場の 3 操作・トレーナー・スタジアムの受け付ける前の確かめを `check_*` の関数に分けた。処理は同じ）・`effects.py`（スタジアムの型に選ばせるものの宣言 `energy_choice` を加えた。挙動は同じ）・版の番号・文書・テスト。`client_api.py` は変わっていない。同梱のカードデータ（`kyuura_engine/data`）は変わっていない（コミットの blob は同じ。導入物の改行は 8.2）。契約の識別・形式の版は同じで、応答は加える方向だけ（11 章）
+- 以前の固定: 0.166.0（`9506d6305e90ec262fbe77740d9aa57f04b980b6`。U7-4）
+- `b4e62d9`（0.165.0）から `9506d63` までの差分: `kyuura_engine/legal_actions.py`（U7-4 のワザの候補・入力・検査）・`resolution/flow.py`（ワザの宣言の前の確かめを `check_use_attack` に分けた。処理は同じ）・版の番号・文書・テスト。同梱のカードデータ（`kyuura_engine/data`）は変わっていない（コミットの blob のバイト列も同じ）。契約の識別・形式の版は同じで、応答は加える方向だけ（10 章）
 - `ffcc5ca`（0.164.0）から `b4e62d9` までの差分: `kyuura_engine/legal_actions.py`（U7-3 の候補・入力・検査）・`engine.py`（コマンドの処理の前半を `check_*` の関数に分けた）・版の番号・文書・テスト。同梱のカードデータの内容は同じ（正規化した JSON の sha256 が同じ）。契約の識別・形式の版（`kyuura-client-api`・1、`kyuura_legal_actions_format` 1、`kyuura_diagnostic_schema` 1）は同じで、応答は加える方向だけ（9 章）
 - 契約の確かめ（1〜5 章）は `d0c5cfa` で行った。`d0c5cfa` から `ffcc5ca` までの差分は配布の設定（`pyproject.toml`・`MANIFEST.in`）・文書・配布物の確かめの道具とテストだけで、`kyuura_engine/` の中身は変わっていない。API の契約は変わっていないものとして扱い、接続層のテスト・ブラウザの接続確認を `ffcc5ca` の通常のインストールで通した
 - 導入元は `direct_url.json` の `vcs_info.commit_id` で確かめる（`kyuura_gui_server/engine_source.py`）。site-packages で `git rev-parse` をしない（GUI 自身の HEAD を返しうる）
 
-## 1. 参照した資料（1〜5 章は固定コミット d0c5cfa で確かめ、b4e62d9・9506d63 で変わっていないことを確かめた。U7-3 は 9 章、U7-4 は 10 章）
+## 1. 参照した資料（1〜5 章は固定コミット d0c5cfa で確かめ、b4e62d9・9506d63・0885d66 で変わっていないことを確かめた。U7-3 は 9 章、U7-4 は 10 章、U7-5 は 11 章）
 
 - `docs/client-api-v0.164.md`（入口・要求と応答・更新・導入）
 - `docs/legal-actions-u7-1.md`（決定への回答・番を終える・取っ手・処理可能性・coverage）
 - `docs/legal-actions-u7-2.md`（初期配置・補償・ジャンケン・延長戦・ホストの入口）
 - `docs/legal-actions-u7-3.md`（番の基本の操作 4 種類。b4e62d9）
 - `docs/legal-actions-u7-4.md`（ワザの宣言。9506d63）・`docs/client-api-v0.164.md` の v0.166 の追記・`resolution/flow.py` の `check_use_attack`
+- `docs/legal-actions-u7-5ab.md`（場の 3 操作）・`docs/legal-actions-u7-5c.md`（手札のトレーナー）・`docs/legal-actions-u7-5d.md`（場のスタジアムと GUI への引き継ぎ。0885d66）・`legal_actions.py` の `_board_candidates`・`_trainer_candidate`・`_stadium_candidate`・`_pokemon_option`・`_card_option`
 - `kyuura_engine/client_api.py`・`legal_actions.py`・`diagnostics.py`・`observation.py`・`examples/headless_client.py`・`tests/test_client_api.py`
 - 実際の応答（接続層のテストと e2e が固定版のエンジンで確かめる）
 
@@ -70,7 +73,7 @@ GUI が使うエンジンの公開の境界と、その確かめ方・更新の�
 
 ## 7. 次の操作の種類への対応（U7-5 など）
 
-新しい操作の種類（トレーナー・パワーなど）が candidates に出るようになったら（U7-4 のワザはこの手順で 10 章のとおり加えた）:
+新しい操作の種類（特殊能力など）が candidates に出るようになったら（U7-4 のワザは 10 章、U7-5a〜d の 5 種類は 11 章のとおり、この手順で加えた）:
 
 1. エンジンの文書で、種類・入力の段・`choices_format`・処理可能性・保証を確かめる（推測しない）
 2. `contract/kyuura-client-api-v1.json` の `implemented_kinds`・`gui_operable_kinds`・`main_kinds`・`turn_kinds_not_covered`・`stage_keys` を直す（Python のテストが照らす）。入力の画面を作るまで `gui_operable_kinds` に加えない（候補は表示だけで選べない）
@@ -101,6 +104,7 @@ renderer は公開の入口（`dist-lib/lib/index.js`）の export だけを使�
 - カード ID の形: `^[A-Za-z0-9][A-Za-z0-9_.-]{0,31}$`。形の違う記録・同じ ID の記録は表に入れず `omitted` に数える
 - 対戦に依存しない全体の表（対戦の状態・デッキリストを読まない。対戦で使うカードだけの表を作らない）。プロセスの中で 1 回だけ作る（`lru_cache(maxsize=1)`）
 - 同梱データを読めない・形式が違うときは `GUI_CARD_DATA_UNAVAILABLE`（503・決まった文）
+- 0.170.0 の確かめ: エンジンのリポジトリの blob（`kyuura_engine/data/kyuura_cards.json`）は 9506d63 と 0885d66 でバイト列も同じ。この端末で入れた 0.170.0 の導入物は、Git の改行の変換（システムの `core.autocrlf=true`。pip がコミットを取り出して配布物を作る）で CRLF になり、導入物のバイト列の sha256 は 0.166.0 の導入物と違った。`sha256`（canonical-json 1。読んだ JSON から作る）は同じ値（`b82354d6…`・1374 件）。改行の違いは JSON の値の違いではないので、識別を読み替えたのではない（値・記録・並びの違いは別の値になる）
 
 ### 8.3 表示の境界
 
@@ -220,3 +224,54 @@ renderer の `renderToCanvas` は、同じ Canvas では最後に始めた要求
 ### 10.5 検証用の固定例の互換性（0.166.0）
 
 `server/tools/scenario_views.py --full` を 0.165.0（`b4e62d9`）と 0.166.0（`9506d63`）の環境で実行し、応答の全体を項目ごとに比べた。3 つの時点の全入口の view は同じ（`views_sha256` も同じ）。candidates の違いは `coverage.implemented_kinds` に `use_attack` が加わったことだけで、追加されたワザの候補はどの時点にもない（どれも番の中ではない）。ほかの違いはない。記録し直さず、固定例の JSON の `compatibility` に確かめた結果（`candidates_difference` に、ワザの候補による差とそれ以外の差を分けて）を追記した。記録のエンジン（`ffcc5ca`）は書き換えていない。
+
+## 11. U7-5a〜d（場の 3 操作・手札のトレーナー・場のスタジアム。0885d66 の実応答で確かめた）
+
+確かめ方: エンジンの `docs/legal-actions-u7-5ab.md`・`u7-5c.md`・`u7-5d.md` と `kyuura_engine/legal_actions.py`（0885d66。読むだけ）と、固定例から進めた実際の応答（接続層のテスト `server/tests/test_u7_5.py`・e2e `web/e2e/u75.spec.ts`）。報告だけを前提にしていない。契約の識別・形式の版は同じ（`kyuura-client-api`・1、`kyuura_legal_actions_format` 1、`kyuura_diagnostic_schema` 1）。
+
+### 11.1 候補と coverage
+
+- 種類: `remove_disguise`・`discard_from_play`・`reveal_face_down`（U7-5a・b）、`play_trainer`（U7-5c）、`use_stadium`（U7-5d）。`implemented_kinds` は 18 種類（`use_attack` のあとに場の 3 操作・`play_trainer`・`use_stadium`、最後にホストの 2 種類。エンジンの並び）。候補の並びは `MAIN_KINDS` の順
+- 番の `scope_kinds` は `MAIN_KINDS` の 13 種類のまま、`not_covered_kinds` は `use_power`・`check_face_up_deck` の 2 種類。番の候補は `partial`。プリセットのデッキ（seed 21）の番 1 にも `play_trainer` の候補が出る（0.166.0 までは対応しない種類。接続層のテストの期待を直した意図した差）
+- 処理可能性: トレーナー・スタジアムは `supported` にならない（`may_stop_later`。理由 `preflight_not_evaluated`・`continuation_not_evaluated`）。使うための条件を前もって呼ばないトレーナーは `unverified`（理由 `use_condition_not_evaluated`。契約の `reason_codes` に加えた）。場の操作は `remove_disguise`・`reveal_face_down` が `may_stop_later`、`discard_from_play` は U7-3 と同じ条件で `supported` のことがある
+- 入力の公開: 5 種類とも `confirmed`。選ばせるもののない `use_stadium` は `no_input`（`input_stages: []`・`choices_format: "[]"`）
+
+### 11.2 入力の形（加わった項目）
+
+| 項目 | 形（実応答） | GUI の扱い |
+|---|---|---|
+| 段の `role` | `disguised`・`discard`・`face_down`（`meaning: pokemon`）、`trainer`・`energy`（`meaning: card`）。どれも 1 段・`count` 1〜1・`order: not_applicable` | `stage_roles` の表と同じ並びでなければ止める。`discard`・`energy` は U7-3 のにげる・エネルギーをつけるも使う（`stage_roles_shared`）。ほかの U7-5 の role がほかの種類に来たら止める。段のない応答は `use_stadium` だけ（`stage_roles_or_empty`） |
+| 場のポケモンの選べるもの | `pokemon`・`card`・`zone`・`bench_index`（ベンチ）・`card_id`（おもて）または `face_down: true`（うら。カード ID なし） | `board_option_keys` の外は止める。うらにカード ID、おもてにカード ID なしは止める。うらは裏面と場所だけを表示 |
+| トレーナーの選べるもの | `card`・`card_id`（本人の手札。`special` はエネルギーだけで、トレーナーにはない） | `trainer_option_keys` の外は止める |
+| スタジアムのエネルギー | `card`・`card_id`（ついているエネルギーカード。公開）・`holder`（ついている本人の場のポケモン。場のポケモンの形） | `holder` は必須。`holder_keys` の外・うらの holder のカード ID は止める。エネルギーとついているポケモンを並べて表示 |
+| 候補の `stadium` | `card`・`card_id`・`owner`（場のスタジアム。公開） | `use_stadium` の候補だけ（ほかの種類に来たら止める）。持ち主（出したプレイヤー）と使う主体（番のプレイヤー）を分けて表示。`state_not_supported` の候補にはない（任意の項目） |
+| 観測のうらのカード | 相手・観戦者: `pokemon_id`・`face_down`・ダメージ・ついているカードなど。持ち主: さらに `real`（`card`・`card_id`・`name_ja`。本人の知識） | `real` は持ち主の観測だけで受け付け、ほかの閲覧者の観測に来たら止める。うらの枠の外のカード ID・名前も止める。持ち主の画面には文字だけで示す（表の画像は描かない） |
+
+選べるものの番号（`o1` など）・`choices` の形は U7-1〜U7-4 と同じ。カード名・画像から送る値を作らない。
+
+### 11.3 確かめた挙動（固定例から、通常の操作の列）
+
+固定例（`server/tools/build_u7_5_scenarios.py` が導入済みのエンジンの公開の入口だけで作る）。「new_game」の 5 つは `ClientHub.start` に固定のデッキと seed を渡すだけで、準備（初期配置は最初の選べるもの・補償は最大・ジャンケンはプレイヤー0）から先は client_api だけで進める。
+
+- ラッキースタジアム（エンジンのテストの LUCKY_DECK 対 CONNECT_DECK・seed 1）: `play_trainer`（`role: trainer`・check 有効）→ 受理（`in_progress`・`next` はプレイヤー0の番）→ `use_stadium`（`stadium.owner` 0・`no_input`）。`choices: ["o1"]` は `CANDIDATE_INPUT_INVALID`、`[]` は check 有効 → 受理 → 同じ番の `use_stadium` の候補はない。観測の `stadium` は全員に公開
+- ヤマブキシティジム（ナツメのケーシィ 4・ヤマブキシティジム 4・超エネルギー 52 対 CONNECT_DECK・seed 1）: エネルギーをつける → `play_trainer` → `use_stadium`（`role: energy`・選べるもの 1 つ・`holder` はバトル場のナツメのケーシィ）→ 受理 → 観測で手札が 1 枚増え、バトル場のエネルギーが 0
+- マチスの秘策（CONNECT_DECK の炎エネルギー 4 枚を PMCG5-093 にしたデッキ・seed 1）: `play_trainer` → 受理（`awaiting_decision`・`next` は本人の `answer_decision`）。相手は `waiting_for_player`。決定 `secret_plan_card`（0〜1・辞退できる）でヒトカゲを選ぶ → 相手・観戦者の観測のベンチは `face_down` でカード ID・名前なし（持ち主の観測には `real`）→ `reveal_face_down`（`face_down: true`・カード ID なし・`face_down_reveal_not_evaluated`）→ 受理 → 相手・観戦者に公開の更新が届き、観測でヒトカゲが公開される。たねでないカードをうらにした場合（別の seed）にトラッシュされることは、上限を決めた探索の一時的なスクリプトで見ただけ（テスト・e2e にはしていない）
+- ピッピ人形（エンジンのテストの DOLL_DECK 同士・seed 1）: `play_trainer` → ベンチ → `discard_from_play`（`role: discard`・`supported`）→ 受理 → ベンチが空
+- 錯乱ジム（エンジンのテストの CHAOS_DECK 対 たねポケモン 1 枚と炎エネルギー 59 枚・seed 1・補償 1 回）: 錯乱ジムを出す → 交換おじさん → コイン「うら」で受理（`awaiting_decision`・`next` はプレイヤー1の `answer_decision`）。使った側は `waiting_for_player`。相手の決定 `accept_request`（`count` 0〜1・`decline: true`・選べるもの `o1`）。`["o1"]`（使う）は check 有効だが submit は `rejected`（`NO_POKEMON_CARD_IN_HAND`・区分 `invalid_input`・`refetch_required: false`）。使ったプレイヤー・観戦者への更新は 0 件。同じ取っ手で `[]`（使わない）は受理 → プレイヤー0の番
+- 「ばける」（タケシのロコン・キュウコン・ヒトカゲ・リザード各 4 と炎エネルギー 44 対 CONNECT_DECK・seed 10・9 コマンドの再生。「ばける」は特殊能力で GUI の対象外なのでホストの側で送った）: `remove_disguise`（`role: disguised`・タケシのキュウコン）→ 受理 → のせたリザードがトラッシュ
+- 取っ手: エンジンは `candidates` を取るたびに新しい `revision` を返す。拒否では取っ手は失効しない（同じ取っ手で辞退できた）が、GUI は送信のあとに観測と候補を取り直すので、画面では選び直す（古い取っ手を使い続けない）
+
+### 11.4 実エンジンで通していない範囲（模擬の単体テストだけ）
+
+形はエンジンの文書の JSON の例と `legal_actions.py` から作った（`web/src/test/u75.ts` の区分）。同じ形を運べることを、実際の場面で画面が正しく動くことと同じには扱わない。
+
+- `unverified` のトレーナー（PT-5e の 5 つ）と、未登録のトレーナー（`not_implemented`）
+- 本人のうらのカードをすてる FD1（`eligible: false`・`unresolved_ruling`）・`leave_lock` による拒否
+- うらのポケモンについているエネルギー（`holder` の `face_down`）・相手が出したスタジアムを番のプレイヤーが使う場面・タマムシシティジム・コインのあとの決定のあるスタジアム（セキチクシティジム・エネルギースタジアム・キョウの忍者ジム・ラジオとう）・知らない選ばせるものの宣言（`unconfirmed`）
+- ［ちえくらべ］（相手の `REACTION_POWER`）・MG1・リムーブ禁止ジムの追加の条件・サイキックコントロール・どうぐ・なにかの化石・番を終えるトレーナー・対象を選ぶトレーナー
+- おもてにしてトラッシュ・すててバトル場が空く場面の `promote_active`（U7-1 の既存の候補。実エンジンでは U7-1 の固定例で確かめた）
+- エンジンの `rejected` のうち錯乱ジム以外（ばけるの解除の MH1・TK1、トレーナーの先読みの拒否など）
+
+### 11.5 検証用の固定例の互換性（0.170.0）
+
+`server/tools/scenario_views.py --full` を 0.166.0（`9506d63`）と 0.170.0（`0885d66`）の環境で実行し、応答の全体を項目ごとに比べた。既存の 3 つの時点の全入口の view は同じ（`views_sha256` も同じ）。candidates の違いは `coverage.implemented_kinds` に U7-5 の 5 種類が加わったことだけで、U7-5 の候補はどの時点にもない（番の中でトレーナー・スタジアム・場の 3 操作の対象がない）。記録し直さず、`compatibility` に確かめた結果（`candidates_difference` に U7-5 の候補による差とそれ以外の差を分けて）を追記した。記録のエンジン（`ffcc5ca`）は書き換えていない。U7-5 の 6 つの固定例は 0885d66 で作り、記録のエンジンは `0885d66`。
