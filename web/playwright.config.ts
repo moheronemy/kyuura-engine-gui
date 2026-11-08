@@ -12,6 +12,7 @@ const serverPort = process.env.KYUURA_E2E_SERVER_PORT ?? "8766";
 // 0.170.0・0885d66 でも同じ（プリセットの番 1 に play_trainer の候補が加わる）。U7-5 の e2e（u75.spec.ts）は検証用の固定例から始め、固定例が自分の
 // デッキと seed を持つ（server/kyuura_gui_server/scenarios.py。この seed は使わない）
 // 0.171.0・74c8e1f でも同じ。U7-5e の e2e（u75e.spec.ts）も固定例から始める
+// 0.172.0・e26df79 でも同じ。U7-5f・g の e2e（u75fg.spec.ts）も固定例から始める
 export const E2E_FIXED_SEED = "21";
 const webPort = process.env.KYUURA_E2E_WEB_PORT ?? "5174";
 const python = process.platform === "win32" ? join("..", "server", ".venv", "Scripts", "python.exe") : join("..", "server", ".venv", "bin", "python");
