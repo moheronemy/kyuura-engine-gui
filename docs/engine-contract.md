@@ -472,9 +472,10 @@ renderer の `renderToCanvas` は、同じ Canvas では最後に始めた要求
 | G2 | 作業場所 `kyuura-engine-gui-wt-u75fg` | tsc・`npm run build` 終了コード 0。vitest 18 ファイル 227 件・pytest 10 ファイル 113 件・失敗 0。e2e `local-flow` 5・`card-images` 4・`u75fg` 4 の 13 件・失敗 0 |
 | G3 | 同（G2 のビルド） | `KYUURA_E2E_PREVIEW=1`（`npx vite preview`）で `card-images` 4・`u75fg` 4 の 8 件・失敗 0 |
 | G4 | クリーンな場所（新しい clone を `b1037bc` に detach。新しい npm のキャッシュ・pip のキャッシュなし・空の PYTHONPATH・ssh なしで `npm run setup`） | 接続層の kyuura-engine は Git の URL からの通常のインストール（`e26df79…`・0.172.0・編集可能でない）。tsc・build 0、vitest 227 件・pytest 113 件、e2e 7 ファイル 27 件・preview 8 件・失敗 0 |
-| G5 | 両方の場所（読むだけ） | package.json・lockfile の `resolved` は `af88231…`・version 0.1.0。入れた renderer の package.json・README.md は renderer の `af88231` の木と同じ sha256。`dist-lib/` の 75 ファイル（入れるときに作るもの）は 2 つの場所で同じ |
+| G5 | 両方の場所（読むだけ） | package.json・lockfile の `resolved` は `af88231…`・version 0.1.0。入れた renderer の package.json・README.md は renderer の `af88231` の木と同じ sha256。`dist-lib/` の 75 ファイル（入れるときに作るもの）は 2 つの場所で同じ。2026-11-08 に読み取りだけで確かめ直した（下の G5 の確かめ直し） |
 
 - e2e の選択: JUnit の件数がファイルの件数と同じことで確かめた。接続層（`..\server\.venv\Scripts\python.exe -m kyuura_gui_server --port 8766 --test-fixed-seed 21`）と Vite は、各実行で起動した npx の子孫として記録した
 - 待ち受けの観測の訂正: この環境では `Get-NetTCPConnection` が待ち受けを示さず、netstat の `LISTENING` は生きている待ち受けでも pid 0 で、止めたプロセスの残り（接続を拒否する）も出る。13.9・13.9.1 の「待ち受けなし」は弱い根拠だった（プロセスの確かめは別で有効）。G2 の 2 ファイル目からは、8765・8766・5173・5174・4173 に直接 TCP でつなげるかで決めた。始める前と終わったあと、どこにもつながらなかった
 - 事故: G4 の `u75.spec.ts`・`u75e.spec.ts` の後始末で、検証の道具（ParentProcessId をたどって子孫を集め、残りを `taskkill /T /F` で止めていた）が、pid の再利用で今回の実行でないプロセスを子孫と誤って数え、181 件に `taskkill /T /F` を要求した（今回の実行の過程は 0 件）。あとの確かめで 53 件（常駐のアプリ・デスクトップの部品など）がいなかったが、止められたのか自分で終わったのかは区別できない（2026-11-08 に訂正: 以前は「53 件を止めた」と書いていた）。テストの結果とは別。道具は直したが、直したあとは実行していない（エンジンの文書の 6.6 節）
+- G5 の確かめ直し（2026-11-08。ファイルと git の読み取りだけ。インストール・テストの再実行なし）: 2 つの場所の `web/package.json`・`web/package-lock.json` は `b1037bc` の木と同じ sha256。入れた renderer は 77 ファイル（package.json・README.md・`dist-lib/` 75）で、道の一覧と sha256 は 2 つの場所で全部同じ。`dist-lib/` は renderer の `af88231` の木になく（`.gitignore` にあり、`prepare` が `build:lib`）、クリーンな場所では G4 の準備のあいだ（18:39:27）に作られた。75 の内訳は、木の素材と同じバイトの画像 51 と、ビルドで作る `.js`・`.d.ts` 24（CRLF・絶対パス・source map の参照なし）。フォント `@fontsource/noto-sans-jp` 5.3.1 の 2,319 ファイルも 2 つの場所で同じ。詳細はエンジンの文書の 6.4 節
 - 終わったあと: 作業場所とクリーンな場所の指紋は E0 と同じ・変更なし。利用者の作業場所の未コミットの 13 件は E0 の記録と同じ
