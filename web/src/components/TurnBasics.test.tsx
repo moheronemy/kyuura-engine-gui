@@ -259,12 +259,12 @@ describe("候補と coverage（U7-3）", () => {
   it("候補の番号・並びでなく kind で表示し、GUI が入力の画面を持たない種類は選べない", async () => {
     const onSelect = vi.fn();
     const list = [
-      cand("use_power", "may_stop_later", { id: "c1" }), // 将来の種類（この GUI に入力の画面がない。U7-5e）
+      cand("check_face_up_deck", "may_stop_later", { id: "c1" }), // 将来の種類（この GUI に入力の画面がない。U7-5f）
       cand("retreat", "supported", { id: "c9", reasons: ["reactions_not_evaluated"] }),
     ];
     render(<CandidatesPanel legal={legal(list)} selectedId={null} disabled={false} onSelect={onSelect} />);
     const items = screen.getAllByRole("listitem").filter((li) => li.closest(".candidate-list"));
-    const attack = items.find((li) => li.textContent?.includes("ポケモンパワーを使う"))!;
+    const attack = items.find((li) => li.textContent?.includes("表向きの山札のカードを確かめる"))!;
     expect(within(attack).queryByRole("button", { name: "この操作を選ぶ" })).toBeNull();
     expect(attack).toHaveTextContent("入力の画面を持っていません");
     const retreat = items.find((li) => li.textContent?.includes("にげる"))!;

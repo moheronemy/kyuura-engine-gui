@@ -223,7 +223,7 @@ describe("場のポケモン 1 匹を指す操作（remove_disguise・discard_fr
   it("「ばける」の解除は、エンジンが返した場のポケモンを選ぶ", async () => {
     const { user, onCheck } = setup(BOARD("remove_disguise"), DISGUISE_STAGES);
     expect(screen.getByRole("group")).toHaveTextContent("「ばける」でカードをのせている自分の場のポケモン");
-    await user.click(screen.getByRole("radio", { name: /タケシのキュウコン PMCG5-019（バトル場）/ }));
+    await user.click(screen.getByRole("radio", { name: /タケシのキュウコン PMCG5-019（自分のバトル場）/ }));
     await user.click(screen.getByRole("button", { name: "入力を検査" }));
     expect(onCheck).toHaveBeenCalledWith(["o1"]);
   });
