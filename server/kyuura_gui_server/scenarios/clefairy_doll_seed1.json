@@ -131,5 +131,18 @@
  "seed": 1,
  "views_sha256": {
   "clefairy_doll": "2bdf67995f295627d5146586656069c40b97ab068b62057931a2dfc40b53c2ea"
- }
+ },
+ "compatibility": [
+  {
+   "engine_commit": "74c8e1f8ca03d017d5c0a8a79e6fdaa33d25b7f8",
+   "engine_version": "0.171.0",
+   "checked": "2026-11-08",
+   "result": "操作の列・到達点は同じ（ここの追記だけ。記録は作り直していない）",
+   "method": "server/tools/scenario_views.py の --full を 0.170.0（0885d66）と 0.171.0（74c8e1f）の環境で実行し、応答の全体を項目ごとに比べた。各時点の全入口（プレイヤー0・1・観戦者・ホスト）の view は同じ（views_sha256 も同じ）",
+   "candidates_difference": {
+    "added_power_candidates": "なし（どの時点にも use_power の候補は出ない）",
+    "other": "coverage.implemented_kinds に use_power が加わった（種類の追加）。ほかの項目の違いはない"
+   }
+  }
+ ]
 }
