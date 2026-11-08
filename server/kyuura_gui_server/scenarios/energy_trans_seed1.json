@@ -1,0 +1,211 @@
+{
+ "source": "フシギダネ・フシギソウ・フシギバナ各 4 と草エネルギー 48 対 RC_DECK（GUI の側のデッキ。seed 1 は GUI の事前に上限を決めた探索）。準備・ベンチ・進化・エネルギー・番を終えるを U7 の候補で送った列（GUI の画面でもできる操作だけ）",
+ "engine_commit": "74c8e1f8ca03d017d5c0a8a79e6fdaa33d25b7f8",
+ "engine_version": "0.171.0",
+ "decks": [
+  [
+   "PMCG1-001",
+   "PMCG1-001",
+   "PMCG1-001",
+   "PMCG1-001",
+   "PMCG1-008",
+   "PMCG1-008",
+   "PMCG1-008",
+   "PMCG1-008",
+   "PMCG1-011",
+   "PMCG1-011",
+   "PMCG1-011",
+   "PMCG1-011",
+   "PMCG1-097",
+   "PMCG1-097",
+   "PMCG1-097",
+   "PMCG1-097",
+   "PMCG1-097",
+   "PMCG1-097",
+   "PMCG1-097",
+   "PMCG1-097",
+   "PMCG1-097",
+   "PMCG1-097",
+   "PMCG1-097",
+   "PMCG1-097",
+   "PMCG1-097",
+   "PMCG1-097",
+   "PMCG1-097",
+   "PMCG1-097",
+   "PMCG1-097",
+   "PMCG1-097",
+   "PMCG1-097",
+   "PMCG1-097",
+   "PMCG1-097",
+   "PMCG1-097",
+   "PMCG1-097",
+   "PMCG1-097",
+   "PMCG1-097",
+   "PMCG1-097",
+   "PMCG1-097",
+   "PMCG1-097",
+   "PMCG1-097",
+   "PMCG1-097",
+   "PMCG1-097",
+   "PMCG1-097",
+   "PMCG1-097",
+   "PMCG1-097",
+   "PMCG1-097",
+   "PMCG1-097",
+   "PMCG1-097",
+   "PMCG1-097",
+   "PMCG1-097",
+   "PMCG1-097",
+   "PMCG1-097",
+   "PMCG1-097",
+   "PMCG1-097",
+   "PMCG1-097",
+   "PMCG1-097",
+   "PMCG1-097",
+   "PMCG1-097",
+   "PMCG1-097"
+  ],
+  [
+   "PMCG4-012",
+   "PMCG4-012",
+   "PMCG4-012",
+   "PMCG4-012",
+   "PMCG1-060",
+   "PMCG1-060",
+   "PMCG1-060",
+   "PMCG1-060",
+   "PMCG1-016",
+   "PMCG1-016",
+   "PMCG1-016",
+   "PMCG1-016",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098"
+  ]
+ ],
+ "seed": 1,
+ "commands": [
+  {
+   "type": "place_starting_pokemon",
+   "player": 0,
+   "active": 2,
+   "bench": []
+  },
+  {
+   "type": "place_starting_pokemon",
+   "player": 1,
+   "active": 67,
+   "bench": []
+  },
+  {
+   "type": "report_janken_result",
+   "winner": 0
+  },
+  {
+   "type": "attach_energy",
+   "player": 0,
+   "energy": 26,
+   "target": 2
+  },
+  {
+   "type": "end_turn",
+   "player": 0
+  },
+  {
+   "type": "end_turn",
+   "player": 1
+  },
+  {
+   "type": "play_basic_to_bench",
+   "player": 0,
+   "card": 3
+  },
+  {
+   "type": "evolve_pokemon",
+   "player": 0,
+   "card": 5,
+   "target": 1
+  },
+  {
+   "type": "attach_energy",
+   "player": 0,
+   "energy": 59,
+   "target": 5
+  },
+  {
+   "type": "end_turn",
+   "player": 0
+  },
+  {
+   "type": "end_turn",
+   "player": 1
+  },
+  {
+   "type": "evolve_pokemon",
+   "player": 0,
+   "card": 9,
+   "target": 1
+  },
+  {
+   "type": "attach_energy",
+   "player": 0,
+   "energy": 23,
+   "target": 9
+  }
+ ],
+ "points": {
+  "energy_trans": {
+   "commands": 13,
+   "phase": "main",
+   "decision_kind": null
+  }
+ },
+ "views_sha256": {
+  "energy_trans": "34c0daf93b9b2d5badb2d2ef31071bf668944add7834d84b32adabd39d1d02cb"
+ }
+}

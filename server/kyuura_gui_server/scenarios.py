@@ -17,6 +17,9 @@ U7-5 の固定例（``tools/build_u7_5_scenarios.py``。導入済みのエンジ
   （通常の合法な操作の列。seed を画面に返さないための入口）
 - 再生する 1 つ（「ばける」）: タケシのキュウコンの「ばける」は特殊能力（GUI の対象外）なので、ホストの側の準備として操作の列を再生する。
   再生のあとの「ばける」の解除は、ブラウザから client_api だけで送る
+
+U7-5e の固定例（``tools/build_u7_5e_scenarios.py``）: new_game から始める 2 つ（ロケット団のヒトカゲ・ダークユンゲラー）と、U7 の候補だけで送った
+合法な列を再生する 1 つ（エナジートランス。2 進化までの手数を減らすため。GUI の対象外の操作は含まない）
 """
 
 from __future__ import annotations
@@ -74,7 +77,14 @@ SCENARIOS: dict[str, dict[str, str]] = {
     "chaos_gym": {"label": "錯乱ジム（固定例・new_game）", "file": "chaos_gym_seed1.json", "point": "start",
                   "description": "錯乱ジム・ポケモン交換おじさんのデッキ 対 たねポケモン 1 枚のデッキ。準備から画面で進め、コインの結果のあとに相手が答える決定を確かめる。"},
     "disguise": {"label": "「ばける」の解除（固定例・再生）", "file": "disguise_seed10.json", "point": "disguise",
-                 "description": "プレイヤー 0 の番 3。タケシのキュウコンに「ばける」でリザードをのせた直後（特殊能力は GUI の対象外なので、ホストの側で再生した）。"},
+                 "description": "プレイヤー 0 の番 3。タケシのキュウコンに「ばける」でリザードをのせた直後（「ばける」の宣言はホストの側で再生した）。"},
+    # U7-5e（tools/build_u7_5e_scenarios.py。new_game から始める 2 つと、U7 の候補だけの列を再生する 1 つ）
+    "rocket_charmander": {"label": "ロケット団のヒトカゲ（固定例・new_game）", "file": "rocket_charmander_seed1.json", "point": "start",
+                          "description": "ロケット団のヒトカゲのデッキ同士で、準備から画面で進める。特殊能力［ほのおをもらう］（2 段: 元のポケモン → エネルギー。自分の番ごとに 1 回）。"},
+    "dark_kadabra": {"label": "ダークユンゲラー（固定例・new_game）", "file": "dark_kadabra_seed1.json", "point": "start",
+                     "description": "ケーシィ・ダークユンゲラーのデッキで、準備から画面で進める。特殊能力［ぶっしつこうかん］（入力なし。受理のあとに手札のカードを選ぶ決定。自分の番ごとに 1 回）。"},
+    "energy_trans": {"label": "エナジートランス（固定例・再生）", "file": "energy_trans_seed1.json", "point": "energy_trans",
+                     "description": "プレイヤー 0 の番 5。フシギバナに進化した直後（準備・ベンチ・進化・エネルギーの合法な列を再生した）。特殊能力［エナジートランス］（3 段: 元 → エネルギー → 先）。"},
 }
 
 
