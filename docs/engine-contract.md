@@ -420,7 +420,7 @@ renderer の `renderToCanvas` は、同じ Canvas では最後に始めた要求
 
 #### 今回（13.3.1 の訂正）
 
-作業場所（GUI の worktree `kyuura-engine-gui-wt-u75fg`。エンジン 0.172.0・`e26df79` の通常のインストールのまま）だけで、変更に関係する対象を各 1 回実行した。失敗はなく、失敗による再実行はない（実行のあとの import の整理で 1 ファイルと型検査だけをもう 1 回実行した。表の最後の行）。件数と終了コードは JUnit と終了コードの記録に残した。
+作業場所（GUI の worktree `kyuura-engine-gui-wt-u75fg`。エンジン 0.172.0・`e26df79` の通常のインストールのまま）だけで、変更に関係する対象を各 1 回実行した。失敗はなく、失敗による再実行はない（実行のあとの import の整理で 1 ファイルと型検査だけをもう 1 回実行した。表の最後の行）。件数と終了コードは JUnit と終了コードの記録に残した（2026-11-08 に補足: `web/playwright.config.ts` の reporter は `list` だけで、e2e の JUnit は実行のときのコマンド行の `--reporter=list,junit` と環境変数 `PLAYWRIGHT_JUNIT_OUTPUT_NAME` で出した。vitest は `--reporter=junit --outputFile.junit=…`、pytest は `--junitxml` をコマンド行で指定した。設定だけでは JUnit は出ない）。
 
 | 実行したもの | 結果 |
 |---|---|
@@ -431,4 +431,4 @@ renderer の `renderToCanvas` は、同じ Canvas では最後に始めた要求
 | e2e `u75fg.spec.ts` のカツラの 1 件（実ブラウザ・実エンジン・実 renderer。送信は check の前は無効・2 枚目を外す・選び直すたびに検査し直す・2 枚で受理） | 1 件成功・終了コード 0。Playwright が起動した接続層（8766）と Vite（5174）は終了後に残っていない |
 | 上のすべての実行のあと `checkGate.test.tsx` の import を 1 行にまとめた（中身は同じ）ので、そのファイルと型検査だけをもう 1 回 | 4 件成功・型検査とも終了コード 0 |
 
-実行していないもの: 接続層のテストの残り・単体テストの残り（カード画像・検証）・e2e の残り・preview・クリーンな場所での再構築・依存の更新の確かめ・エンジンの全体テスト。既存の e2e のうち attach_energy を check なしで送っていた `turn-basics.spec.ts`（3 か所）・`u75e.spec.ts`（1 か所）・`helpers.ts` の `attachToActive`（`u75.spec.ts`・`u75e.spec.ts` が使う）は、送る前に check するように直したが、今回は実行していない。
+実行していないもの: 接続層のテストの残り・単体テストの残り（カード画像・検証）・e2e の残り・preview・クリーンな場所での再構築・依存の更新の確かめ・エンジンの全体テスト。既存の e2e のうち attach_energy を check なしで送っていた `turn-basics.spec.ts`（3 か所）・`u75e.spec.ts`（1 か所）・`helpers.ts` の `attachToActive`（`attacks.spec.ts`・`u75.spec.ts`・`u75e.spec.ts` が使う。2026-11-08 に訂正: 当初は `attacks.spec.ts`（33・68・92・97・136 行）を書き落としていた。attacks も b1037bc の変更のあと実行していなかった）は、送る前に check するように直したが、今回は実行していない。
