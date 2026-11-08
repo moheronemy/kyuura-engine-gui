@@ -86,7 +86,7 @@ test("通常の new_game（seed 固定）から: ベンチに出す → エネ�
   const area = viewer(page);
   // coverage: 評価した種類・候補に出した種類・未対応を分ける（番は partial）
   await expect(area.getByLabel("評価して候補に出さなかった種類")).toContainText("進化させる");
-  await expect(area.getByLabel("未対応の操作")).toContainText("ポケモンパワーを使う"); // U7-4 でワザ（attacks.spec.ts）、U7-5 でトレーナー・スタジアム（u75.spec.ts）は評価する種類になった
+  await expect(area.getByLabel("未対応の操作")).toContainText("表向きの山札のカードを確かめる"); // U7-4 でワザ（attacks.spec.ts）、U7-5 でトレーナー・スタジアム（u75.spec.ts）は評価する種類になった
   await expect(area.getByLabel("未対応の操作")).not.toContainText("にげる");
   await expect(area.getByLabel("未対応の操作")).not.toContainText("ワザを使う");
 
