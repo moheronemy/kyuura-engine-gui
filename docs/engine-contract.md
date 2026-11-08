@@ -1,10 +1,12 @@
-# エンジンの契約と GUI の対応（kyuura-engine v0.170.0・U7-5a〜d）
+# エンジンの契約と GUI の対応（kyuura-engine v0.171.0・U7-5e）
 
 GUI が使うエンジンの公開の境界と、その確かめ方・更新の方法の記録です。推測でなく、固定コミットの文書・コードと実際の応答で確かめた内容だけを書きます。
 
 ## 0. 固定と導入
 
-- 版 0.170.0、導入する完全なコミット `0885d664913bc8e57279ed9e44ac51cc97d5a6bf`（公開ブランチ `claude/u7-5d-stadium` の「版を 0.170.0 にする」。U7-5a〜d を含む。Git の URL からの通常のインストール。`server/requirements.txt`）。文書だけが違う後続のコミット・後続の特殊能力（U7-5e 以降）・エンジンの main へは自動で変えない。renderer の固定（`af88231`）は変えていない
+- 版 0.171.0、導入する完全なコミット `74c8e1f8ca03d017d5c0a8a79e6fdaa33d25b7f8`（公開ブランチ `claude/u7-5e-power` の「版を 0.171.0 にする」。U7-5e を含む。Git の URL からの通常のインストール。`server/requirements.txt`）。文書だけが違う後続のコミット・後続の実装（U7-5f 以降）・エンジンの main へは自動で変えない。renderer の固定（`af88231`）は変えていない
+- `0885d66`（0.170.0）から `74c8e1f` までの差分: `kyuura_engine/legal_actions.py`（U7-5e の特殊能力の候補・宣言の段・依存する段の確かめ）・`engine.py`（特殊能力の宣言の前の確かめを `check_use_pokemon_power` に分けた。処理は同じ）・`effects.py`（型ごとの宣言の表 `POWER_INPUT_STAGES` などを加えた。挙動は同じ）・版の番号・文書・テスト。`client_api.py` と同梱のカードデータは変わっていない。契約の識別・形式の版は同じで、応答は加える方向だけ（12 章）
+- 以前の固定: 0.170.0（`0885d664913bc8e57279ed9e44ac51cc97d5a6bf`。U7-5a〜d。11 章）
 - `9506d63`（0.166.0）から `0885d66` までの差分: `kyuura_engine/legal_actions.py`（U7-5a〜d の候補・入力・検査）・`engine.py`（場の 3 操作・トレーナー・スタジアムの受け付ける前の確かめを `check_*` の関数に分けた。処理は同じ）・`effects.py`（スタジアムの型に選ばせるものの宣言 `energy_choice` を加えた。挙動は同じ）・版の番号・文書・テスト。`client_api.py` は変わっていない。同梱のカードデータ（`kyuura_engine/data`）は変わっていない（コミットの blob は同じ。導入物の改行は 8.2）。契約の識別・形式の版は同じで、応答は加える方向だけ（11 章）
 - 以前の固定: 0.166.0（`9506d6305e90ec262fbe77740d9aa57f04b980b6`。U7-4）
 - `b4e62d9`（0.165.0）から `9506d63` までの差分: `kyuura_engine/legal_actions.py`（U7-4 のワザの候補・入力・検査）・`resolution/flow.py`（ワザの宣言の前の確かめを `check_use_attack` に分けた。処理は同じ）・版の番号・文書・テスト。同梱のカードデータ（`kyuura_engine/data`）は変わっていない（コミットの blob のバイト列も同じ）。契約の識別・形式の版は同じで、応答は加える方向だけ（10 章）
@@ -12,7 +14,7 @@ GUI が使うエンジンの公開の境界と、その確かめ方・更新の�
 - 契約の確かめ（1〜5 章）は `d0c5cfa` で行った。`d0c5cfa` から `ffcc5ca` までの差分は配布の設定（`pyproject.toml`・`MANIFEST.in`）・文書・配布物の確かめの道具とテストだけで、`kyuura_engine/` の中身は変わっていない。API の契約は変わっていないものとして扱い、接続層のテスト・ブラウザの接続確認を `ffcc5ca` の通常のインストールで通した
 - 導入元は `direct_url.json` の `vcs_info.commit_id` で確かめる（`kyuura_gui_server/engine_source.py`）。site-packages で `git rev-parse` をしない（GUI 自身の HEAD を返しうる）
 
-## 1. 参照した資料（1〜5 章は固定コミット d0c5cfa で確かめ、b4e62d9・9506d63・0885d66 で変わっていないことを確かめた。U7-3 は 9 章、U7-4 は 10 章、U7-5 は 11 章）
+## 1. 参照した資料（1〜5 章は固定コミット d0c5cfa で確かめ、b4e62d9・9506d63・0885d66・74c8e1f で変わっていないことを確かめた。U7-3 は 9 章、U7-4 は 10 章、U7-5 は 11 章、U7-5e は 12 章）
 
 - `docs/client-api-v0.164.md`（入口・要求と応答・更新・導入）
 - `docs/legal-actions-u7-1.md`（決定への回答・番を終える・取っ手・処理可能性・coverage）
@@ -20,6 +22,7 @@ GUI が使うエンジンの公開の境界と、その確かめ方・更新の�
 - `docs/legal-actions-u7-3.md`（番の基本の操作 4 種類。b4e62d9）
 - `docs/legal-actions-u7-4.md`（ワザの宣言。9506d63）・`docs/client-api-v0.164.md` の v0.166 の追記・`resolution/flow.py` の `check_use_attack`
 - `docs/legal-actions-u7-5ab.md`（場の 3 操作）・`docs/legal-actions-u7-5c.md`（手札のトレーナー）・`docs/legal-actions-u7-5d.md`（場のスタジアムと GUI への引き継ぎ。0885d66）・`legal_actions.py` の `_board_candidates`・`_trainer_candidate`・`_stadium_candidate`・`_pokemon_option`・`_card_option`
+- `docs/legal-actions-u7-5e.md`（特殊能力・型ごとの宣言・3 段の依存。74c8e1f）・`legal_actions.py` の `_power_candidates`・`_power_candidate`・`_public_pokemon`・`_power_domain`・`stage_dependency_problems`・`_power_input_problem`・`effects.POWER_INPUT_STAGES`
 - `kyuura_engine/client_api.py`・`legal_actions.py`・`diagnostics.py`・`observation.py`・`examples/headless_client.py`・`tests/test_client_api.py`
 - 実際の応答（接続層のテストと e2e が固定版のエンジンで確かめる）
 
@@ -73,7 +76,7 @@ GUI が使うエンジンの公開の境界と、その確かめ方・更新の�
 
 ## 7. 次の操作の種類への対応（U7-5 など）
 
-新しい操作の種類（特殊能力など）が candidates に出るようになったら（U7-4 のワザは 10 章、U7-5a〜d の 5 種類は 11 章のとおり、この手順で加えた）:
+新しい操作の種類（おもての山札のカードの確かめなど）が candidates に出るようになったら（U7-4 のワザは 10 章、U7-5a〜d の 5 種類は 11 章、U7-5e の特殊能力は 12 章のとおり、この手順で加えた）:
 
 1. エンジンの文書で、種類・入力の段・`choices_format`・処理可能性・保証を確かめる（推測しない）
 2. `contract/kyuura-client-api-v1.json` の `implemented_kinds`・`gui_operable_kinds`・`main_kinds`・`turn_kinds_not_covered`・`stage_keys` を直す（Python のテストが照らす）。入力の画面を作るまで `gui_operable_kinds` に加えない（候補は表示だけで選べない）
@@ -104,7 +107,7 @@ renderer は公開の入口（`dist-lib/lib/index.js`）の export だけを使�
 - カード ID の形: `^[A-Za-z0-9][A-Za-z0-9_.-]{0,31}$`。形の違う記録・同じ ID の記録は表に入れず `omitted` に数える
 - 対戦に依存しない全体の表（対戦の状態・デッキリストを読まない。対戦で使うカードだけの表を作らない）。プロセスの中で 1 回だけ作る（`lru_cache(maxsize=1)`）
 - 同梱データを読めない・形式が違うときは `GUI_CARD_DATA_UNAVAILABLE`（503・決まった文）
-- 0.170.0 の確かめ: エンジンのリポジトリの blob（`kyuura_engine/data/kyuura_cards.json`）は 9506d63 と 0885d66 でバイト列も同じ。この端末で入れた 0.170.0 の導入物は、Git の改行の変換（システムの `core.autocrlf=true`。pip がコミットを取り出して配布物を作る）で CRLF になり、導入物のバイト列の sha256 は 0.166.0 の導入物と違った。`sha256`（canonical-json 1。読んだ JSON から作る）は同じ値（`b82354d6…`・1374 件）。改行の違いは JSON の値の違いではないので、識別を読み替えたのではない（値・記録・並びの違いは別の値になる）
+- 0.170.0 の確かめ: エンジンのリポジトリの blob（`kyuura_engine/data/kyuura_cards.json`）は 9506d63 と 0885d66 でバイト列も同じ。この端末で入れた 0.170.0 の導入物は、Git の改行の変換（システムの `core.autocrlf=true`。pip がコミットを取り出して配布物を作る）で CRLF になり、導入物のバイト列の sha256 は 0.166.0 の導入物と違った。`sha256`（canonical-json 1。読んだ JSON から作る）は同じ値（`b82354d6…`・1374 件）。0.171.0（74c8e1f）でも blob は同じで、導入物は同じく CRLF、`sha256` は同じ値。改行の違いは JSON の値の違いではないので、識別を読み替えたのではない（値・記録・並びの違いは別の値になる）
 
 ### 8.3 表示の境界
 
@@ -275,3 +278,48 @@ renderer の `renderToCanvas` は、同じ Canvas では最後に始めた要求
 ### 11.5 検証用の固定例の互換性（0.170.0）
 
 `server/tools/scenario_views.py --full` を 0.166.0（`9506d63`）と 0.170.0（`0885d66`）の環境で実行し、応答の全体を項目ごとに比べた。既存の 3 つの時点の全入口の view は同じ（`views_sha256` も同じ）。candidates の違いは `coverage.implemented_kinds` に U7-5 の 5 種類が加わったことだけで、U7-5 の候補はどの時点にもない（番の中でトレーナー・スタジアム・場の 3 操作の対象がない）。記録し直さず、`compatibility` に確かめた結果（`candidates_difference` に U7-5 の候補による差とそれ以外の差を分けて）を追記した。記録のエンジン（`ffcc5ca`）は書き換えていない。U7-5 の 6 つの固定例は 0885d66 で作り、記録のエンジンは `0885d66`。
+
+## 12. U7-5e（特殊能力と依存する段。74c8e1f の実応答で確かめた）
+
+確かめ方: エンジンの `docs/legal-actions-u7-5e.md` と `kyuura_engine/legal_actions.py`・`effects.py`（74c8e1f。読むだけ）と、固定例から進めた実際の応答（接続層のテスト `server/tests/test_u7_5e.py`・e2e `web/e2e/u75e.spec.ts`）。比べた GUI は U7-5a〜d に対応した実際の GUI（`9c36a8f`）で、エンジンの文書の引き継ぎが比べた古い GUI（`3649946`）ではない。契約の識別・形式の版は同じ（`kyuura-client-api`・1、`kyuura_legal_actions_format` 1、`kyuura_diagnostic_schema` 1）。
+
+### 12.1 候補と coverage
+
+- 種類 `use_power`。`implemented_kinds` は 19 種類（`use_stadium` のあと、ホストの 2 種類の前。エンジンの並び）。番の `scope_kinds` は 13 種類のまま、`not_covered_kinds` は `check_face_up_deck` だけ。番の候補は `partial`
+- 特殊能力の位置ごとに 1 つの候補（同じ種類の候補がいくつも並ぶ）。候補の項目に `pokemon`（使う本人の場のポケモン。`pokemon`・`card`・`zone`・`bench_index`・`card_id`）と `power`（`index`・`name_ja`・`card`・`card_id`。印刷したカード）。本人のうらのカードの特殊能力・常にはたらく特殊能力・反応やワザといっしょに使う特殊能力は候補にならない（ソースで確かめた）
+- 処理可能性: `may_stop_later`（理由 `continuation_not_evaluated`）。うらのカードを指定する組は `unverified`（`face_down_reveal_not_evaluated`）。止める候補は入力なしで実行できない区分。入力の公開は、入力ありが `confirmed`、入力なしが `no_input`、宣言のない型が `unconfirmed`（`input_boundary_unconfirmed`・`not_implemented`）
+
+### 12.2 入力の形と依存する段（GUI が確かめる範囲）
+
+| 項目 | 形（実応答・ソース） | GUI の扱い |
+|---|---|---|
+| 段の role の並び | `[]`・`[source, energy, target]`・`[source, energy]`・`[energy, target]`・`[energy]`・`[source, target]`・`[source]`・`[target]`（`POWER_INPUT_STAGES` と同じ） | 表（`power_stage_shapes`）のどれでもなければ止める。`source`・依存の形はほかの種類の段に来たら止める |
+| meaning・count | `source`・`target` は `pokemon`、`energy` は `card`。どの段も `count` 1〜1 | 違えば止める（任意の段はない） |
+| 依存 | 2 段目以降に `depends_on_stage`（直前の段）・`upstream_stages`（前のすべての段）・`options_by_choice`（直前の段の番号ごと）・選べるものの `after`（直前の段の番号） | 段の番号は 1 からの並び、`after` は組の鍵でその組にある、組の選べるものの `after` はその鍵（別の上流の番号を混ぜない）。合わなければ止める（エンジンの `stage_dependency_problems` と同じ確かめ） |
+| 選べるもの | 場のポケモン（本人: `pokemon`・`card`・`zone`・`bench_index`・`card_id`。相手のうら: `pokemon`・`zone`・`bench_index`・`face_down` だけ）、カード（`card`・`card_id`。手札は `special` もある） | 項目の表（`power_option_keys`）の外・うらにカード ID・カードの選べるものに場のポケモンの項目は止める |
+
+- 画面: k 段目は直前の段で選んだ番号の組だけ。k 段目を変えたら、直接・間接に依存する後のすべての段の選択を捨てる（`downstreamOf`。U7-4 までは直接の次の段だけだった）。check の答えは今の入力と同じときだけ使う
+- エンジンの文書の「新しい項目を無視するクライアントも直前の段の番号で引けば正しい組だけを選べる」は、エンジンの側の説明で、この GUI の保証ではない。GUI は新しい項目を読み、上の形だけを受け付ける
+
+### 12.3 確かめた挙動（固定例から、通常の操作の列）
+
+固定例（`server/tools/build_u7_5e_scenarios.py`。導入済みのエンジンの公開の入口だけで作る）。準備は初期配置が最初の選べるもの・補償は最大・ジャンケンはプレイヤー0。
+
+- ロケット団のヒトカゲ（new_game。エンジンのテストの RC_DECK 同士・seed 1）: 番 1 にロケット団のヒトカゲ・コラッタをベンチ、炎エネルギーをポニータ → 番 3 に炎エネルギーをコラッタ →［ほのおをもらう］（`source` 2 つ → `energy`。`after` と組が一致）。`[元A, 元B のエネルギー]`・逆の順・1 つだけ・空は `CANDIDATE_INPUT_INVALID`（submit も `refused`。相手・観戦者の更新 0 件）→ 正しい入力は check 有効 → 受理（`in_progress`）→ 相手の観測でポニータ 0・ロケット団のヒトカゲ 1・コラッタ 1 → 同じ番には候補が出ない（コラッタにまだ炎エネルギーがある。番ごとに 1 回）。相手の候補は `waiting_for_player`
+- ダークユンゲラー（new_game。ケーシィ 4・ダークユンゲラー 4・超エネルギー 52 対 RC_DECK・seed 1）: 番 1 に超エネルギー → 番 3 に進化 →［ぶっしつこうかん］（`no_input`・`choices_format: "[]"`。`["o1"]` は断る、`[]` は check 有効）→ 受理（`awaiting_decision`・本人の `answer_decision`）。相手は待つ。決定 `discard_from_hand`（1〜1・辞退できない）→ 答えて受理 → 観測でトラッシュ +1・手札の枚数は同じ → 同じ番には出ない
+- エナジートランス（再生。フシギダネ・フシギソウ・フシギバナ各 4 と草エネルギー 48 対 RC_DECK・seed 1・13 コマンド）: 番 5 に［エナジートランス］（3 段。元はフシギバナ 1 つ・エネルギー 3 枚・先はエネルギーごとに別の番号）。混ぜた入力（2 段目 A と、2 段目 B に続く 3 段目）は断る → 受理 → 相手の観測でバトル場 −1・ベンチ +1 → 続けて候補が出る（回数の制限はない）
+- 探索: 対象と上限を先に決めた（ダークユンゲラー seed 1〜10・フシギバナ seed 1〜10。どちらも seed 1 で条件を満たした。各 seed 1 回）
+
+### 12.4 実エンジンで通していない範囲（模擬の単体テストだけ）
+
+形はエンジンの文書の 7.1 の JSON の例と `legal_actions.py` から作った（`web/src/test/u75e.ts` の区分）。同じ形を運べることを、実際の場面で画面が正しく動くことと同じには扱わない。
+
+- 元が 2 匹ある 3 段（1 段目を変えて 2・3 段目を捨てる画面の動きは模擬だけ。実エンジンの 3 段は元が 1 匹）
+- 相手の場の元と先（のろい・じっとみる）・相手のうらのカードを指定する組（`unverified`）
+- 宣言のない型（入力非公開）・止める候補（入力なしで実行できない区分）
+- 写した特殊能力（メタモン）・「ばける」の印刷したカード、ねむり・かがくへんかガスで候補が消えること、あまごい・ダメージスワップの形
+- 特殊能力のエンジンの `rejected`（MH1 など）・受理のあとの停止
+
+### 12.5 検証用の固定例の互換性（0.171.0）
+
+`server/tools/scenario_views.py --full` を 0.170.0（`0885d66`）と 0.171.0（`74c8e1f`）の環境で実行し、9 つの固定例の応答の全体を項目ごとに比べた。全入口の view は同じ（`views_sha256` も同じ）。candidates の違いは `coverage.implemented_kinds` に `use_power` が加わったこと（「ばける」の時点は番の中なので `not_covered_kinds` から `use_power` が外れた）だけで、どの時点にも `use_power` の候補は出ない。記録し直さず、9 つの JSON の `compatibility` に確かめた結果を追記した。記録のエンジン（`ffcc5ca`・`0885d66`）は書き換えていない。U7-5e の 3 つの固定例は 74c8e1f で作った。
