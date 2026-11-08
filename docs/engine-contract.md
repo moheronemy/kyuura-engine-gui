@@ -357,9 +357,23 @@ renderer の `renderToCanvas` は、同じ Canvas では最後に始めた要求
 | 3 段目 | `meaning: card`・`count` 0〜1・`decline: true`・`path_stages: [1, 2]`・`options_by_path`。`options_by_choice`・`depends_on_stage`・`upstream_stages` はない | 契約の表（`path_stage_kinds`）の種類・段・形だけ。ほかの種類・段に `path_stages` があれば止める |
 | 鍵と参照 | 鍵は 1・2 段目の選ぶものの番号を `/` でつないだもの（`"o1/o8"`）。値は参照（`option`・`eligible`・`processability`・`reasons`）の並び。3 段目の番号は 1・2 段目のあとに続き、1 段目と同じカードでも別の番号（その組には出ない） | 鍵の段の数・番号が path_stages の段にある・前の段どうしの組が 2 段目の `options_by_choice` にある・参照がこの段にある・重ならない。`path_stages` は前の段の増える並び（空・逆・自分やあとの段は止める）。エンジンの `_path_stage_problems` と同じ確かめ |
 | 画面 | — | 今の 1・2 段目の鍵の一覧だけを出す（全部の組を GUI で作らない）。鍵がなければ「この段に選べるものがありません。選ばずに送れます」。1・2 段目を変えたら 3 段目の選択を捨てる（`downstreamOf` が path_stages もたどる）。送る順は段の順 |
-| check の答え | 1 段目を変えた古い 3 段目・同じカード・知らない番号・4 つ以上・逆の順は `CANDIDATE_INPUT_INVALID` | 入力を変えたら前の答えと、変える前に始めた遅れた答えを使わない（元の入力に戻しても検査し直す）。attach_energy は送る前の check を必須にしていない（今までどおり）が、表示する答えは今の入力へのものだけ |
+| check の答え | 1 段目を変えた古い 3 段目・同じカード・知らない番号・4 つ以上・逆の順は `CANDIDATE_INPUT_INVALID`。エンジンは check なしの submit も受け付ける（check は送信の条件ではない） | 入力を変えたら前の答えと、変える前に始めた遅れた答えを使わない（元の入力に戻しても検査し直す）。GUI の決まりとして、attach_energy は 1 枚・2 枚とも送る前の check を必須にする（13.3.1） |
 
 カツラの許可・炎の判定・つける先・回数・レインボーは GUI で判定しない（エンジンの組と送信が決める）。
+
+#### 13.3.1 送る前の check（GUI の決まり。`3740355` のあとの訂正）
+
+`3740355` までは「attach_energy は送る前の check を必須にしていない」としていた。エンジンが check なしの submit を受け付けることと、GUI が送る前に check を要求することは別なので、GUI の送信の条件を次に統一した。
+
+| 区分 | 条件 |
+|---|---|
+| エンジンが要求する条件 | なし（submit は check を前提にしない。受理・拒否は submit の応答で決まる）。エンジンは変更していない |
+| GUI が要求する条件 | attach_energy は、energy2 の段の有無・2 枚目の有無にかかわらず、今の取っ手・今の候補・今の入力への check が通っている場合だけ送信できる |
+
+- 仕組み: 契約の表の `check_before_submit_kinds` に `attach_energy` を加えた（ワザ・U7-5 の 5 種類・use_power と同じ一覧。説明に GUI の決まりと明記）。条件の関数は `web/src/state/checkGate.ts` の 1 つで、送信のボタンの可否（`DecisionPanel`）と送信の処理の入口（`useEndpointSession` の submit）が同じ関数を呼ぶ。入口で条件を満たさなければ submit の要求を出さず、「送信していません」と知らせる
+- 答えを捨てる場面: 1 段目のエネルギーを変える・2 段目のつけ先を変える・3 段目の 2 枚目を選ぶ・変える・外す（どれも入力の変更）、候補・取っ手が変わる（選び直す・取っ手の取り直し）、閲覧者を切り替える（部品ごと作り直す）。入力の世代は既存の `checkEpoch` を使い、別の状態の管理は加えていない（候補を選んだときにも世代を進めるようにした）
+- 元の入力に戻しても、変える前に始めた check の遅れた答えは置かず、検査し直す
+- check・submit を自動で実行・再送しない
 
 ### 13.4 本人のうらのカードの特殊能力（U7-5g-2）
 
@@ -389,3 +403,32 @@ renderer の `renderToCanvas` は、同じ Canvas では最後に始めた要求
 ### 13.7 検証用の固定例の互換性（0.172.0）
 
 `server/tools/scenario_views.py --full` を 0.171.0（`74c8e1f`）と 0.172.0（`e26df79`）の環境で実行し、12 の固定例（11 の JSON）の応答の全体を項目ごとに比べた。全入口の view と作成の知らせは同じ（`views_sha256` も同じ）。candidates の違いは、coverage に `display_only_kinds`・`completeness_basis`・`partial_residual`・`residual`・`unverified_paths` が加わったこと、`implemented_kinds` に `check_face_up_deck` が加わったこと、番のプレイヤーの MAIN の 2 時点（「ばける」・エナジートランス）のプレイヤー 0 の応答で `not_covered_kinds` が空になり `display_only_kinds: ["check_face_up_deck"]`・`partial_residual: ["R-2"]` になったこと（意図した差）だけ。候補の並び・中身は同じで、どの時点にも U7-5f・g の候補は出ない。どの時点も `residual.present`・`unverified_paths` は空。記録し直さず、11 の JSON の `compatibility` に確かめた結果を追記した（記録のエンジン `ffcc5ca`・`0885d66`・`74c8e1f` は書き換えていない）。U7-5f・g の 3 つの固定例は e26df79 で作った。
+
+### 13.8 実行した検証の記録
+
+前回（`3740355` まで）と、今回の訂正（13.3.1）の実行の結果を分けて書く。
+
+#### 前回（`3740355` まで）
+
+| 場所 | 実行したもの | 結果 |
+|---|---|---|
+| 作業場所（GUI の worktree） | 新しい e2e 4 件（`u75fg.spec.ts`） | 成功 |
+| 作業場所 | 既存の e2e 23 件 | 初回は 20 件成功・3 件失敗。原因を直したあと、失敗した 3 件だけを再実行して成功 |
+| 作業場所 | 本番ビルドの e2e（preview。`KYUURA_E2E_PREVIEW=1`）4 件 | 成功 |
+| クリーンな場所 | setup・接続層のテスト 113 件・単体テスト 221 件・型検査・ビルド | 成功 |
+| クリーンな場所 | e2e・preview | 実行していない |
+
+#### 今回（13.3.1 の訂正）
+
+作業場所（GUI の worktree `kyuura-engine-gui-wt-u75fg`。エンジン 0.172.0・`e26df79` の通常のインストールのまま）だけで、変更に関係する対象を各 1 回実行した。失敗はなく、失敗による再実行はない（実行のあとの import の整理で 1 ファイルと型検査だけをもう 1 回実行した。表の最後の行）。件数と終了コードは JUnit と終了コードの記録に残した。
+
+| 実行したもの | 結果 |
+|---|---|
+| 型検査（`tsc --noEmit`） | 終了コード 0 |
+| 単体テスト（vitest）: 送信の門・U7-3・U7-5f・g・決定の入力・ワザ・U7-5・U7-5e の部品と画面全体の 13 ファイル（`checkGate.test.tsx` を加えた） | 184 件成功・終了コード 0 |
+| 接続層のテスト `server/tests/test_contract.py`（契約の表とエンジンの定数） | 13 件成功・終了コード 0 |
+| ビルド（`npm run build`） | 終了コード 0 |
+| e2e `u75fg.spec.ts` のカツラの 1 件（実ブラウザ・実エンジン・実 renderer。送信は check の前は無効・2 枚目を外す・選び直すたびに検査し直す・2 枚で受理） | 1 件成功・終了コード 0。Playwright が起動した接続層（8766）と Vite（5174）は終了後に残っていない |
+| 上のすべての実行のあと `checkGate.test.tsx` の import を 1 行にまとめた（中身は同じ）ので、そのファイルと型検査だけをもう 1 回 | 4 件成功・型検査とも終了コード 0 |
+
+実行していないもの: 接続層のテストの残り・単体テストの残り（カード画像・検証）・e2e の残り・preview・クリーンな場所での再構築・依存の更新の確かめ・エンジンの全体テスト。既存の e2e のうち attach_energy を check なしで送っていた `turn-basics.spec.ts`（3 か所）・`u75e.spec.ts`（1 か所）・`helpers.ts` の `attachToActive`（`u75.spec.ts`・`u75e.spec.ts` が使う）は、送る前に check するように直したが、今回は実行していない。
