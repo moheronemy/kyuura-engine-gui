@@ -31,6 +31,7 @@ import { CardBack, CardFace } from "../cards/CardImages";
 import { choicesKey, type Selection } from "../state/useEndpointSession";
 import {
   ADDON_LABELS,
+  DECISION_TEXT,
   ENERGY_LABELS,
   KIND_LABELS,
   ORDER_TEXT,
@@ -525,6 +526,7 @@ function OptionStageInput({
         {stage.total_units ? " 枚" : ""}
       </legend>
       {stage.note ? <p className="small">{stage.note}</p> : null}
+      {stage.decision_kind && DECISION_TEXT[stage.decision_kind] ? <p className="small">{DECISION_TEXT[stage.decision_kind]}</p> : null}
       {stage.bench ? (
         <p className="small">
           ベンチ: {stage.bench.count}/{stage.bench.limit}（今の数と上限。出せるかどうかはエンジンが候補で示します）

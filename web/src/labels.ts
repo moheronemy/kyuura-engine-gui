@@ -248,6 +248,12 @@ export const ADDON_LABELS: Record<string, string> = {
   with_power: "自分の場のポケモンの、ワザといっしょに使う特殊能力",
 };
 
+/** 決定の種類の説明（表示だけ。エンジンの文書の意味。送る値は選べるものの id のまま）。知らない種類は説明しない。 */
+export const DECISION_TEXT: Record<string, string> = {
+  accept_request: "錯乱ジム: 相手が使ったトレーナーを、かわりに使うか（選べるものを選ぶと「使う」、選ばないと「使わない」）。使えるかは送ったときにエンジンが決めます。",
+  secret_plan_card: "マチスの秘策: うらにしてベンチに出すカード（選ばなくてもよい）。",
+};
+
 export function roleLabel(kind: string, role: string): string {
   return ROLE_LABELS[`${kind}:${role}`] ?? role;
 }
