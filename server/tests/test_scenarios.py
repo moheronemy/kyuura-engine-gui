@@ -19,7 +19,17 @@ def test_provenance_names_the_pinned_engine(name):
     data = json.loads((scenarios.DATA / name).read_text(encoding="utf-8"))
     verified = {data["engine_commit"]} | {entry["engine_commit"] for entry in data.get("compatibility", [])}
     assert ENGINE["commit"] in verified
-    assert data["engine_commit"] == "ffcc5cab5df1ebde0faed3fd23b481295374e1f9"  # 記録のエンジン（U7-3 の前）。来歴の追記だけ
+    # 記録のエンジン: U7-3 の前に作った 2 つは ffcc5ca（来歴の追記だけ）、U7-5 の固定例は 0885d66（tools/build_u7_5_scenarios.py）
+    expected = "ffcc5cab5df1ebde0faed3fd23b481295374e1f9" if name in ("halt_seed1.json", "pikachu_seed9.json") else "0885d664913bc8e57279ed9e44ac51cc97d5a6bf"
+    assert data["engine_commit"] == expected
+
+
+def test_u7_5_scenarios_do_not_reveal_seed_or_decks(bridge):
+    """U7-5 の固定例の一覧（ブラウザへ返す）は名前と説明だけ。seed・デッキリスト・操作の列は返さない。"""
+    listed = bridge.client.get("/api/scenarios").json()["scenarios"]
+    assert {"lucky_stadium", "saffron_gym", "secret_plan", "clefairy_doll", "chaos_gym", "disguise"} <= {s["id"] for s in listed}
+    for item in listed:
+        assert set(item) == {"id", "label", "description"}
 
 
 @pytest.mark.parametrize("scenario_id", list(scenarios.SCENARIOS))

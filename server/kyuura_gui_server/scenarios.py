@@ -10,6 +10,13 @@ seed 9 の対戦。エンジンの v0.2f 以来の固定例）で受理された
 - 再生の結果が記録した段階・決定と合わなければ、固定例を使わない（エンジンの固定コミットが変わったときの検出）
 
 「停止」の固定例は操作の列を使わず、``ClientHub.start`` へ固定のデッキと seed を渡す（エンジンのテスト HALT_DECK と同じ）。
+
+U7-5 の固定例（``tools/build_u7_5_scenarios.py``。導入済みのエンジンの公開の入口だけで作る）:
+
+- new_game から始める 5 つ（point が start）: ``ClientHub.start`` へ固定のデッキと seed を渡すだけで、準備から先はブラウザが client_api で進める
+  （通常の合法な操作の列。seed を画面に返さないための入口）
+- 再生する 1 つ（「ばける」）: タケシのキュウコンの「ばける」は特殊能力（GUI の対象外）なので、ホストの側の準備として操作の列を再生する。
+  再生のあとの「ばける」の解除は、ブラウザから client_api だけで送る
 """
 
 from __future__ import annotations
@@ -55,6 +62,19 @@ SCENARIOS: dict[str, dict[str, str]] = {
                      "description": "両者が同時に最後のサイドを取りサドン・デスに移った直後。ホストが延長戦を始める。"},
     "halt": {"label": "準備で停止（固定例）", "file": "halt_seed1.json", "point": "start",
              "description": "たねポケモン 1 枚のデッキ同士。切り直しの補償が記録で決まらず、エンジンが対戦を止める。"},
+    # U7-5（tools/build_u7_5_scenarios.py。new_game から始める 5 つと、特殊能力の「ばける」をホストの側で再生する 1 つ）
+    "lucky_stadium": {"label": "ラッキースタジアム（固定例・new_game）", "file": "lucky_stadium_seed1.json", "point": "start",
+                      "description": "ラッキースタジアムを入れたデッキで、準備から画面で進める。手札から出す（トレーナー）と、場のスタジアムを使う（入力なし）を確かめる。"},
+    "saffron_gym": {"label": "ヤマブキシティジム（固定例・new_game）", "file": "saffron_gym_seed1.json", "point": "start",
+                    "description": "ナツメのケーシィ・ヤマブキシティジムのデッキで、準備から画面で進める。エネルギーをつけてから、場のスタジアムで手札にもどすエネルギーを選ぶ。"},
+    "secret_plan": {"label": "マチスの秘策（固定例・new_game）", "file": "secret_plan_seed1.json", "point": "start",
+                    "description": "マチスの秘策を入れたデッキで、準備から画面で進める。使ったあとの決定でうらにするカードを選び、うらのカードをおもてにする。"},
+    "clefairy_doll": {"label": "ピッピ人形（固定例・new_game）", "file": "clefairy_doll_seed1.json", "point": "start",
+                      "description": "ピッピ人形を入れたデッキ同士で、準備から画面で進める。手札から出し（トレーナー）、場からすてる。"},
+    "chaos_gym": {"label": "錯乱ジム（固定例・new_game）", "file": "chaos_gym_seed1.json", "point": "start",
+                  "description": "錯乱ジム・ポケモン交換おじさんのデッキ 対 たねポケモン 1 枚のデッキ。準備から画面で進め、コインの結果のあとに相手が答える決定を確かめる。"},
+    "disguise": {"label": "「ばける」の解除（固定例・再生）", "file": "disguise_seed10.json", "point": "disguise",
+                 "description": "プレイヤー 0 の番 3。タケシのキュウコンに「ばける」でリザードをのせた直後（特殊能力は GUI の対象外なので、ホストの側で再生した）。"},
 }
 
 

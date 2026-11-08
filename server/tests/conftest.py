@@ -130,9 +130,10 @@ def first_eligible(stage):
 MOLTRES_DECK = {"entries": [{"card_id": "ES2-005", "count": 4}, {"card_id": "PMCG1-098", "count": 56}]}  # ファイヤー（ドライアップ）4 枚・炎エネルギー 56 枚
 
 
-def reach_first_turn(bridge, decks=None):
-    """固定の seed の new_game を、e2e と同じ選び方でプレイヤー0の最初の番まで進める（初期配置: 最初の eligible だけ、補償: 最大、ジャンケン: 0）。"""
-    created = bridge.create(mode="decks", decks=decks or bridge.preset_decks())
+def reach_first_turn(bridge, decks=None, *, scenario=None):
+    """固定の seed の new_game を、e2e と同じ選び方でプレイヤー0の最初の番まで進める（初期配置: 最初の eligible だけ、補償: 最大、ジャンケン: 0）。
+    scenario を渡すと、new_game から始める固定例（U7-5。seed とデッキは固定例が持つ）を同じ選び方で進める。"""
+    created = bridge.create(mode="scenario", scenario=scenario) if scenario else bridge.create(mode="decks", decks=decks or bridge.preset_decks())
     assert created["ok"] and created["start"]["status"] != "halted"
     t = tokens(created["match"])
     for seat in (0, 1):
