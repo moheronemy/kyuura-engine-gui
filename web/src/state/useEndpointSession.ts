@@ -56,6 +56,8 @@ export interface EndpointSession extends SessionState {
   select(candidate: Candidate): Promise<void>;
   clearSelection(): void;
   check(choices: Choice[]): Promise<void>;
+  /** 入力が変わった: 前の check の答えを捨て、まだ届いていない check の答えも置かない（U7-5g: 上流を変えた古い 3 段目への答えを使わない）。 */
+  inputChanged(): void;
   submit(choices: Choice[]): Promise<void>;
   dismissNotice(id: number): void;
 }
@@ -94,6 +96,7 @@ export function useEndpointSession({ client, canAct, gate, onMutated, refreshSig
   const lastObservation = useRef<Observation | null>(null);
   const noticeId = useRef(0);
   const opCounter = useRef(0);
+  const checkEpoch = useRef(0); // 入力が変わるたびに進める。前の番号で始めた check の答えは置かない
 
   const current = (gen: number) => alive.current && generation.current === gen;
 
@@ -221,9 +224,10 @@ export function useEndpointSession({ client, canAct, gate, onMutated, refreshSig
       const sel = state.selection;
       if (!sel) return;
       const gen = generation.current;
+      const epoch = checkEpoch.current;
       try {
         const answer = await client.check(sel.handle, choices);
-        if (!current(gen)) return;
+        if (!current(gen) || epoch !== checkEpoch.current) return; // 閲覧者の切り替え・入力の変更のあとに届いた答えは使わない
         if (answer.refetch_required) {
           notify("warn", "候補が古くなりました。取り直します。");
           await refetchCandidates();
@@ -285,8 +289,15 @@ export function useEndpointSession({ client, canAct, gate, onMutated, refreshSig
     [client, state.selection, state.legal, gate, notify, refresh, onMutated, operationPrefix, handleError],
   );
 
-  const clearSelection = useCallback(() => setState((s) => ({ ...s, selection: null })), []);
+  const clearSelection = useCallback(() => {
+    checkEpoch.current += 1;
+    setState((s) => ({ ...s, selection: null }));
+  }, []);
+  const inputChanged = useCallback(() => {
+    checkEpoch.current += 1;
+    setState((s) => (s.selection?.check ? { ...s, selection: { ...s.selection, check: null } } : s));
+  }, []);
   const dismissNotice = useCallback((id: number) => setState((s) => ({ ...s, notices: s.notices.filter((n) => n.id !== id) })), []);
 
-  return { ...state, refresh, select, clearSelection, check, submit, dismissNotice };
+  return { ...state, refresh, select, clearSelection, check, inputChanged, submit, dismissNotice };
 }

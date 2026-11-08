@@ -127,9 +127,12 @@ describe("U7-3 の操作（画面全体）", () => {
     await settle();
     expect(within(panel).queryByText(/エンジンの検査を通りました/)).toBeNull();
     expect(within(panel).getByRole("button", { name: "送信" })).toBeDisabled();
-    // 元の入力に戻すと、その入力への答えとして使える（同じ取っ手・同じ入力）
+    // v0.172 から: 入力を変えたあとに届いた答えは置かない。元の入力に戻しても、その遅れた答えは使わず、検査し直す（U7-5g の上流の変更と同じ扱い）
     await user.click(boxes[1]!);
-    expect(within(panel).getByText(/エンジンの検査を通りました/)).toBeInTheDocument();
+    expect(within(panel).queryByText(/エンジンの検査を通りました/)).toBeNull();
+    expect(within(panel).getByRole("button", { name: "送信" })).toBeDisabled();
+    await user.click(within(panel).getByRole("button", { name: "入力を検査" }));
+    expect(await within(panel).findByText(/エンジンの検査を通りました/)).toBeInTheDocument();
     expect(within(panel).getByRole("button", { name: "送信" })).toBeEnabled();
   });
 

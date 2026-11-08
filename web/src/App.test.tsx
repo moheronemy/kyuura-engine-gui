@@ -63,7 +63,7 @@ describe("観測の表示", () => {
     const unsupported = within(area).getByLabelText("未対応の操作");
     expect(unsupported).toHaveTextContent("ワザを使う");
     expect(unsupported).toHaveTextContent("ゲーム上の禁止ではありません");
-    expect(within(area).getByText(/部分実装です/)).toBeInTheDocument();
+    expect(within(area).getByText(/^一部です/)).toBeInTheDocument();
     // ホストの別枠は観戦者と同じ範囲（手札なし）で、プレイヤーの候補を出さない
     expect(within(hostArea()).queryByLabelText(/の手札$/)).toBeNull();
   });

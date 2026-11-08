@@ -106,9 +106,23 @@ export const ORDER_TEXT: Record<string, string> = {
 };
 
 export const COMPLETENESS_TEXT: Record<string, string> = {
-  complete: "この応答で明示した種類（scope_kinds）の候補がそろっています。全合法手の完成ではありません。",
-  partial: "部分実装です。not_covered_kinds の種類は、この API の版では評価も候補の作成もしていません。",
+  complete: "この応答で明示した種類（scope_kinds）の候補の取得が網羅しています。全合法手・全部の操作の受理や完走の保証ではありません。",
+  partial: "一部です。この応答の範囲に、評価していない種類（not_covered_kinds）か、種類の中で示していない経路（partial_residual）があります。",
   undetermined: "完全性を判定できません。",
+};
+
+/** v0.172（U7-5g-3）: 残りの分類（residual.classes の id。説明はエンジンの note の要約。知らない id は note をそのまま出す）。 */
+export const RESIDUAL_TEXT: Record<string, string> = {
+  "R-2": "自分のうらのバトル場のポケモンのワザといっしょに選ぶもの（示していない。未対応のまま）",
+  "R-3": "自分のうらのカードの特殊能力のうち、入力を本人の知識だけで作れないもの（候補は出すが入力を返さない）",
+  "R-4": "番のプレイヤーの MAIN のほかでの、相手の山札の 2 枚目より下のおもてのカードの確かめ（API の対象範囲外）",
+  "R-5": "情報境界を確かめていない入力（候補は出すが入力を返さない）",
+};
+
+export const RESIDUAL_STATUS_TEXT: Record<string, string> = {
+  not_offered: "経路を示していない",
+  input_withheld: "入力を返していない",
+  out_of_scope: "API の対象範囲外",
 };
 
 export const SITUATION_LABELS: Record<string, string> = {
@@ -123,7 +137,7 @@ export const EMPTY_REASON_LABELS: Record<string, string> = {
   not_actor: "今はこの閲覧者が操作する場面ではありません。",
   host_operation: "ホストの操作（ジャンケンの結果・サドン・デスの開始）を待っています。",
   game_ended: "終局・停止のため、操作は受け付けられません。",
-  kinds_not_covered: "操作できる種類はありますが、この API の版では未対応です（ゲーム上できないのではありません）。",
+  kinds_not_covered: "この応答の状況で API が評価していない種類があるため、候補がなくても「操作がない」とは言えません（ゲーム上できないという意味ではありません）。",
   players_to_act: "プレイヤーの操作を待っています（ホストの操作はありません）。",
 };
 
@@ -233,6 +247,10 @@ const ROLE_LABELS: Record<string, string> = {
   "use_power:source": "元のポケモン（source）",
   "use_power:energy": "エネルギーカード（energy）",
   "use_power:target": "先のポケモン（target）",
+  // U7-5g-1: カツラの 2 枚目（任意の 3 段目。1・2 段目の組でエンジンが示したカードだけ）
+  "attach_energy:energy2": "2 枚目のエネルギーカード（任意・カツラの効果）",
+  // U7-5f: 表示だけ（送れない）
+  "check_face_up_deck:face_up_position": "相手の山札のおもてのカードの位置（表示だけ）",
 };
 
 /** ワザの持ち方（route）。エンジンが返した値の説明で、カード名・画像からワザを補わない。 */

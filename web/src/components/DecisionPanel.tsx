@@ -30,8 +30,13 @@ import { useId, useMemo, useState } from "react";
 // - k 段目は、直前の段で選んだ番号の options_by_choice の組だけ。k 段目を変えたら、それに依存する後のすべての段の選択を捨てる
 //   （check の答えも今の入力と違うので使わない）。全段の組み合わせを GUI で作らない
 // - 相手のうらのカードは、エンジンが示した位置と face_down だけ（カード ID・名前・表の画像を補わない）
-import { ATTACK_KINDS, CHECK_BEFORE_SUBMIT_KINDS, EXECUTABLE_PROCESSABILITY, POWER_KINDS, STADIUM_KINDS, TRAINER_KINDS } from "../api/contract";
-import type { Candidate, Choice, FieldSlot, Holder, InputOption, InputStage, Observation, OptionStage, PlayerIndex, StadiumRef } from "../api/types";
+// U7-5f・g（v0.172）:
+// - 表示だけの種類（check_face_up_deck）: エンジンが返した owner・position だけを表示し、check・submit を呼ばない（未裁定。ゲーム上の禁止ではない）
+// - attach_energy の任意の 3 段目（energy2。カツラの 2 枚目）: 1・2 段目の今の選択の鍵（"o1/o8"）の options_by_path の一覧だけ。1 段目・2 段目を変えたら
+//   3 段目の選択と検査の結果を捨てる。選ばなければ今までどおり 1 枚。カツラの許可・炎・付け先・回数・レインボーは GUI で判定しない
+// - 本人のうらのカードの特殊能力: 本人が知る本当のカード（power.card_id）を、公開の盤面の情報と分けて文字で示す（盤面は裏面のまま）
+import { ATTACK_KINDS, CHECK_BEFORE_SUBMIT_KINDS, DISPLAY_ONLY_KINDS, EXECUTABLE_PROCESSABILITY, PATH_STAGE_KINDS, POWER_KINDS, STADIUM_KINDS, TRAINER_KINDS } from "../api/contract";
+import type { Candidate, Choice, FieldSlot, Holder, InputOption, InputStage, Observation, OptionStage, PairOption, PlayerIndex, StadiumRef } from "../api/types";
 import { CardBack, CardFace, usePowerText } from "../cards/CardImages";
 import { choicesKey, type Selection } from "../state/useEndpointSession";
 import {
@@ -64,6 +69,8 @@ interface Props {
   onCheck(choices: Choice[]): void;
   onSubmit(choices: Choice[]): void;
   onCancel(): void;
+  /** 入力（選択・値）が変わったとき。前の check の答えと、届いていない check の答えを捨てる（今の入力への答えだけを使う）。 */
+  onInputChange?(): void;
 }
 
 const MEANING_LABELS: Record<string, string> = {
@@ -126,6 +133,9 @@ const KNOWN_OPTION_KEYS = new Set([
   "holder",
   // U7-5e（依存する段の前の段の番号。表示しない）
   "after",
+  // U7-5f（表示だけの山札の位置。専用の表示で示す）
+  "owner",
+  "position",
 ]);
 
 /** 場のポケモンの番号の持ち主（観測のバトル場・ベンチ。うらのカードも番号は公開）。 */
@@ -212,6 +222,22 @@ function PowerInfo({ candidate, names }: { candidate: Candidate; names: Names })
   const text = usePowerText(power?.card_id ?? "", power?.index ?? -1, power?.name_ja ?? "");
   if (!pokemon || !power) return null;
   const place = pokemon.zone === "active" ? "バトル場" : `ベンチ${(pokemon.bench_index ?? 0) + 1}`;
+  if (power.face_down || pokemon.face_down || typeof pokemon.card_id !== "string") {
+    // v0.172（U7-5g-2）: 本人のうらのカード。盤面の情報（公開）は「裏向きのポケモン・場所」だけ。本当のカードは本人の候補にだけ来た本人の知識（相手・観戦者には出ない）
+    return (
+      <div className="power-info face-down-power" aria-label="特殊能力">
+        <p className="small">
+          特殊能力: <strong>［{power.name_ja}］</strong> ／ 使うポケモン: 自分の裏向きのポケモン（{place}。盤面ではうらのまま）
+          <br />
+          あなただけが知る本当のカード（印刷の情報）: {names(power.card_id) ?? power.card_id} <code className="muted">{power.card_id}</code>（相手・観戦者には見えません）
+        </p>
+        <p className="small attack-text">{text ?? "説明なし（公開カード定義に合う説明がない）"}</p>
+        <p className="small warn">
+          送ると、エンジンがこのカードをおもてにしてから決めます（受理・拒否・トラッシュ）。「未確認」は使える・受理されるという意味ではありません。拒否なら状態はもどり、おもてにしたことも相手・観戦者に知らされません。
+        </p>
+      </div>
+    );
+  }
   return (
     <div className="power-info" aria-label="特殊能力">
       <p className="small">
@@ -229,7 +255,7 @@ function PowerInfo({ candidate, names }: { candidate: Candidate; names: Names })
 }
 
 /** U7-5: 種類ごとの説明（入力の画面は段の role で同じ部品を使う。ここは何を聞かないかと、受理のあとの続きの説明だけ）。 */
-function kindNote(kind: string, noStages: boolean): string | null {
+function kindNote(kind: string, noStages: boolean, hasPathStage = false): string | null {
   if (TRAINER_KINDS.has(kind)) {
     return "ここで選ぶのは手札のトレーナーカード 1 枚だけです。対象・枚数・費用・山札から選ぶカード・相手が答える決定（錯乱ジム・［ちえくらべ］など）は、受理のあとにエンジンが決定として聞きます。コインはエンジンが投げます（結果は入力しません）。どうぐ・手札から出すスタジアム・化石・人形もこの操作です（場のスタジアムの効果は「場のスタジアムを使う」）。";
   }
@@ -242,6 +268,9 @@ function kindNote(kind: string, noStages: boolean): string | null {
     return noStages
       ? "この特殊能力に宣言といっしょに選ぶものはありません（choices: [] で送ります）。コインの結果・効果の決定（回復するポケモン・トラッシュするカードなど）は、受理のあとにエンジンが聞きます。回数・使えるかはエンジンが決めます（GUI は数えません）。"
       : "宣言といっしょに選ぶものを段の順に 1 つずつ選びます。後の段には、前の段で選んだものに続く選べるものだけが出ます。前の段を変えると、後の段の選択と検査の結果は捨てます。コインの結果・効果の決定は、受理のあとにエンジンが聞きます。";
+  }
+  if (kind === "attach_energy" && hasPathStage) {
+    return "この番はカツラの効果で、3 段目に 2 枚目のエネルギーカードを選べます（任意。選ばなければ今までどおり 1 枚）。3 段目に出るのは、1・2 段目の今の選択の組でエンジンが示したカードだけです。1 段目か 2 段目を変えると、3 段目の選択と検査の結果を捨てます。2 枚つけられるか（カツラのポケモン・炎・回数など）は GUI では決めず、エンジンが組と送信で決めます。";
   }
   if (kind === "reveal_face_down") {
     return "おもてにしたあと場に残るか・トラッシュするかは、エンジンが本当のカードで決めます（ここでは予告しません）。結果は受理のあとの観測で表示します。バトル場が空けば、バトル場に出すポケモンを選ぶ決定に続きます。";
@@ -318,36 +347,54 @@ export function optionUnavailable(option: InputOption): string | null {
  * 2 つめの値は、依存の段で 1 段目がまだ選ばれていないとき true。
  */
 export function stageOptions(stage: OptionStage, stages: InputStage[], picks: Record<number, string[]>): [InputOption[], boolean] {
+  if (stage.path_stages !== undefined) {
+    // U7-5g-1: path_stages の段の今の選択を段の順に / でつないだ鍵の一覧だけ（鍵がない組では選べない。全部の組み合わせを GUI で作らない）
+    const parts = stage.path_stages.map((n) => (picks[n] ?? [])[0]);
+    if (parts.some((p) => p === undefined)) return [[], true];
+    return [merge(stage, stage.options_by_path?.[parts.join("/")] ?? []), false];
+  }
   if (stage.depends_on_stage !== undefined) {
     const chosen = (picks[stage.depends_on_stage] ?? [])[0];
     if (chosen === undefined) return [[], true];
-    const byId = new Map((stage.options ?? []).map((o) => [o.id, o]));
-    const pairs = stage.options_by_choice?.[chosen] ?? [];
-    const out: InputOption[] = [];
-    for (const pair of pairs) {
-      const base = byId.get(pair.option);
-      if (!base) continue; // 検証済み（validate.ts）なので来ない
-      const merged: InputOption = { ...base, eligible: pair.eligible, processability: pair.processability };
-      if (pair.reasons) merged.reasons = pair.reasons;
-      else delete merged.reasons;
-      out.push(merged);
-    }
-    return [out, false];
+    return [merge(stage, stage.options_by_choice?.[chosen] ?? []), false];
   }
   if (stage.options) return [stage.options, false];
   const from = stages.find((s) => s.stage === stage.options_from_stage);
   return [from && from.input === "choose_option" && from.options ? from.options : [], false];
 }
 
-/** stageNo に直接・間接に依存する段の番号（depends_on_stage をたどる）。 */
+/** 組の参照（option・eligible・processability・reasons）を段の選べるものに重ねる（組ごとの可否を使う）。 */
+function merge(stage: OptionStage, pairs: PairOption[]): InputOption[] {
+  const byId = new Map((stage.options ?? []).map((o) => [o.id, o]));
+  const out: InputOption[] = [];
+  for (const pair of pairs) {
+    const base = byId.get(pair.option);
+    if (!base) continue; // 検証済み（validate.ts）なので来ない
+    const merged: InputOption = { ...base, eligible: pair.eligible, processability: pair.processability };
+    if (pair.reasons) merged.reasons = pair.reasons;
+    else delete merged.reasons;
+    out.push(merged);
+  }
+  return out;
+}
+
+/** 段が直接に頼る前の段（depends_on_stage か path_stages）。 */
+function upstreamOf(stage: InputStage): number[] {
+  if (stage.input !== "choose_option") return [];
+  if (stage.path_stages !== undefined) return stage.path_stages;
+  return stage.depends_on_stage === undefined ? [] : [stage.depends_on_stage];
+}
+
+/** stageNo に直接・間接に依存する段の番号（depends_on_stage・path_stages をたどる）。 */
 export function downstreamOf(stages: InputStage[], stageNo: number): Set<number> {
   const out = new Set<number>();
   let grew = true;
   while (grew) {
     grew = false;
     for (const s of stages) {
-      if (s.input !== "choose_option" || s.depends_on_stage === undefined || out.has(s.stage)) continue;
-      if (s.depends_on_stage === stageNo || out.has(s.depends_on_stage)) {
+      const ups = upstreamOf(s);
+      if (ups.length === 0 || out.has(s.stage)) continue;
+      if (ups.some((n) => n === stageNo || out.has(n))) {
         out.add(s.stage);
         grew = true;
       }
@@ -362,7 +409,7 @@ export function unitsOf(stage: OptionStage, picked: string[]): number {
   return picked.reduce((sum, id) => sum + (byId.get(id)?.units ?? 0), 0);
 }
 
-export function DecisionPanel({ selection, actor = null, observation, names, busy, blocked, onCheck, onSubmit, onCancel }: Props) {
+export function DecisionPanel({ selection, actor = null, observation, names, busy, blocked, onCheck, onSubmit, onCancel, onInputChange }: Props) {
   const { candidate, inputs } = selection;
   const stages = useMemo(() => {
     if (!inputs || !("stages" in inputs.response)) return [];
@@ -382,6 +429,10 @@ export function DecisionPanel({ selection, actor = null, observation, names, bus
   }
 
   const body = inputs.response;
+  if (!("refusal" in body) && DISPLAY_ONLY_KINDS.has(candidate.kind)) {
+    // U7-5f: 表示だけの候補。check・submit のボタンを出さない（未裁定で送れない）
+    return <DisplayOnlyInputs candidate={candidate} stages={stages} actor={actor} headingId={headingId} onCancel={onCancel} />;
+  }
   if ("refusal" in body) {
     return (
       <section className="panel decision" aria-labelledby={headingId}>
@@ -417,6 +468,7 @@ export function DecisionPanel({ selection, actor = null, observation, names, bus
   );
 
   const toggle = (stage: OptionStage, id: string) => {
+    onInputChange?.(); // 入力が変わる: 前の check の答えと、届いていない答えを使わない（更新関数の外で知らせる）
     setPicks((p) => {
       const list = p[stage.stage] ?? [];
       let next: string[];
@@ -431,7 +483,7 @@ export function DecisionPanel({ selection, actor = null, observation, names, bus
         if (other.distinct_across_stages && updated[other.stage]) {
           updated[other.stage] = (updated[other.stage] ?? []).filter((x) => !next.includes(x));
         }
-        // 依存する段: 前の段を変えたら、それに（直接・間接に）依存するすべての段の選択を捨てる（組・番号が変わる。U7-5e の 3 段を含む）
+        // 依存する段: 前の段を変えたら、それに（直接・間接に）依存するすべての段の選択を捨てる（組・番号が変わる。U7-5e の 3 段・U7-5g の energy2 を含む）
         if (dependents.has(other.stage)) updated[other.stage] = [];
       }
       return updated;
@@ -439,6 +491,7 @@ export function DecisionPanel({ selection, actor = null, observation, names, bus
   };
 
   const move = (stageNo: number, index: number, delta: number) => {
+    onInputChange?.();
     setPicks((p) => {
       const list = [...(p[stageNo] ?? [])];
       const target = index + delta;
@@ -457,6 +510,7 @@ export function DecisionPanel({ selection, actor = null, observation, names, bus
   const needsCheck = CHECK_BEFORE_SUBMIT_KINDS.has(candidate.kind) || stages.some((s) => s.input === "choose_option" && s.total_units !== undefined);
   const executable = EXECUTABLE_PROCESSABILITY.has(candidate.processability);
   const canSend = !withheld && satisfied && !busy && !blocked && executable && (!needsCheck || check?.valid === true);
+  const hasPathStage = stages.some((s) => s.input === "choose_option" && s.path_stages !== undefined && PATH_STAGE_KINDS[candidate.kind] !== undefined);
 
   return (
     <section className="panel decision" aria-labelledby={headingId}>
@@ -480,7 +534,7 @@ export function DecisionPanel({ selection, actor = null, observation, names, bus
       {candidate.stadium ? <StadiumInfo stadium={candidate.stadium} actor={actor} names={names} /> : null}
       {POWER_KINDS.has(candidate.kind) ? <PowerInfo candidate={candidate} names={names} /> : null}
       {!withheld && stages.length === 0 ? <p>この操作に入力はありません。</p> : null}
-      {kindNote(candidate.kind, stages.length === 0) ? <p className="small">{kindNote(candidate.kind, stages.length === 0)}</p> : null}
+      {kindNote(candidate.kind, stages.length === 0, hasPathStage) ? <p className="small">{kindNote(candidate.kind, stages.length === 0, hasPathStage)}</p> : null}
       {ATTACK_KINDS.has(candidate.kind) ? (
         <p className="small">
           ここで選ぶのは、ワザと、宣言といっしょに選ぶもの（あれば）だけです。ワザの対象・トラッシュするエネルギー・山札から選ぶカード・写すワザは、受理のあとにエンジンが決定として聞きます。コインはエンジンが投げます（結果は入力しません）。
@@ -498,7 +552,14 @@ export function DecisionPanel({ selection, actor = null, observation, names, bus
               {stage.note ? <p className="small">{stage.note}</p> : null}
               {stage.remaining !== undefined ? <p className="small">残りの回数: {stage.remaining}</p> : null}
               {stage.decline ? <p className="small">辞退できます（{stage.range.min} を選べます）。</p> : null}
-              <ValueInput stage={stage} value={values[stage.stage] ?? ""} onChange={(v) => setValues((s) => ({ ...s, [stage.stage]: v }))} />
+              <ValueInput
+                stage={stage}
+                value={values[stage.stage] ?? ""}
+                onChange={(v) => {
+                  onInputChange?.();
+                  setValues((s) => ({ ...s, [stage.stage]: v }));
+                }}
+              />
             </fieldset>
           );
         }
@@ -509,7 +570,7 @@ export function DecisionPanel({ selection, actor = null, observation, names, bus
             kind={candidate.kind}
             stage={stage}
             options={options}
-            waitingFor={waiting ? stage.depends_on_stage ?? null : null}
+            waitingFor={waiting ? (stage.path_stages ?? (stage.depends_on_stage === undefined ? [] : [stage.depends_on_stage])) : null}
             picked={picks[stage.stage] ?? []}
             elsewhere={stage.distinct_across_stages ? pickedElsewhere(stage.stage) : new Set()}
             observation={observation}
@@ -573,7 +634,7 @@ function OptionStageInput({
   kind: string;
   stage: OptionStage;
   options: InputOption[];
-  waitingFor: number | null;
+  waitingFor: number[] | null;
   picked: string[];
   elsewhere: Set<string>;
   observation: Observation | null;
@@ -624,7 +685,13 @@ function OptionStageInput({
         // 宣言といっしょに選べるものが 1 つもない（count 0〜0）: 余分な入力を求めない
         <p className="small muted">宣言といっしょに選べるものはありません（ワザだけを送ります）。</p>
       ) : waitingFor !== null ? (
-        <p className="callout info small">段 {waitingFor} を選ぶと、その選択と組になるものだけを選べます（組はエンジンの options_by_choice）。</p>
+        <p className="callout info small">
+          {stage.path_stages
+            ? `段 ${waitingFor.join("・")} を選ぶと、その組でエンジンが示したものだけを選べます（組はエンジンの options_by_path）。`
+            : `段 ${waitingFor.join("・")} を選ぶと、その選択と組になるものだけを選べます（組はエンジンの options_by_choice）。`}
+        </p>
+      ) : stage.path_stages && options.length === 0 ? (
+        <p className="callout info small">今の段 {stage.path_stages.join("・")} の組では、この段に選べるものがありません（エンジンの options_by_path に組がない）。選ばずに送れます。</p>
       ) : declaration && options.length === 0 ? (
         <p className="small muted">このワザといっしょに選べるものはありません（0 個のまま送れます）。</p>
       ) : options.length === 0 ? (
@@ -751,5 +818,59 @@ function ValueInput({ stage, value, onChange }: { stage: Extract<InputStage, { i
       <span>値（{min}〜{max}）</span>
       <input id={id} type="number" min={min} max={max} step={1} value={value} onChange={(e) => onChange(e.target.value)} />
     </label>
+  );
+}
+
+/**
+ * U7-5f: 表示だけの候補（check_face_up_deck）。エンジンが返した owner・position だけを表示する（カード ID・uid・名前・表面の画像を補わない）。
+ * position は 0 がいちばん上（内部の値）で、人向けには「上から position+1 枚目」と書く。check・submit を呼ばない（ボタンを出さない）。
+ */
+function DisplayOnlyInputs({
+  candidate,
+  stages,
+  actor,
+  headingId,
+  onCancel,
+}: {
+  candidate: Candidate;
+  stages: InputStage[];
+  actor: PlayerIndex | "host" | null;
+  headingId: string;
+  onCancel(): void;
+}) {
+  const [only] = stages as OptionStage[];
+  return (
+    <section className="panel decision display-only" aria-labelledby={headingId}>
+      <h3 id={headingId}>
+        表示だけ: {labelOf(KIND_LABELS, candidate.kind)} <code className="muted">{candidate.kind}</code>
+      </h3>
+      <div className="badges">
+        <ProcessabilityBadge value={candidate.processability} withDescription />
+      </div>
+      <p className="callout warn small" role="status">
+        この候補は表示だけで、送れません。エンジンの記録で裁定が決まらない要求（未裁定・FU2）のためで、ゲーム上の禁止ではありません。この GUI は検査・送信を呼びません。
+      </p>
+      <p className="small">
+        エンジンが示した、相手の山札のおもてのカードの位置です（位置は公開のおもての枚数だけから決まります）。どのカードかは表示しません（カード ID・名前・画像は受け取っていません）。
+      </p>
+      <ul className="options face-up-positions" aria-label="おもての山札の位置">
+        {(only?.options ?? []).map((op) => (
+          <li key={op.id}>
+            <span>
+              {actor === op.owner ? "自分" : `相手（${playerLabel(op.owner as PlayerIndex)}）`}の山札・上から {(op.position as number) + 1} 枚目
+            </span>{" "}
+            <code className="muted small">
+              owner: {op.owner}・position: {op.position}（0 がいちばん上）
+            </code>{" "}
+            <ProcessabilityBadge value={op.processability} />
+          </li>
+        ))}
+      </ul>
+      <div className="actions">
+        <button type="button" onClick={onCancel}>
+          閉じる
+        </button>
+      </div>
+    </section>
   );
 }
