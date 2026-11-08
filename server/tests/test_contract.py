@@ -23,7 +23,7 @@ EXPECTED = json.loads((ROOT / "contract" / "kyuura-client-api-v1.json").read_tex
 def test_engine_identity():
     """導入元は direct_url.json の vcs_info で確かめる（site-packages で git rev-parse をしない）。"""
     summary = verify_engine_source(EXPECTED["engine"]["commit"], EXPECTED["engine"]["version"])
-    assert summary["commit_id"] == EXPECTED["engine"]["commit"] and summary["version"] == kyuura_engine.__version__ == EXPECTED["engine"]["version"] == "0.166.0"
+    assert summary["commit_id"] == EXPECTED["engine"]["commit"] and summary["version"] == kyuura_engine.__version__ == EXPECTED["engine"]["version"] == "0.170.0"
     assert "site-packages" in Path(summary["module"]).parts and ".venv/src" not in Path(summary["module"]).as_posix()
     reqs = (ROOT / "server" / "requirements.txt").read_text(encoding="utf-8")
     assert f"kyuura-engine @ git+https://github.com/moheronemy/kyuura-engine@{EXPECTED['engine']['commit']}" in reqs
@@ -56,14 +56,18 @@ def test_enumerations_match_engine():
             L.CANDIDATE_NOT_EXECUTABLE, L.INPUT_BOUNDARY_UNCONFIRMED] == EXPECTED["refusal_codes"]
     assert list(C.ERROR_MESSAGES) == EXPECTED["client_error_codes"]
     assert list(L.IMPLEMENTED_KINDS) == EXPECTED["implemented_kinds"]
-    assert EXPECTED["gui_operable_kinds"] == EXPECTED["implemented_kinds"]  # U7-4 で use_attack の画面を加えた（画面を持たない種類は表示だけ）
+    assert EXPECTED["gui_operable_kinds"] == EXPECTED["implemented_kinds"]  # U7-4 で use_attack、U7-5 で 5 種類の画面を加えた（画面を持たない種類は表示だけ）
     assert list(L.TURN_KINDS) == EXPECTED["turn_basic_kinds"] == [L.KIND_PLAY_BASIC, L.KIND_ATTACH_ENERGY, L.KIND_EVOLVE, L.KIND_RETREAT]
     assert list(L.MAIN_KINDS) == EXPECTED["main_kinds"]
     assert EXPECTED["attack_kinds"] == [L.KIND_USE_ATTACK]
-    assert [k for k in L.MAIN_KINDS if k not in (L.KIND_END_TURN, *L.TURN_KINDS, L.KIND_USE_ATTACK)] == EXPECTED["turn_kinds_not_covered"]
+    assert EXPECTED["board_kinds"] == list(L.BOARD_KINDS) == [L.KIND_REMOVE_DISGUISE, L.KIND_DISCARD_FROM_PLAY, L.KIND_REVEAL_FACE_DOWN]
+    assert EXPECTED["trainer_kinds"] == [L.KIND_PLAY_TRAINER] and EXPECTED["stadium_kinds"] == [L.KIND_USE_STADIUM]
+    evaluated = (L.KIND_END_TURN, *L.TURN_KINDS, L.KIND_USE_ATTACK, *L.BOARD_KINDS, L.KIND_PLAY_TRAINER, L.KIND_USE_STADIUM)
+    assert [k for k in L.MAIN_KINDS if k not in evaluated] == EXPECTED["turn_kinds_not_covered"] == ["use_power", "check_face_up_deck"]
     assert {L.REASON_REACTIONS, L.REASON_FACE_DOWN, L.REASON_STOPS, L.REASON_PREFLIGHT, L.REASON_CONTINUATION,
-            L.REASON_NO_PRINTED_ATTACK} <= set(EXPECTED["reason_codes"])
+            L.REASON_NO_PRINTED_ATTACK, L.REASON_USE_CONDITION} <= set(EXPECTED["reason_codes"])
     assert set(EXPECTED["check_before_submit_kinds"]) <= set(EXPECTED["implemented_kinds"])
+    assert {L.KIND_USE_ATTACK, *L.BOARD_KINDS, L.KIND_PLAY_TRAINER, L.KIND_USE_STADIUM} == set(EXPECTED["check_before_submit_kinds"])
 
 
 def test_attack_enumerations_match_engine():
@@ -74,7 +78,40 @@ def test_attack_enumerations_match_engine():
     assert [E.ROUTE_FORM, E.ROUTE_RECALL, E.ROUTE_LINK, E.ROUTE_PREHISTORIC, E.ROUTE_PUPPET, E.ROUTE_MIMIC] == EXPECTED["attack_routes"]
     assert [L.ADDON_STADIUM_COIN, L.ADDON_ATTACK_POWER, L.ADDON_WITH_POWER] == EXPECTED["declaration_addons"]
     assert [e.value for e in EnergyType] == EXPECTED["energy_types"]
-    assert EXPECTED["stage_roles"] == {L.KIND_USE_ATTACK: ["attack", "declaration_options"]}
+    assert EXPECTED["stage_roles"][L.KIND_USE_ATTACK] == ["attack", "declaration_options"]
+
+
+def test_u7_5_roles_match_engine():
+    """U7-5 の段の role（1 段）が、固定版のエンジンの表・ソースと同じ。use_stadium は段のない応答もある（選ばせるもののない効果）。"""
+    import inspect
+
+    board = {kind: [role] for kind, (_check, role) in L._BOARD_CHECKS.items()}
+    assert {k: EXPECTED["stage_roles"][k] for k in L.BOARD_KINDS} == board
+    assert '"role": "trainer"' in inspect.getsource(L._trainer_candidate) and EXPECTED["stage_roles"][L.KIND_PLAY_TRAINER] == ["trainer"]
+    stadium = inspect.getsource(L._stadium_candidate)
+    assert '"role": "energy"' in stadium and EXPECTED["stage_roles"][L.KIND_USE_STADIUM] == ["energy"]
+    assert "disclosure=DISCLOSURE_NONE" in stadium and EXPECTED["stage_roles_or_empty"] == [L.KIND_USE_STADIUM]
+    assert set(EXPECTED["stage_roles"]) == {L.KIND_USE_ATTACK, *L.BOARD_KINDS, L.KIND_PLAY_TRAINER, L.KIND_USE_STADIUM}
+
+
+def test_u7_5_option_keys_cover_engine_source():
+    """U7-5 の選べるもの・候補の stadium・holder の項目の表（知らない項目は画面が止める）が、固定版のエンジンが作る項目と同じ。"""
+    import inspect
+
+    pokemon = inspect.getsource(L._pokemon_option)
+    for key in ("pokemon", "card", "zone", "bench_index", "face_down", "card_id"):
+        assert f'"{key}"' in pokemon, key
+    common = {"id", "eligible", "processability", "reasons"}
+    assert set(EXPECTED["board_option_keys"]) == common | {"pokemon", "card", "zone", "bench_index", "card_id", "face_down"}
+    assert set(EXPECTED["holder_keys"]) == {"pokemon", "card", "zone", "bench_index", "card_id", "face_down"}
+    card = inspect.getsource(L._card_option)
+    assert '"card"' in card and '"card_id"' in card and 'option["special"]' in card and 'category == "energy"' in card  # special はエネルギーだけ（トレーナーにない）
+    assert set(EXPECTED["trainer_option_keys"]) == common | {"card", "card_id"}
+    stadium = inspect.getsource(L._stadium_candidate)
+    assert '"card": energy, "card_id": state.cards[energy].card_id, "holder": dict(base)' in stadium
+    assert set(EXPECTED["stadium_energy_option_keys"]) == common | {"card", "card_id", "holder"}
+    assert '{"card": stadium.card, "card_id": state.cards[stadium.card].card_id, "owner": stadium.owner}' in stadium
+    assert EXPECTED["stadium_keys"] == ["card", "card_id", "owner"]
 
 
 def test_attack_option_keys_cover_engine_source():
@@ -111,7 +148,7 @@ def test_stage_keys_cover_engine_source():
 
 
 def test_coverage_of_a_real_turn(fixed_bridge):
-    """実際の番の coverage（seed 固定の new_game）: scope_kinds は評価した種類（番を終える・基本の 4 種類・ワザ）と未対応の 7 種類。
+    """実際の番の coverage（seed 固定の new_game）: scope_kinds は評価した種類（番を終える・基本の 4 種類・ワザ・U7-5 の 5 種類）と未対応の 2 種類。
     offered_kinds は候補に出した種類だけ（評価してゲーム上できない種類は出さない）。番の候補は partial。"""
     from .conftest import reach_first_turn
 
@@ -122,7 +159,8 @@ def test_coverage_of_a_real_turn(fixed_bridge):
     assert cov["completeness"] == "partial"
     assert cov["scope_kinds"] == EXPECTED["main_kinds"]
     assert cov["not_covered_kinds"] == EXPECTED["turn_kinds_not_covered"]
-    assert cov["offered_kinds"] == [c["kind"] for c in turn["candidates"]] == ["end_turn", "play_basic", "attach_energy"]
+    # 0.170.0 から: プリセットの 1 番目のデッキの最初の手札のトレーナーが play_trainer の候補になる（0.166.0 までは対応しない種類で候補がなかった。意図した差）
+    assert cov["offered_kinds"] == [c["kind"] for c in turn["candidates"]] == ["end_turn", "play_basic", "attach_energy", "play_trainer"]
     end = next(c for c in turn["candidates"] if c["kind"] == "end_turn")
     assert end["processability"] == "may_stop_later" and end["input_disclosure"] == "no_input"
     for c in turn["candidates"][1:]:

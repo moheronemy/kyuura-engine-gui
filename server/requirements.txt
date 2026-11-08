@@ -1,7 +1,7 @@
 # ローカル接続層の依存（実行時）。導入: npm run setup（scripts/setup.mjs）または README の手順。
 #
 # kyuura-engine は完全なコミットハッシュで固定し、Git の URL から通常のインストールで入れる。
-# 版の番号（0.166.0）は同じ番号で中身の違う配布物があるため、固定にはコミットを使う（README「エンジンの固定」）。
-kyuura-engine @ git+https://github.com/moheronemy/kyuura-engine@9506d6305e90ec262fbe77740d9aa57f04b980b6
+# 版の番号（0.170.0）は同じ番号で中身の違う配布物があるため、固定にはコミットを使う（README「エンジンの固定」）。
+kyuura-engine @ git+https://github.com/moheronemy/kyuura-engine@0885d664913bc8e57279ed9e44ac51cc97d5a6bf
 fastapi==0.162.0
 uvicorn==0.54.0
