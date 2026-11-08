@@ -462,3 +462,19 @@ renderer の `renderToCanvas` は、同じ Canvas では最後に始めた要求
 - 資源: e2e 1 件のプロセスの木（npx から下）の私用のメモリは最大約 1.5 GB。端末の空きは最小 3,293 MB、コミットの空きは最小 4,218 MB。停止の知らせはなかった
 - 今回の接続層であることの確かめ: 始める前に待ち受けがないこと、`reuseExistingServer: false`、接続層（python）と Vite（node）が今回起動した npx の子孫として記録されたこと（1 件目は道具の誤りで子孫を記録できなかった）、終わったあと待ち受けと子孫のプロセスが残っていないこと。待ち受けの観測（2 秒ごと）は記録がなく、待ち受けの pid とコマンド行の照合はできていない
 - 詳細はエンジンの `docs/u7-integration-verification-e0-g1.md` 9 章
+
+#### 13.9.2 G2〜G5（2026-11-08 18:28〜18:4x）
+
+エンジンの計画の G2〜G5 を実行した記録（GUI `b1037bc`・エンジン `e26df79`・renderer `af88231`。GUI のコードは変えていない）。13.8・13.9・13.9.1 とは別の実行で、数を足さない。すべて 1 つずつ別のプロセスで、並列にしていない。全体の記録はエンジンの `docs/u7-integration-verification-e3-g5.md`。
+
+| 段 | 場所 | 結果 |
+|---|---|---|
+| G2 | 作業場所 `kyuura-engine-gui-wt-u75fg` | tsc・`npm run build` 終了コード 0。vitest 18 ファイル 227 件・pytest 10 ファイル 113 件・失敗 0。e2e `local-flow` 5・`card-images` 4・`u75fg` 4 の 13 件・失敗 0 |
+| G3 | 同（G2 のビルド） | `KYUURA_E2E_PREVIEW=1`（`npx vite preview`）で `card-images` 4・`u75fg` 4 の 8 件・失敗 0 |
+| G4 | クリーンな場所（新しい clone を `b1037bc` に detach。新しい npm のキャッシュ・pip のキャッシュなし・空の PYTHONPATH・ssh なしで `npm run setup`） | 接続層の kyuura-engine は Git の URL からの通常のインストール（`e26df79…`・0.172.0・編集可能でない）。tsc・build 0、vitest 227 件・pytest 113 件、e2e 7 ファイル 27 件・preview 8 件・失敗 0 |
+| G5 | 両方の場所（読むだけ） | package.json・lockfile の `resolved` は `af88231…`・version 0.1.0。入れた renderer の package.json・README.md は renderer の `af88231` の木と同じ sha256。`dist-lib/` の 75 ファイル（入れるときに作るもの）は 2 つの場所で同じ |
+
+- e2e の選択: JUnit の件数がファイルの件数と同じことで確かめた。接続層（`..\server\.venv\Scripts\python.exe -m kyuura_gui_server --port 8766 --test-fixed-seed 21`）と Vite は、各実行で起動した npx の子孫として記録した
+- 待ち受けの観測の訂正: この環境では `Get-NetTCPConnection` が待ち受けを示さず、netstat の `LISTENING` は生きている待ち受けでも pid 0 で、止めたプロセスの残り（接続を拒否する）も出る。13.9・13.9.1 の「待ち受けなし」は弱い根拠だった（プロセスの確かめは別で有効）。G2 の 2 ファイル目からは、8765・8766・5173・5174・4173 に直接 TCP でつなげるかで決めた。始める前と終わったあと、どこにもつながらなかった
+- 事故: G4 の `u75.spec.ts`・`u75e.spec.ts` の後始末で、検証の道具（ParentProcessId をたどって子孫を集め、残りを `taskkill /T /F` で止めていた）が、pid の再利用で今回の実行でないプロセスを子孫と誤って数え、53 件（常駐のアプリ・デスクトップの部品など）を止めた。テストの結果とは別。道具は直したが、直したあとは実行していない（エンジンの文書の 6.6 節）
+- 終わったあと: 作業場所とクリーンな場所の指紋は E0 と同じ・変更なし。利用者の作業場所の未コミットの 13 件は E0 の記録と同じ
