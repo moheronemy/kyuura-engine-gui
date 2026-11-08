@@ -23,7 +23,7 @@ EXPECTED = json.loads((ROOT / "contract" / "kyuura-client-api-v1.json").read_tex
 def test_engine_identity():
     """導入元は direct_url.json の vcs_info で確かめる（site-packages で git rev-parse をしない）。"""
     summary = verify_engine_source(EXPECTED["engine"]["commit"], EXPECTED["engine"]["version"])
-    assert summary["commit_id"] == EXPECTED["engine"]["commit"] and summary["version"] == kyuura_engine.__version__ == EXPECTED["engine"]["version"] == "0.170.0"
+    assert summary["commit_id"] == EXPECTED["engine"]["commit"] and summary["version"] == kyuura_engine.__version__ == EXPECTED["engine"]["version"] == "0.171.0"
     assert "site-packages" in Path(summary["module"]).parts and ".venv/src" not in Path(summary["module"]).as_posix()
     reqs = (ROOT / "server" / "requirements.txt").read_text(encoding="utf-8")
     assert f"kyuura-engine @ git+https://github.com/moheronemy/kyuura-engine@{EXPECTED['engine']['commit']}" in reqs
@@ -56,18 +56,19 @@ def test_enumerations_match_engine():
             L.CANDIDATE_NOT_EXECUTABLE, L.INPUT_BOUNDARY_UNCONFIRMED] == EXPECTED["refusal_codes"]
     assert list(C.ERROR_MESSAGES) == EXPECTED["client_error_codes"]
     assert list(L.IMPLEMENTED_KINDS) == EXPECTED["implemented_kinds"]
-    assert EXPECTED["gui_operable_kinds"] == EXPECTED["implemented_kinds"]  # U7-4 で use_attack、U7-5 で 5 種類の画面を加えた（画面を持たない種類は表示だけ）
+    assert EXPECTED["gui_operable_kinds"] == EXPECTED["implemented_kinds"]  # U7-4 で use_attack、U7-5 で 5 種類、U7-5e で use_power の画面を加えた（画面を持たない種類は表示だけ）
     assert list(L.TURN_KINDS) == EXPECTED["turn_basic_kinds"] == [L.KIND_PLAY_BASIC, L.KIND_ATTACH_ENERGY, L.KIND_EVOLVE, L.KIND_RETREAT]
     assert list(L.MAIN_KINDS) == EXPECTED["main_kinds"]
     assert EXPECTED["attack_kinds"] == [L.KIND_USE_ATTACK]
     assert EXPECTED["board_kinds"] == list(L.BOARD_KINDS) == [L.KIND_REMOVE_DISGUISE, L.KIND_DISCARD_FROM_PLAY, L.KIND_REVEAL_FACE_DOWN]
     assert EXPECTED["trainer_kinds"] == [L.KIND_PLAY_TRAINER] and EXPECTED["stadium_kinds"] == [L.KIND_USE_STADIUM]
-    evaluated = (L.KIND_END_TURN, *L.TURN_KINDS, L.KIND_USE_ATTACK, *L.BOARD_KINDS, L.KIND_PLAY_TRAINER, L.KIND_USE_STADIUM)
-    assert [k for k in L.MAIN_KINDS if k not in evaluated] == EXPECTED["turn_kinds_not_covered"] == ["use_power", "check_face_up_deck"]
+    assert EXPECTED["power_kinds"] == [L.KIND_USE_POWER]
+    evaluated = (L.KIND_END_TURN, *L.TURN_KINDS, L.KIND_USE_ATTACK, *L.BOARD_KINDS, L.KIND_PLAY_TRAINER, L.KIND_USE_STADIUM, L.KIND_USE_POWER)
+    assert [k for k in L.MAIN_KINDS if k not in evaluated] == EXPECTED["turn_kinds_not_covered"] == ["check_face_up_deck"]
     assert {L.REASON_REACTIONS, L.REASON_FACE_DOWN, L.REASON_STOPS, L.REASON_PREFLIGHT, L.REASON_CONTINUATION,
             L.REASON_NO_PRINTED_ATTACK, L.REASON_USE_CONDITION} <= set(EXPECTED["reason_codes"])
     assert set(EXPECTED["check_before_submit_kinds"]) <= set(EXPECTED["implemented_kinds"])
-    assert {L.KIND_USE_ATTACK, *L.BOARD_KINDS, L.KIND_PLAY_TRAINER, L.KIND_USE_STADIUM} == set(EXPECTED["check_before_submit_kinds"])
+    assert {L.KIND_USE_ATTACK, *L.BOARD_KINDS, L.KIND_PLAY_TRAINER, L.KIND_USE_STADIUM, L.KIND_USE_POWER} == set(EXPECTED["check_before_submit_kinds"])
 
 
 def test_attack_enumerations_match_engine():
@@ -135,6 +136,41 @@ def test_attack_option_keys_cover_engine_source():
             "reasons"} == set(EXPECTED["addon_option_keys"])
     option = inspect.getsource(L._option)  # eligible・processability・reasons は _option が加える
     assert all(f'"{key}"' in option for key in ("eligible", "processability", "reasons"))
+
+
+def test_power_shapes_match_engine():
+    """U7-5e: 特殊能力の段の role の並び・role ごとの meaning が、固定版のエンジンの宣言の表（effects.POWER_INPUT_STAGES）と同じ。段のない形も受ける。"""
+    from kyuura_engine.effects import POWER_INPUT_STAGES
+
+    shapes = {tuple(field for field, _ in decl) for decl in POWER_INPUT_STAGES.values()} | {()}
+    assert shapes == {tuple(shape) for shape in EXPECTED["power_stage_shapes"]}
+    for decl in POWER_INPUT_STAGES.values():
+        for field, domain in decl:
+            assert EXPECTED["power_role_meanings"][field] == L._POWER_MEANING[domain], (field, domain)
+    # どの段も 1 つを選ぶ（任意の段はない）。2 段目以降は直前の段に依存し、upstream_stages・after を持つ
+    import inspect
+
+    source = inspect.getsource(L._power_candidate)
+    assert '"count": {"min": 1, "max": 1}' in source and '"depends_on_stage": k - 1, "upstream_stages": list(range(1, k))' in source
+    assert '{"after": parents[oid]} if k > 1' in source
+
+
+def test_power_option_keys_cover_engine_source():
+    """U7-5e の選べるもの・候補の pokemon・power の項目の表が、固定版のエンジンが作る項目と同じ。相手のうらのカードは位置と face_down だけ。"""
+    import inspect
+
+    public = inspect.getsource(L._public_pokemon)
+    assert '{"pokemon": pokemon.pokemon_id, "zone": zone, "face_down": True}' in public and 'option["bench_index"] = index' in public
+    domain = inspect.getsource(L._power_domain)
+    assert '{"card": uid, "card_id": state.cards[uid].card_id}' in domain and "_card_option(state, uid)" in domain
+    common = {"id", "eligible", "processability", "reasons"}
+    assert set(EXPECTED["power_option_keys"]) == common | {"pokemon", "card", "zone", "bench_index", "card_id", "face_down", "special", "after"}
+    candidates = inspect.getsource(L._power_candidates)
+    assert '{"index": slot.key.power_index, "name_ja": slot.power.name_ja, "card": slot.card, "card_id": slot.key.card_id}' in candidates
+    assert EXPECTED["power_keys"] == ["index", "name_ja", "card", "card_id"]
+    # 候補の pokemon は本人の場のポケモン（_pokemon_option）。本人のうらのカードの特殊能力は候補にしない（face_down の pokemon は来ない）
+    assert "if state.is_face_down(pokemon):" in candidates and '"pokemon": dict(base)' in candidates
+    assert set(EXPECTED["power_candidate_pokemon_keys"]) == {"pokemon", "card", "zone", "bench_index", "card_id"}
 
 
 def test_stage_keys_cover_engine_source():
