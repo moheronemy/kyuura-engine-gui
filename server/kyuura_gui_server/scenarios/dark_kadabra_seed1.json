@@ -131,5 +131,18 @@
  "seed": 1,
  "views_sha256": {
   "dark_kadabra": "d4b9bd802eb2dffb5c14f934a98226b200e075062f22693c4531039a90378fce"
- }
+ },
+ "compatibility": [
+  {
+   "engine_commit": "e26df79cc6dec913c1d15b5d8203df066334d65d",
+   "engine_version": "0.172.0",
+   "checked": "2026-11-08",
+   "result": "操作の列・到達点は同じ（来歴の追記だけ。記録し直していない）",
+   "method": "server/tools/scenario_views.py の --full を 0.171.0（74c8e1f）と 0.172.0（e26df79）の環境で実行し、応答の全体を項目ごとに比べた。各時点の全入口（プレイヤー0・1・観戦者・ホスト）の view と作成の知らせは同じ（views_sha256 も同じ）",
+   "candidates_difference": {
+    "added_u7_5fg_candidates": "なし（どの時点にも check_face_up_deck の候補・attach_energy の 3 段目・本人のうらのカードの特殊能力の候補は出ない）",
+    "other": "coverage に display_only_kinds・completeness_basis・partial_residual・residual（classes は R-2〜R-5 の固定の分類）・unverified_paths が加わり、implemented_kinds に check_face_up_deck が加わった（U7-5f・g の項目の追加）。どの時点・入口も completeness・not_covered_kinds は変わらず、display_only_kinds・partial_residual・residual.present・unverified_paths は空。候補の並び・中身の違いはない"
+   }
+  }
+ ]
 }
