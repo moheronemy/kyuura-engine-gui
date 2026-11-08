@@ -5,11 +5,14 @@ import {
   ATTACK_KINDS,
   ATTACK_OPTION_KEYS,
   ATTACK_ROUTES,
+  BOARD_KINDS,
+  BOARD_OPTION_KEYS,
   CONTRACT,
   DECLARATION_ADDONS,
   ENERGY_TYPES,
   FORMAT,
   GUI_SERVER_FORMAT,
+  HOLDER_KEYS,
   INPUT_DISCLOSURE,
   INPUT_KINDS,
   LEGAL_ACTIONS_FORMAT,
@@ -17,9 +20,16 @@ import {
   OUTCOMES,
   PAIR_KEYS,
   PROCESSABILITY,
+  STADIUM_ENERGY_OPTION_KEYS,
+  STADIUM_KEYS,
+  STADIUM_KINDS,
   STAGE_KEYS,
   STAGE_ROLES,
+  STAGE_ROLES_OR_EMPTY,
+  STAGE_ROLES_SHARED,
   STATUS_VALUES,
+  TRAINER_KINDS,
+  TRAINER_OPTION_KEYS,
   ZONES,
 } from "./contract";
 import type {
@@ -143,7 +153,7 @@ function status(value: unknown): StatusInfo {
   return o as unknown as StatusInfo;
 }
 
-function playerObservation(value: unknown, i: number): PlayerObservation {
+function playerObservation(value: unknown, i: number, viewer: 0 | 1 | null): PlayerObservation {
   const w = `observation.players[${i}]`;
   const o = obj(value, w);
   if (o.player !== i) fail(`${w}.player`);
@@ -156,8 +166,8 @@ function playerObservation(value: unknown, i: number): PlayerObservation {
   arr(prizes.face_up, `${w}.prizes.face_up`);
   arr(o.discard, `${w}.discard`).forEach((c, j) => cardRef(c, `${w}.discard[${j}]`));
   arr(o.set_aside, `${w}.set_aside`);
-  if (o.active !== null) fieldSlot(o.active, `${w}.active`);
-  arr(o.bench, `${w}.bench`).forEach((b, j) => fieldSlot(b, `${w}.bench[${j}]`));
+  if (o.active !== null) fieldSlot(o.active, `${w}.active`, viewer === i);
+  arr(o.bench, `${w}.bench`).forEach((b, j) => fieldSlot(b, `${w}.bench[${j}]`, viewer === i));
   return o as unknown as PlayerObservation;
 }
 
@@ -167,9 +177,20 @@ function cardRef(value: unknown, where: string): void {
   str(o.card_id, `${where}.card_id`);
 }
 
-function fieldSlot(value: unknown, where: string): void {
+function fieldSlot(value: unknown, where: string, own: boolean): void {
   const o = obj(value, where);
-  if (o.face_down === true) return;
+  if (o.face_down === true) {
+    // 情報境界: うらのカードの本当のカード（real）は、持ち主の観測にだけある。ほかの閲覧者の観測・項目の外にカード ID が来たら止める
+    if ("card_id" in o || "name_ja" in o) fail(`${where}: うらのカードにカード ID・名前がある`);
+    if ("real" in o) {
+      if (!own) fail(`${where}.real: 持ち主でない閲覧者にうらのカードの中身がある`);
+      const real = obj(o.real, `${where}.real`);
+      int(real.card, `${where}.real.card`);
+      str(real.card_id, `${where}.real.card_id`);
+      if ("name_ja" in real) str(real.name_ja, `${where}.real.name_ja`);
+    }
+    return;
+  }
   int(o.pokemon_id, `${where}.pokemon_id`);
   str(o.card_id, `${where}.card_id`);
   str(o.name_ja, `${where}.name_ja`);
@@ -181,13 +202,13 @@ function fieldSlot(value: unknown, where: string): void {
 
 export function observation(value: unknown): Observation {
   const o = obj(value, "observation");
-  playerOrNull(o.viewer, "observation.viewer");
+  const viewer = playerOrNull(o.viewer, "observation.viewer");
   int(o.turn, "observation.turn");
   playerOrNull(o.current_player, "observation.current_player");
   str(o.phase, "observation.phase");
   const players = arr(o.players, "observation.players");
   if (players.length !== 2) fail("observation.players");
-  players.forEach((p, i) => playerObservation(p, i));
+  players.forEach((p, i) => playerObservation(p, i, viewer));
   if (o.decision != null) {
     const d = obj(o.decision, "observation.decision");
     str(d.kind, "observation.decision.kind");
@@ -230,6 +251,16 @@ function candidate(value: unknown, i: number): Candidate {
     int(so.stage, `${w}.input_stages[${j}].stage`);
     oneOf(so.input, INPUT_KINDS, `${w}.input_stages[${j}].input`);
   });
+  if ("choices_format" in o) str(o.choices_format, `${w}.choices_format`);
+  // U7-5d: 場のスタジアム（use_stadium の候補だけ。公開のカード・持ち主）。ほかの種類に来たら、知らない形として止める
+  if ("stadium" in o) {
+    if (!STADIUM_KINDS.has(o.kind as string)) fail(`${w}.stadium: ${String(o.kind)} の候補ではない`);
+    const st = obj(o.stadium, `${w}.stadium`);
+    for (const key of Object.keys(st)) if (!STADIUM_KEYS.has(key)) fail(`${w}.stadium.${key}: 知らないスタジアムの項目`);
+    int(st.card, `${w}.stadium.card`);
+    str(st.card_id, `${w}.stadium.card_id`);
+    if (st.owner !== 0 && st.owner !== 1) fail(`${w}.stadium.owner`);
+  }
   return o as unknown as Candidate;
 }
 
@@ -284,7 +315,40 @@ function option(value: unknown, where: string): InputOption {
     // 本人が知る本当のカードの印刷のワザなので、本人の候補にカード ID がある（attack_index のある選べるものだけ）
     if ("card_id" in o && !("attack_index" in o)) fail(`${where}: うらのポケモンにカード ID がある`);
   }
+  if ("holder" in o) holder(o.holder, `${where}.holder`);
   return o as unknown as InputOption;
+}
+
+/** U7-5d: エネルギーがついている本人の場のポケモン（場のポケモンの形）。うらのポケモンにカード ID は来ない。 */
+function holder(value: unknown, where: string): void {
+  const h = obj(value, where);
+  for (const key of Object.keys(h)) if (!HOLDER_KEYS.has(key)) fail(`${where}.${key}: 知らない holder の項目`);
+  int(h.pokemon, `${where}.pokemon`);
+  int(h.card, `${where}.card`);
+  oneOf(h.zone, ZONES, `${where}.zone`);
+  if ("bench_index" in h && int(h.bench_index, `${where}.bench_index`) < 0) fail(`${where}.bench_index`);
+  if ("face_down" in h) {
+    if (h.face_down !== true || "card_id" in h) fail(`${where}: うらのポケモンにカード ID がある`);
+  } else {
+    str(h.card_id, `${where}.card_id`);
+  }
+}
+
+/** U7-5: 1 段の選べるもの（場のポケモン・手札のトレーナー・スタジアムで選ぶエネルギー）の項目の形。知らない項目は止める。 */
+function singleStageOption(kind: string, o: InputOption, where: string): void {
+  const keys = BOARD_KINDS.has(kind) ? BOARD_OPTION_KEYS : TRAINER_KINDS.has(kind) ? TRAINER_OPTION_KEYS : STADIUM_ENERGY_OPTION_KEYS;
+  for (const key of Object.keys(o)) if (!keys.has(key)) fail(`${where}.${key}: 知らない ${kind} の項目`);
+  if (!("eligible" in o)) fail(`${where}.eligible`);
+  int(o.card, `${where}.card`);
+  if (BOARD_KINDS.has(kind)) {
+    int(o.pokemon, `${where}.pokemon`);
+    oneOf(o.zone, ZONES, `${where}.zone`);
+    // うらのポケモンは face_down（カード ID なし。option() が確かめる）、おもてのポケモンにはカード ID がある
+    if (o.face_down !== true) str(o.card_id, `${where}.card_id`);
+    return;
+  }
+  str(o.card_id, `${where}.card_id`);
+  if (STADIUM_KINDS.has(kind) && !("holder" in o)) fail(`${where}.holder`);
 }
 
 function intList(value: unknown, where: string): number[] {
@@ -333,13 +397,23 @@ function addonOption(o: InputOption, where: string): void {
  */
 function kindStages(kind: string, stages: InputStage[]): void {
   const expectedRoles = STAGE_ROLES[kind];
-  const special = new Set(Object.values(STAGE_ROLES).flat());
+  // U7-3 の種類も同じ名前で使う role（にげるの discard・エネルギーをつけるの energy）は除く
+  const special = new Set(Object.values(STAGE_ROLES).flat().filter((r) => !STAGE_ROLES_SHARED.has(r)));
   if (!expectedRoles) {
     for (const s of stages) if (s.input === "choose_option" && s.role !== undefined && special.has(s.role)) fail(`stages[${s.stage}].role: ${kind} の段ではない`);
     return;
   }
+  if (stages.length === 0 && STAGE_ROLES_OR_EMPTY.has(kind)) return; // U7-5d: 選ばせるもののない場のスタジアム（choices は []）
   const roles = stages.map((s) => (s.input === "choose_option" ? s.role : undefined));
   if (roles.length !== expectedRoles.length || roles.some((r, i) => r !== expectedRoles[i])) fail(`stages: ${kind} の段の並び`);
+  if (BOARD_KINDS.has(kind) || TRAINER_KINDS.has(kind) || STADIUM_KINDS.has(kind)) {
+    // U7-5: 1 段で 1 つを選ぶ。場のポケモン（meaning: pokemon）か、カード（meaning: card）
+    const [only] = stages as OptionStage[];
+    const meaning = BOARD_KINDS.has(kind) ? "pokemon" : "card";
+    if (!only?.options || only.count.min !== 1 || only.count.max !== 1 || only.meaning !== meaning || only.depends_on_stage !== undefined) fail(`stages[1]: ${kind} の段`);
+    only.options.forEach((op, j) => singleStageOption(kind, op, `stages[1].options[${j}]`));
+    return;
+  }
   if (!ATTACK_KINDS.has(kind)) return;
   const [first, second] = stages as OptionStage[];
   if (!first?.options || !second?.options || first.count.min !== 1 || first.count.max !== 1) fail("stages[1]: ワザの段");

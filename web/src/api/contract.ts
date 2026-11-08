@@ -41,3 +41,16 @@ export const ATTACK_OPTION_KEYS = new Set<string>(expected.attack_option_keys);
 export const ADDON_OPTION_KEYS = new Set<string>(expected.addon_option_keys);
 /** 今の入力・今の取っ手への check が通ってから送信する種類（GUI の決まり。check は受理の保証ではない）。 */
 export const CHECK_BEFORE_SUBMIT_KINDS = new Set<string>(expected.check_before_submit_kinds);
+// U7-5a〜d: 場のポケモン 1 匹を指す操作・手札のトレーナー・場のスタジアム。段の role・選べるもの・holder・候補の stadium の項目は契約の表のとおりで、ほかは操作を止める（validate.ts）
+export const BOARD_KINDS = new Set<string>(expected.board_kinds);
+export const TRAINER_KINDS = new Set<string>(expected.trainer_kinds);
+export const STADIUM_KINDS = new Set<string>(expected.stadium_kinds);
+/** 段がない応答（入力なし。choices は []）も受ける種類（選ばせるもののない場のスタジアム）。 */
+export const STAGE_ROLES_OR_EMPTY = new Set<string>(expected.stage_roles_or_empty);
+/** stage_roles の role のうち、U7-3 の種類（にげる・エネルギーをつける）も同じ名前で使うもの。 */
+export const STAGE_ROLES_SHARED = new Set<string>(expected.stage_roles_shared);
+export const BOARD_OPTION_KEYS = new Set<string>(expected.board_option_keys);
+export const TRAINER_OPTION_KEYS = new Set<string>(expected.trainer_option_keys);
+export const STADIUM_ENERGY_OPTION_KEYS = new Set<string>(expected.stadium_energy_option_keys);
+export const HOLDER_KEYS = new Set<string>(expected.holder_keys);
+export const STADIUM_KEYS = new Set<string>(expected.stadium_keys);

@@ -35,6 +35,8 @@
   "stage_roles": {"use_attack": ["attack", "declaration_options"], "remove_disguise": ["disguised"], "discard_from_play": ["discard"], "reveal_face_down": ["face_down"], "play_trainer": ["trainer"], "use_stadium": ["energy"]},
   "$stage_roles_or_empty": "段がない応答（入力なし。choices は []）も受ける種類。use_stadium は選ばせるもののない効果（ラッキースタジアムなど）で段がない（input_disclosure: no_input）。エネルギーを選ばせる効果だけ 1 段（role: energy）",
   "stage_roles_or_empty": ["use_stadium"],
+  "$stage_roles_shared": "stage_roles の role のうち、U7-3 の種類も同じ名前で使うもの（retreat の discard・attach_energy の energy）。ほかの role は、表にない種類の段に来たら「不明な応答」として止める",
+  "stage_roles_shared": ["discard", "energy"],
   "attack_routes": ["form", "recall", "psylink", "prehistoric", "puppet", "mimic"],
   "declaration_addons": ["stadium_coin", "attack_power", "with_power"],
   "energy_types": ["grass", "fire", "water", "lightning", "psychic", "fighting", "colorless", "darkness", "metal"],

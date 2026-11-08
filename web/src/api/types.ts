@@ -98,6 +98,13 @@ export interface FieldPokemon {
 
 export interface FaceDownPokemon {
   face_down: true;
+  /** 公開の値（うらのカードでも観測が返す。マチスの秘策のカードなど）。どのカードかは来ない。 */
+  pokemon_id?: number;
+  damage?: number;
+  energy?: CardRef[];
+  /** 持ち主の観測だけにある、本人が知っている本当のカード（マチスの秘策など）。ほかの閲覧者の観測にはない（validate.ts が確かめる）。 */
+  real?: CardRef;
+  [key: string]: unknown;
 }
 
 export type FieldSlot = FieldPokemon | FaceDownPokemon;
@@ -170,6 +177,25 @@ export interface Candidate {
   input_disclosure: string;
   input_stages: { stage: number; input: string }[];
   choices_format?: string;
+  /** U7-5d（use_stadium）: 場のスタジアム（公開）。owner は出したプレイヤーで、使うのは番のプレイヤー（持ち主でなくても使える）。 */
+  stadium?: StadiumRef;
+}
+
+/** U7-5d: 候補の場のスタジアム。 */
+export interface StadiumRef {
+  card: number;
+  card_id: string;
+  owner: PlayerIndex;
+}
+
+/** U7-5d: スタジアムで選ぶエネルギーカードがついている本人の場のポケモン（U7-5a の場のポケモンと同じ形。うらのポケモンは face_down で card_id なし）。 */
+export interface Holder {
+  pokemon: number;
+  card: number;
+  zone: "active" | "bench";
+  bench_index?: number;
+  card_id?: string;
+  face_down?: true;
 }
 
 export interface LegalActions {
@@ -234,6 +260,8 @@ export interface InputOption {
   addon?: string;
   /** U7-4（addon: with_power）: 特殊能力の名前。 */
   power?: string;
+  /** U7-5d（use_stadium の role: energy）: エネルギーカードがついている本人の場のポケモン。 */
+  holder?: Holder;
   [key: string]: unknown;
 }
 

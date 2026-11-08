@@ -92,6 +92,10 @@ def test_u7_5_roles_match_engine():
     assert '"role": "energy"' in stadium and EXPECTED["stage_roles"][L.KIND_USE_STADIUM] == ["energy"]
     assert "disclosure=DISCLOSURE_NONE" in stadium and EXPECTED["stage_roles_or_empty"] == [L.KIND_USE_STADIUM]
     assert set(EXPECTED["stage_roles"]) == {L.KIND_USE_ATTACK, *L.BOARD_KINDS, L.KIND_PLAY_TRAINER, L.KIND_USE_STADIUM}
+    # retreat の discard・attach_energy の energy は U7-3 の段と同じ名前（GUI はほかの種類の段の role を止めるとき、この 2 つを除く）
+    assert '"role": "discard"' in inspect.getsource(L._retreat_candidate) and '("energy", "target")' in inspect.getsource(L._attach_candidate)
+    shared = {r for roles in EXPECTED["stage_roles"].values() for r in roles} & {"discard", "energy", "new_active", "target", "bench", "evolution_card", "active"}
+    assert sorted(shared) == EXPECTED["stage_roles_shared"] == ["discard", "energy"]
 
 
 def test_u7_5_option_keys_cover_engine_source():
