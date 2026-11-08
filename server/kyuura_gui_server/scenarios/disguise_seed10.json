@@ -1,0 +1,209 @@
+{
+ "source": "タケシのロコン・キュウコン・ヒトカゲ・リザード各 4 と炎エネルギー 44 対 CONNECT_DECK（GUI の側のデッキ。seed 10 は GUI の事前に固定した探索）。準備は U7 の候補、「ばける」は直接のコマンド（UsePokemonPower。GUI の対象外）、のせるカードは U7 の決定で答えた列",
+ "engine_commit": "0885d664913bc8e57279ed9e44ac51cc97d5a6bf",
+ "engine_version": "0.170.0",
+ "decks": [
+  [
+   "PMCG5-018",
+   "PMCG5-018",
+   "PMCG5-018",
+   "PMCG5-018",
+   "PMCG5-019",
+   "PMCG5-019",
+   "PMCG5-019",
+   "PMCG5-019",
+   "PMCG1-014",
+   "PMCG1-014",
+   "PMCG1-014",
+   "PMCG1-014",
+   "PMCG1-017",
+   "PMCG1-017",
+   "PMCG1-017",
+   "PMCG1-017",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098"
+  ],
+  [
+   "PMCG1-014",
+   "PMCG1-014",
+   "PMCG1-014",
+   "PMCG1-014",
+   "PMCG1-017",
+   "PMCG1-017",
+   "PMCG1-017",
+   "PMCG1-017",
+   "PMCG1-018",
+   "PMCG1-018",
+   "PMCG1-018",
+   "PMCG1-018",
+   "PMCG1-019",
+   "PMCG1-019",
+   "PMCG1-019",
+   "PMCG1-019",
+   "PMCG1-015",
+   "PMCG1-015",
+   "PMCG1-015",
+   "PMCG1-015",
+   "PMCG1-022",
+   "PMCG1-022",
+   "PMCG1-022",
+   "PMCG1-022",
+   "PMCG1-016",
+   "PMCG1-016",
+   "PMCG1-016",
+   "PMCG1-016",
+   "PMCG1-020",
+   "PMCG1-020",
+   "PMCG1-020",
+   "PMCG1-020",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098",
+   "PMCG1-098"
+  ]
+ ],
+ "seed": 10,
+ "commands": [
+  {
+   "type": "place_starting_pokemon",
+   "player": 0,
+   "active": 1,
+   "bench": []
+  },
+  {
+   "type": "place_starting_pokemon",
+   "player": 1,
+   "active": 61,
+   "bench": []
+  },
+  {
+   "type": "draw_mulligan_cards",
+   "player": 1,
+   "count": 2
+  },
+  {
+   "type": "report_janken_result",
+   "winner": 0
+  },
+  {
+   "type": "end_turn",
+   "player": 0
+  },
+  {
+   "type": "end_turn",
+   "player": 1
+  },
+  {
+   "type": "evolve_pokemon",
+   "player": 0,
+   "card": 4,
+   "target": 1
+  },
+  {
+   "type": "use_pokemon_power",
+   "player": 0,
+   "pokemon": 1,
+   "power": 0,
+   "energy": null,
+   "source": null,
+   "target": null
+  },
+  {
+   "type": "resolve_decision",
+   "player": 0,
+   "decision": 1,
+   "choices": [
+    14
+   ]
+  }
+ ],
+ "points": {
+  "disguise": {
+   "commands": 9,
+   "phase": "main",
+   "decision_kind": null
+  }
+ },
+ "views_sha256": {
+  "disguise": "7b53bac800bcb737c92fa069448e978e791f49571b02018f508f740104bc568d"
+ },
+ "compatibility": [
+  {
+   "engine_commit": "74c8e1f8ca03d017d5c0a8a79e6fdaa33d25b7f8",
+   "engine_version": "0.171.0",
+   "checked": "2026-11-08",
+   "result": "操作の列・到達点は同じ（ここの追記だけ。記録は作り直していない）",
+   "method": "server/tools/scenario_views.py の --full を 0.170.0（0885d66）と 0.171.0（74c8e1f）の環境で実行し、応答の全体を項目ごとに比べた。各時点の全入口（プレイヤー0・1・観戦者・ホスト）の view は同じ（views_sha256 も同じ）",
+   "candidates_difference": {
+    "added_power_candidates": "なし（どの時点にも use_power の候補は出ない）",
+    "other": "coverage.implemented_kinds に use_power が加わった（種類の追加）。この時点（番の中）では not_covered_kinds から use_power が外れた。ほかの項目の違いはない"
+   }
+  }
+ ]
+}

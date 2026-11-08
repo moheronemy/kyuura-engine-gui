@@ -354,7 +354,7 @@ textarea {
 }
 .bench {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr));
   gap: 6px;
 }
 .pokemon {
@@ -546,6 +546,122 @@ details > summary {
   cursor: pointer;
 }
 
+/* カード画像（非公式のカード風の画像。400×560 の比率） */
+.card-image {
+  --card-w: 84px;
+  display: inline-flex;
+  flex: none;
+  width: var(--card-w);
+  aspect-ratio: 400 / 560;
+  vertical-align: top;
+  border-radius: calc(var(--card-w) * 0.05);
+  overflow: hidden;
+  background: #efeee8;
+}
+.card-image.size-s {
+  --card-w: 56px;
+}
+.card-image.size-l {
+  --card-w: 112px;
+}
+.card-canvas,
+.card-image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.card-canvas[hidden] {
+  display: none;
+}
+.card-fallback {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  width: 100%;
+  padding: 4px;
+  border: 1px dashed var(--line);
+  border-radius: inherit;
+  font-size: 0.7rem;
+  line-height: 1.3;
+  text-align: center;
+  overflow-wrap: anywhere;
+  color: var(--muted);
+}
+.card-fallback-name {
+  color: var(--ink);
+  font-weight: 600;
+}
+.card-fallback[data-state="failed"],
+.card-fallback[data-state="unavailable"] {
+  border-color: var(--warn);
+}
+.card-back .card-fallback {
+  background: #3a4a7a;
+  color: #fff;
+  border: none;
+}
+.card-back-one,
+.card-back-row {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 3px;
+}
+.card-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  margin: 0;
+  max-width: 120px;
+  text-align: center;
+}
+.card-list.hand-cards li {
+  padding: 4px;
+}
+.piles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 0 0 6px;
+}
+.pile {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+}
+.prize-row {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+.pokemon {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+.pokemon-body {
+  min-width: 0;
+  flex: 1;
+}
+.pokemon-image {
+  margin: 0;
+  text-align: center;
+}
+.middle-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.option .card-image {
+  cursor: pointer;
+}
+.option.disabled .card-image {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 @media (max-width: 900px) {
   .console-grid,
   .deck-grid,
@@ -555,4 +671,77 @@ details > summary {
   .app {
     padding: 8px 10px 32px;
   }
+}
+
+@media (max-width: 480px) {
+  .card-image {
+    --card-w: 64px;
+  }
+  .card-image.size-s {
+    --card-w: 44px;
+  }
+  .card-image.size-l {
+    --card-w: 84px;
+  }
+  .pokemon {
+    flex-direction: column;
+  }
+}
+
+/* U7-3 の入力: にげるの個数・検査の結果 */
+.units {
+  border-left: 3px solid var(--info);
+  padding: 2px 8px;
+  margin: 4px 0;
+  background: var(--info-bg);
+}
+.units p {
+  margin: 2px 0;
+}
+.check-result {
+  border-radius: 4px;
+  padding: 4px 8px;
+}
+.check-result.ok {
+  background: var(--ok-bg);
+}
+.check-result.warn {
+  background: var(--warn-bg);
+}
+.option {
+  flex-wrap: wrap;
+}
+
+/* U7-4: ワザの選べるものの中身（印刷の情報と持ち方）。狭い画面では折り返す */
+.attack-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex-basis: 100%;
+  min-width: 0;
+}
+
+.attack-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* U7-5d: 場のスタジアム（候補の stadium。持ち主と使う主体を分けて書く） */
+.stadium-info {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  margin: 0.5rem 0;
+}
+.stadium-info p {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+/* U7-5e: 特殊能力（候補の pokemon・power） */
+.power-info p,
+.power-head {
+  margin: 0.25rem 0;
+  overflow-wrap: anywhere;
 }

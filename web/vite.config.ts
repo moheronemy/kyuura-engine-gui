@@ -6,6 +6,8 @@ import react from "@vitejs/plugin-react";
 // ブラウザは Python を直接 import しない。接続層のポートは KYUURA_GUI_SERVER_PORT で変えられる。
 const serverPort = process.env.KYUURA_GUI_SERVER_PORT ?? "8765";
 const webPort = Number(process.env.KYUURA_GUI_WEB_PORT ?? "5173");
+const previewPort = Number(process.env.KYUURA_GUI_WEB_PORT ?? "4173");
+const proxy = { "/api": { target: `http://127.0.0.1:${serverPort}`, changeOrigin: false } };
 
 export default defineConfig({
   plugins: [react()],
@@ -13,16 +15,18 @@ export default defineConfig({
     host: "127.0.0.1",
     port: webPort,
     strictPort: true,
-    proxy: {
-      "/api": { target: `http://127.0.0.1:${serverPort}`, changeOrigin: false },
-    },
+    proxy,
   },
-  preview: { host: "127.0.0.1", port: 4173 },
+  // 本番ビルドの確認（npm run build のあと vite preview）。開発時と同じく /api を接続層へプロキシする
+  preview: { host: "127.0.0.1", port: previewPort, strictPort: true, proxy },
   test: {
     environment: "jsdom",
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
     include: ["src/**/*.test.{ts,tsx}"],
     exclude: ["e2e/**", "node_modules/**"],
+    // kyuura-card-renderer の dist-lib はバンドルしていない ESM（拡張子なしの import・素材画像と CSS の import）で、
+    // 使う側のバンドラーが扱う前提。テストでも Node に直接読ませず Vite の変換を通す
+    server: { deps: { inline: ["kyuura-card-renderer"] } },
   },
 });

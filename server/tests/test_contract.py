@@ -5,14 +5,15 @@
 
 from __future__ import annotations
 
+import importlib
 import json
-import subprocess
 from pathlib import Path
 
 import kyuura_engine
 from kyuura_engine import client_api as C
 from kyuura_engine import diagnostics as D
 from kyuura_engine import legal_actions as L
+from kyuura_gui_server.engine_source import verify_engine_source
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -20,13 +21,14 @@ EXPECTED = json.loads((ROOT / "contract" / "kyuura-client-api-v1.json").read_tex
 
 
 def test_engine_identity():
-    assert kyuura_engine.__version__ == EXPECTED["engine"]["version"]
-    src = Path(kyuura_engine.__file__).resolve().parents[1]
-    head = subprocess.run(["git", "-C", str(src), "rev-parse", "HEAD"], capture_output=True, text=True)
-    if head.returncode == 0:  # -e で入れた clone なら、そのコミットを確かめる
-        assert head.stdout.strip() == EXPECTED["engine"]["commit"]
+    """導入元は direct_url.json の vcs_info で確かめる（site-packages で git rev-parse をしない）。"""
+    summary = verify_engine_source(EXPECTED["engine"]["commit"], EXPECTED["engine"]["version"])
+    assert summary["commit_id"] == EXPECTED["engine"]["commit"] and summary["version"] == kyuura_engine.__version__ == EXPECTED["engine"]["version"] == "0.171.0"
+    assert "site-packages" in Path(summary["module"]).parts and ".venv/src" not in Path(summary["module"]).as_posix()
     reqs = (ROOT / "server" / "requirements.txt").read_text(encoding="utf-8")
-    assert f"kyuura-engine@{EXPECTED['engine']['commit']}" in reqs
+    assert f"kyuura-engine @ git+https://github.com/moheronemy/kyuura-engine@{EXPECTED['engine']['commit']}" in reqs
+    assert not any(line.strip().startswith("-e") for line in reqs.splitlines())
+    importlib.import_module("kyuura_engine.resolution")  # 修正前の配布物では入っていなかったサブパッケージ
 
 
 def test_envelope_and_formats():
@@ -53,26 +55,153 @@ def test_enumerations_match_engine():
     assert [L.CANDIDATES_STALE, L.CANDIDATES_WRONG_GAME, L.CANDIDATES_WRONG_ACTOR, L.CANDIDATE_UNKNOWN, L.CANDIDATE_INPUT_INVALID,
             L.CANDIDATE_NOT_EXECUTABLE, L.INPUT_BOUNDARY_UNCONFIRMED] == EXPECTED["refusal_codes"]
     assert list(C.ERROR_MESSAGES) == EXPECTED["client_error_codes"]
-    assert [L.KIND_TAKE_PRIZE, L.KIND_PROMOTE_ACTIVE, L.KIND_ANSWER_DECISION, L.KIND_END_TURN, L.KIND_PLACE_STARTING, L.KIND_MULLIGAN_DRAW,
-            L.KIND_REPORT_JANKEN, L.KIND_START_SUDDEN_DEATH] == EXPECTED["implemented_kinds"]
+    assert list(L.IMPLEMENTED_KINDS) == EXPECTED["implemented_kinds"]
+    assert EXPECTED["gui_operable_kinds"] == EXPECTED["implemented_kinds"]  # U7-4 で use_attack、U7-5 で 5 種類、U7-5e で use_power の画面を加えた（画面を持たない種類は表示だけ）
+    assert list(L.TURN_KINDS) == EXPECTED["turn_basic_kinds"] == [L.KIND_PLAY_BASIC, L.KIND_ATTACH_ENERGY, L.KIND_EVOLVE, L.KIND_RETREAT]
+    assert list(L.MAIN_KINDS) == EXPECTED["main_kinds"]
+    assert EXPECTED["attack_kinds"] == [L.KIND_USE_ATTACK]
+    assert EXPECTED["board_kinds"] == list(L.BOARD_KINDS) == [L.KIND_REMOVE_DISGUISE, L.KIND_DISCARD_FROM_PLAY, L.KIND_REVEAL_FACE_DOWN]
+    assert EXPECTED["trainer_kinds"] == [L.KIND_PLAY_TRAINER] and EXPECTED["stadium_kinds"] == [L.KIND_USE_STADIUM]
+    assert EXPECTED["power_kinds"] == [L.KIND_USE_POWER]
+    evaluated = (L.KIND_END_TURN, *L.TURN_KINDS, L.KIND_USE_ATTACK, *L.BOARD_KINDS, L.KIND_PLAY_TRAINER, L.KIND_USE_STADIUM, L.KIND_USE_POWER)
+    assert [k for k in L.MAIN_KINDS if k not in evaluated] == EXPECTED["turn_kinds_not_covered"] == ["check_face_up_deck"]
+    assert {L.REASON_REACTIONS, L.REASON_FACE_DOWN, L.REASON_STOPS, L.REASON_PREFLIGHT, L.REASON_CONTINUATION,
+            L.REASON_NO_PRINTED_ATTACK, L.REASON_USE_CONDITION} <= set(EXPECTED["reason_codes"])
+    assert set(EXPECTED["check_before_submit_kinds"]) <= set(EXPECTED["implemented_kinds"])
+    assert {L.KIND_USE_ATTACK, *L.BOARD_KINDS, L.KIND_PLAY_TRAINER, L.KIND_USE_STADIUM, L.KIND_USE_POWER} == set(EXPECTED["check_before_submit_kinds"])
 
 
-def test_coverage_of_a_real_turn(bridge):
-    """実際の番の coverage: 番を終えるだけを出し、ほかの 12 種類は not_covered（partial）。"""
-    from .conftest import act
-    from .test_bridge import _match_that_did_not_halt_at_start
+def test_attack_enumerations_match_engine():
+    """U7-4 のワザの入力の値（route・addon・cost の値・段の role）が、固定版のエンジンの定数と同じ。"""
+    from kyuura_engine import effects as E
+    from kyuura_engine.cards import EnergyType
 
-    t = _match_that_did_not_halt_at_start(bridge)
-    for _ in range(20):
-        r0 = bridge.seat(t[0], "candidates")["response"]
-        r1 = bridge.seat(t[1], "candidates")["response"]
-        turn = next((r for r in (r0, r1) if r["candidates"] and r["candidates"][0]["kind"] == "end_turn"), None)
-        if turn is not None:
-            break
-        if not (act(bridge, t[0]) or act(bridge, t[1]) or act(bridge, t["host"], host=True)):
-            raise AssertionError("番に届かない")
+    assert [E.ROUTE_FORM, E.ROUTE_RECALL, E.ROUTE_LINK, E.ROUTE_PREHISTORIC, E.ROUTE_PUPPET, E.ROUTE_MIMIC] == EXPECTED["attack_routes"]
+    assert [L.ADDON_STADIUM_COIN, L.ADDON_ATTACK_POWER, L.ADDON_WITH_POWER] == EXPECTED["declaration_addons"]
+    assert [e.value for e in EnergyType] == EXPECTED["energy_types"]
+    assert EXPECTED["stage_roles"][L.KIND_USE_ATTACK] == ["attack", "declaration_options"]
+
+
+def test_u7_5_roles_match_engine():
+    """U7-5 の段の role（1 段）が、固定版のエンジンの表・ソースと同じ。use_stadium は段のない応答もある（選ばせるもののない効果）。"""
+    import inspect
+
+    board = {kind: [role] for kind, (_check, role) in L._BOARD_CHECKS.items()}
+    assert {k: EXPECTED["stage_roles"][k] for k in L.BOARD_KINDS} == board
+    assert '"role": "trainer"' in inspect.getsource(L._trainer_candidate) and EXPECTED["stage_roles"][L.KIND_PLAY_TRAINER] == ["trainer"]
+    stadium = inspect.getsource(L._stadium_candidate)
+    assert '"role": "energy"' in stadium and EXPECTED["stage_roles"][L.KIND_USE_STADIUM] == ["energy"]
+    assert "disclosure=DISCLOSURE_NONE" in stadium and EXPECTED["stage_roles_or_empty"] == [L.KIND_USE_STADIUM]
+    assert set(EXPECTED["stage_roles"]) == {L.KIND_USE_ATTACK, *L.BOARD_KINDS, L.KIND_PLAY_TRAINER, L.KIND_USE_STADIUM}
+    # retreat の discard・attach_energy の energy は U7-3 の段と同じ名前（GUI はほかの種類の段の role を止めるとき、この 2 つを除く）
+    assert '"role": "discard"' in inspect.getsource(L._retreat_candidate) and '("energy", "target")' in inspect.getsource(L._attach_candidate)
+    shared = {r for roles in EXPECTED["stage_roles"].values() for r in roles} & {"discard", "energy", "new_active", "target", "bench", "evolution_card", "active"}
+    assert sorted(shared) == EXPECTED["stage_roles_shared"] == ["discard", "energy"]
+
+
+def test_u7_5_option_keys_cover_engine_source():
+    """U7-5 の選べるもの・候補の stadium・holder の項目の表（知らない項目は画面が止める）が、固定版のエンジンが作る項目と同じ。"""
+    import inspect
+
+    pokemon = inspect.getsource(L._pokemon_option)
+    for key in ("pokemon", "card", "zone", "bench_index", "face_down", "card_id"):
+        assert f'"{key}"' in pokemon, key
+    common = {"id", "eligible", "processability", "reasons"}
+    assert set(EXPECTED["board_option_keys"]) == common | {"pokemon", "card", "zone", "bench_index", "card_id", "face_down"}
+    assert set(EXPECTED["holder_keys"]) == {"pokemon", "card", "zone", "bench_index", "card_id", "face_down"}
+    card = inspect.getsource(L._card_option)
+    assert '"card"' in card and '"card_id"' in card and 'option["special"]' in card and 'category == "energy"' in card  # special はエネルギーだけ（トレーナーにない）
+    assert set(EXPECTED["trainer_option_keys"]) == common | {"card", "card_id"}
+    stadium = inspect.getsource(L._stadium_candidate)
+    assert '"card": energy, "card_id": state.cards[energy].card_id, "holder": dict(base)' in stadium
+    assert set(EXPECTED["stadium_energy_option_keys"]) == common | {"card", "card_id", "holder"}
+    assert '{"card": stadium.card, "card_id": state.cards[stadium.card].card_id, "owner": stadium.owner}' in stadium
+    assert EXPECTED["stadium_keys"] == ["card", "card_id", "owner"]
+
+
+def test_attack_option_keys_cover_engine_source():
+    """ワザ・宣言といっしょに選ぶものの選べるものの項目の表（知らない項目は画面が止める）が、固定版のエンジンが作る項目を含む。"""
+    import inspect
+
+    attack = "".join(inspect.getsource(f) for f in (L._attack_candidate, L._attack_public, L._face_down_attack_candidate))
+    for key in ("id", "card", "card_id", "attack_index", "route", "grantors", "name_ja", "cost", "damage", "text_ja", "face_down"):
+        assert f'"{key}"' in attack, key
+    assert '("provider", "payer")' in attack  # getattr で加える 2 つ
+    assert {"id", "card", "card_id", "attack_index", "route", "provider", "payer", "grantors", "name_ja", "cost", "damage", "text_ja",
+            "face_down", "eligible", "processability", "reasons"} == set(EXPECTED["attack_option_keys"])
+    addon = inspect.getsource(L._addon_specs) + inspect.getsource(L._pokemon_option)
+    for key in ("addon", "card", "card_id", "pokemon", "power", "zone", "bench_index", "face_down"):
+        assert f'"{key}"' in addon, key
+    assert {"id", "addon", "card", "card_id", "pokemon", "zone", "bench_index", "face_down", "power", "eligible", "processability",
+            "reasons"} == set(EXPECTED["addon_option_keys"])
+    option = inspect.getsource(L._option)  # eligible・processability・reasons は _option が加える
+    assert all(f'"{key}"' in option for key in ("eligible", "processability", "reasons"))
+
+
+def test_power_shapes_match_engine():
+    """U7-5e: 特殊能力の段の role の並び・role ごとの meaning が、固定版のエンジンの宣言の表（effects.POWER_INPUT_STAGES）と同じ。段のない形も受ける。"""
+    from kyuura_engine.effects import POWER_INPUT_STAGES
+
+    shapes = {tuple(field for field, _ in decl) for decl in POWER_INPUT_STAGES.values()} | {()}
+    assert shapes == {tuple(shape) for shape in EXPECTED["power_stage_shapes"]}
+    for decl in POWER_INPUT_STAGES.values():
+        for field, domain in decl:
+            assert EXPECTED["power_role_meanings"][field] == L._POWER_MEANING[domain], (field, domain)
+    # どの段も 1 つを選ぶ（任意の段はない）。2 段目以降は直前の段に依存し、upstream_stages・after を持つ
+    import inspect
+
+    source = inspect.getsource(L._power_candidate)
+    assert '"count": {"min": 1, "max": 1}' in source and '"depends_on_stage": k - 1, "upstream_stages": list(range(1, k))' in source
+    assert '{"after": parents[oid]} if k > 1' in source
+
+
+def test_power_option_keys_cover_engine_source():
+    """U7-5e の選べるもの・候補の pokemon・power の項目の表が、固定版のエンジンが作る項目と同じ。相手のうらのカードは位置と face_down だけ。"""
+    import inspect
+
+    public = inspect.getsource(L._public_pokemon)
+    assert '{"pokemon": pokemon.pokemon_id, "zone": zone, "face_down": True}' in public and 'option["bench_index"] = index' in public
+    domain = inspect.getsource(L._power_domain)
+    assert '{"card": uid, "card_id": state.cards[uid].card_id}' in domain and "_card_option(state, uid)" in domain
+    common = {"id", "eligible", "processability", "reasons"}
+    assert set(EXPECTED["power_option_keys"]) == common | {"pokemon", "card", "zone", "bench_index", "card_id", "face_down", "special", "after"}
+    candidates = inspect.getsource(L._power_candidates)
+    assert '{"index": slot.key.power_index, "name_ja": slot.power.name_ja, "card": slot.card, "card_id": slot.key.card_id}' in candidates
+    assert EXPECTED["power_keys"] == ["index", "name_ja", "card", "card_id"]
+    # 候補の pokemon は本人の場のポケモン（_pokemon_option）。本人のうらのカードの特殊能力は候補にしない（face_down の pokemon は来ない）
+    assert "if state.is_face_down(pokemon):" in candidates and '"pokemon": dict(base)' in candidates
+    assert set(EXPECTED["power_candidate_pokemon_keys"]) == {"pokemon", "card", "zone", "bench_index", "card_id"}
+
+
+def test_stage_keys_cover_engine_source():
+    """入力の段の項目の表（知らない項目は画面が止める）が、固定版のエンジンが作る段の項目をすべて含む。"""
+    import ast
+    import inspect
+
+    tree = ast.parse(inspect.getsource(L))
+    keys = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Dict) and any(isinstance(k, ast.Constant) and k.value == "input" for k in node.keys)                 and any(isinstance(k, ast.Constant) and k.value == "count" for k in node.keys):
+            keys |= {k.value for k in node.keys if isinstance(k, ast.Constant)}
+    keys.add("name")  # 値の段に後から加える（stage["name"] = ...）
+    assert keys <= set(EXPECTED["stage_keys"]), keys - set(EXPECTED["stage_keys"])
+
+
+def test_coverage_of_a_real_turn(fixed_bridge):
+    """実際の番の coverage（seed 固定の new_game）: scope_kinds は評価した種類（番を終える・基本の 4 種類・ワザ・U7-5 の 5 種類）と未対応の 2 種類。
+    offered_kinds は候補に出した種類だけ（評価してゲーム上できない種類は出さない）。番の候補は partial。"""
+    from .conftest import reach_first_turn
+
+    t = reach_first_turn(fixed_bridge)
+    turn = fixed_bridge.seat(t[0], "candidates")["response"]
     cov = turn["coverage"]
     assert cov["implemented_kinds"] == EXPECTED["implemented_kinds"]
-    assert cov["offered_kinds"] == ["end_turn"] and cov["completeness"] == "partial"
+    assert cov["completeness"] == "partial"
+    assert cov["scope_kinds"] == EXPECTED["main_kinds"]
     assert cov["not_covered_kinds"] == EXPECTED["turn_kinds_not_covered"]
-    assert turn["candidates"][0]["processability"] == "may_stop_later" and turn["candidates"][0]["input_disclosure"] == "no_input"
+    # 0.170.0 から: プリセットの 1 番目のデッキの最初の手札のトレーナーが play_trainer の候補になる（0.166.0 までは対応しない種類で候補がなかった。意図した差）
+    assert cov["offered_kinds"] == [c["kind"] for c in turn["candidates"]] == ["end_turn", "play_basic", "attach_energy", "play_trainer"]
+    end = next(c for c in turn["candidates"] if c["kind"] == "end_turn")
+    assert end["processability"] == "may_stop_later" and end["input_disclosure"] == "no_input"
+    for c in turn["candidates"][1:]:
+        assert c["input_disclosure"] == "confirmed" and c["processability"] in EXPECTED["processability"]

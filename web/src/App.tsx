@@ -6,6 +6,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { endpointClient, fetchTransport, loadCatalog, type Transport } from "./api/transport";
 import type { MatchInfo, PlayerIndex, SeatKey } from "./api/types";
 import { ENGINE } from "./api/contract";
+import { CardImagesProvider } from "./cards/CardImages";
+import { RENDERER_COMMIT } from "./cards/definitions";
+import type { CardRenderer } from "./cards/renderer";
 import { EndpointConsole } from "./components/EndpointConsole";
 import { ScopeNote } from "./components/Panels";
 import { StartScreen } from "./components/StartScreen";
@@ -17,7 +20,7 @@ const SEATS: { key: SeatKey; label: string; viewer: PlayerIndex | null }[] = [
   { key: "spectator", label: "観戦者", viewer: null },
 ];
 
-export function App({ transport = fetchTransport }: { transport?: Transport }) {
+export function App({ transport = fetchTransport, cardRenderer }: { transport?: Transport; cardRenderer?: CardRenderer }) {
   const [match, setMatch] = useState<MatchInfo | null>(null);
   const [screen, setScreen] = useState<"start" | "game">("start");
   const [seat, setSeat] = useState<SeatKey>("player0");
@@ -46,6 +49,7 @@ export function App({ transport = fetchTransport }: { transport?: Transport }) {
   const hostClient = useMemo(() => (match ? endpointClient(transport, { route: "host", token: match.host.token }) : null), [match, transport]);
 
   return (
+    <CardImagesProvider transport={transport} renderer={cardRenderer}>
     <div className="app">
       <header className="app-header">
         <h1>kyuura ローカル対戦確認</h1>
@@ -53,7 +57,11 @@ export function App({ transport = fetchTransport }: { transport?: Transport }) {
           ローカル確認用の画面です。認証済みのオンライン対戦ではありません。プレイヤーの切り替えは同じ端末での確認のためで、本人確認ではありません。
         </p>
         <p className="small muted">
-          エンジン kyuura-engine {ENGINE.version}（<code>{ENGINE.commit.slice(0, 7)}</code>）・契約 kyuura-client-api 形式 1
+          エンジン kyuura-engine {ENGINE.version}（<code>{ENGINE.commit.slice(0, 7)}</code>）・契約 kyuura-client-api 形式 1・カード画像 kyuura-card-renderer（
+          <code>{RENDERER_COMMIT.slice(0, 7)}</code>）
+        </p>
+        <p className="small muted">
+          カード画像は、エンジンのカード定義から作る非公式のカード風の画像です（実際のカードの画像ではありません）。イラスト枠は白、エネルギーは仮の表示、ベイビィはたねの枠です。HP・ダメージなど今の状態は画像ではなく文字で表示します。
         </p>
       </header>
 
@@ -139,5 +147,6 @@ export function App({ transport = fetchTransport }: { transport?: Transport }) {
         </main>
       )}
     </div>
+    </CardImagesProvider>
   );
 }

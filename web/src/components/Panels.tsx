@@ -1,5 +1,5 @@
 import type { Candidate, LegalActions, StatusInfo, ViewResponse } from "../api/types";
-import { TURN_KINDS_NOT_COVERED } from "../api/contract";
+import { GUI_OPERABLE_KINDS, TURN_BASIC_KINDS, TURN_KINDS_NOT_COVERED } from "../api/contract";
 import {
   COMPLETENESS_TEXT,
   EMPTY_REASON_LABELS,
@@ -11,6 +11,7 @@ import {
   STATUS_LABELS,
   labelOf,
   playerLabel,
+  reasonsText,
   waitingByLabel,
 } from "../labels";
 import type { LogEntry } from "../state/logSummary";
@@ -133,7 +134,19 @@ export function CandidatesPanel({
                 <ProcessabilityBadge value={c.processability} />
                 <DisclosureBadge value={c.input_disclosure} />
               </div>
-              {c.reasons.length ? <p className="small muted">理由: {c.reasons.join("・")}</p> : null}
+              {c.reasons.length ? <p className="small muted">理由: {reasonsText(c.reasons)}</p> : null}
+              {c.power && c.pokemon ? (
+                // U7-5e: 同じ種類の候補がいくつも並ぶので、エンジンが返した特殊能力の名前と使うポケモンを見出しの下に出す（候補は id で区別する）
+                <p className="small power-head">
+                  ［{c.power.name_ja}］ — <code>{c.pokemon.card_id}</code>（{c.pokemon.zone === "active" ? "バトル場" : `ベンチ${(c.pokemon.bench_index ?? 0) + 1}`}）
+                </p>
+              ) : null}
+              {c.stadium ? (
+                // U7-5d: 場のスタジアム（公開）。持ち主は出したプレイヤーで、使うのは番のプレイヤー
+                <p className="small">
+                  場のスタジアム: <code>{c.stadium.card_id}</code>（持ち主: {playerLabel(c.stadium.owner)}）
+                </p>
+              ) : null}
               <details>
                 <summary>保証の範囲（guarantees）</summary>
                 <dl className="guarantees">
@@ -148,9 +161,14 @@ export function CandidatesPanel({
                 </dl>
                 <p className="small">supported・may_stop_later でも、ここに書かれた範囲を超えて対戦の完走は保証されません。</p>
               </details>
-              <button type="button" onClick={() => onSelect(c)} disabled={disabled} aria-pressed={selectedId === c.id}>
-                {selectedId === c.id ? "入力中" : "この操作を選ぶ"}
-              </button>
+              {GUI_OPERABLE_KINDS.has(c.kind) ? (
+                <button type="button" onClick={() => onSelect(c)} disabled={disabled} aria-pressed={selectedId === c.id}>
+                  {selectedId === c.id ? "入力中" : "この操作を選ぶ"}
+                </button>
+              ) : (
+                // 知らない種類: 入力の形を確かめていないので、古い入力の画面へ通さない（操作しない）
+                <p className="small warn">この GUI はこの種類の入力の画面を持っていません（表示だけ）。</p>
+              )}
             </li>
           ))}
         </ul>
@@ -162,6 +180,8 @@ export function CandidatesPanel({
 
 export function CoveragePanel({ legal }: { legal: LegalActions }) {
   const cov = legal.coverage;
+  // U7-3〜U7-5: scope_kinds は「評価した種類」と未対応の種類。評価して候補に出さなかった種類は、この状態ではゲーム上できない（または入力がない）もの
+  const notOffered = cov.scope_kinds.filter((k) => !cov.offered_kinds.includes(k) && !cov.not_covered_kinds.includes(k));
   return (
     <details className="coverage" open={cov.not_covered_kinds.length > 0}>
       <summary>
@@ -171,12 +191,18 @@ export function CoveragePanel({ legal }: { legal: LegalActions }) {
       <p className="small muted">{cov.completeness_scope}</p>
       <dl className="coverage-grid">
         <div>
-          <dt>この応答の範囲（scope_kinds）</dt>
+          <dt>この応答の範囲（scope_kinds。評価した種類と未対応の種類）</dt>
           <dd>{cov.scope_kinds.length ? cov.scope_kinds.map((k) => labelOf(KIND_LABELS, k)).join("・") : "なし"}</dd>
         </div>
         <div>
           <dt>候補に出した種類（offered_kinds）</dt>
           <dd>{cov.offered_kinds.length ? cov.offered_kinds.map((k) => labelOf(KIND_LABELS, k)).join("・") : "なし"}</dd>
+        </div>
+        <div>
+          <dt>評価して候補に出さなかった種類</dt>
+          <dd aria-label="評価して候補に出さなかった種類">
+            {notOffered.length ? `${notOffered.map((k) => labelOf(KIND_LABELS, k)).join("・")}（エンジンの確かめで、今はできない）` : "なし"}
+          </dd>
         </div>
         <div>
           <dt>入力非公開の候補（withheld_input_candidates）</dt>
@@ -190,7 +216,7 @@ export function CoveragePanel({ legal }: { legal: LegalActions }) {
       {cov.not_covered_kinds.length ? (
         <div className="unsupported" aria-label="未対応の操作">
           <h3>未対応の操作（not_covered_kinds）</h3>
-          <p className="small">現行の API（U7-1・U7-2）では候補に出ない種類です。ゲーム上の禁止ではありません。この GUI では操作として作っていません。</p>
+          <p className="small">この API の版（U7-1〜U7-5e）では評価も候補の作成もしない種類です（おもての山札のカードの確かめ）。ゲーム上の禁止ではありません。この GUI では操作として作っていません。</p>
           <ul className="inline-list">
             {cov.not_covered_kinds.map((k) => (
               <li key={k}>
@@ -212,13 +238,13 @@ export function ScopeNote() {
     <details className="panel scope-note">
       <summary>この GUI でできること・できないこと</summary>
       <p>
-        できる操作: 最初のポケモンを置く・切り直しの補償・ジャンケンの結果の入力（ホスト）・番を終える・決定への回答（サイドを取る・バトル場に出す・その他の決定）・サドン・デスの開始（ホスト）。
+        できる操作: 最初のポケモンを置く・切り直しの補償・ジャンケンの結果の入力（ホスト）・番を終える・{TURN_BASIC_KINDS.map((k) => labelOf(KIND_LABELS, k)).join("・")}・ワザの宣言（ワザ → 宣言といっしょに選ぶもの）・手札のトレーナーを使う（どうぐ・手札から出すスタジアム・化石・人形を含む）・場のスタジアムを使う・「ばける」でのせたカードを外す・化石・人形を場からすてる・うらのカードをおもてにする・決定への回答（サイドを取る・バトル場に出す・ワザやトレーナーの対象・相手が答える決定などの決定）・サドン・デスの開始（ホスト）。番の操作は、エンジンが候補に出したものだけを選べます。
       </p>
       <p>
-        未対応（現行 API で操作できない）: {TURN_KINDS_NOT_COVERED.map((k) => labelOf(KIND_LABELS, k)).join("・")}。ワザ名などは表示だけです。
+        未対応（この API の版で操作できない）: {TURN_KINDS_NOT_COVERED.map((k) => labelOf(KIND_LABELS, k)).join("・")}。
       </p>
       <p className="small">
-        番を終えるだけで進めると山札がなくなって終局しますが、通常の対戦機能が完成したという意味ではありません。
+        ワザ・トレーナー・場のスタジアムで終局・停止まで進められますが、特殊能力などは未対応で、通常の対戦機能が完成したという意味ではありません。
       </p>
     </details>
   );

@@ -5,6 +5,7 @@
 - ``GET  /api/health``                         接続層・エンジンの版と契約の識別
 - ``GET  /api/decks/presets``                  エンジンの固定デッキ（サンプル）
 - ``GET  /api/cards``                          カード名の表（表示用の最小の項目）
+- ``GET  /api/card-definitions``               描画用の公開カード定義（GUI 接続層の拡張。client_api の入口ではない）
 - ``GET  /api/scenarios``                      検証用の固定例の一覧
 - ``POST /api/local-match``                    ローカル対戦を作る（古い対戦は捨てる）
 - ``DELETE /api/local-match``                  対戦を捨てる
@@ -21,16 +22,17 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import secrets
 
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from starlette.concurrency import run_in_threadpool
 
 import kyuura_engine
 from kyuura_engine.client_api import CONTRACT, FORMAT, ClientHub
 
-from . import GUI_SERVER_FORMAT, decks, scenarios
+from . import GUI_SERVER_FORMAT, card_definitions, decks, scenarios
 from .local_match import SEAT_HOST, LocalMatch, MatchClosed, MatchRegistry
 from .safety import forbidden_paths
 
@@ -43,6 +45,7 @@ ERRORS = {
     "GUI_REQUEST_INVALID": (400, "要求が JSON のオブジェクトでない、または大きすぎる"),
     "GUI_FIELD_INVALID": (400, "要求の項目が正しくない"),
     "GUI_DECK_INPUT_INVALID": (400, "デッキの入力の形が正しくない"),
+    "GUI_CARD_DATA_UNAVAILABLE": (503, "同梱のカード定義を読めない（カード画像は文字の表示になる）"),
     "GUI_SCENARIO_UNAVAILABLE": (409, "固定例を使えない（エンジンの版と固定例が合わない）"),
     "GUI_SEAT_UNKNOWN": (404, "ローカルの入口が見つからない（対戦が新しい対戦で置き換えられたか、捨てられた）"),
     "GUI_USE_UPDATES_ROUTE": (400, "更新は updates の口で取る（接続層が閲覧者ごとに保持している）"),
@@ -61,9 +64,29 @@ def gui_ok(body: dict) -> JSONResponse:
     return JSONResponse({"gui_server": GUI_SERVER_FORMAT, "ok": True, **body})
 
 
-def create_app(registry: MatchRegistry | None = None) -> FastAPI:
+TEST_FIXED_SEED_ENV = "KYUURA_GUI_TEST_FIXED_SEED"
+
+
+def _test_fixed_seed() -> int | None:
+    """テスト専用: 新しい対戦の seed を固定する（``python -m kyuura_gui_server --test-fixed-seed N`` が設定する）。
+
+    実ブラウザの確認（e2e）で、通常の new_game から同じ操作の列で同じ盤面に届くようにするためだけに使う。
+    seed はブラウザへ返さない・受け取らない（固定しても応答の形は同じ）。通常の起動（npm run dev）では使わない。
+    """
+    raw = os.environ.get(TEST_FIXED_SEED_ENV)
+    if raw is None or raw == "":
+        return None
+    if not raw.isdigit() or int(raw) >= 2**31:
+        raise ValueError(f"{TEST_FIXED_SEED_ENV} は 0 以上 2**31 未満の整数")
+    return int(raw)
+
+
+def create_app(registry: MatchRegistry | None = None, *, fixed_seed: int | None = None) -> FastAPI:
     app = FastAPI(title="kyuura-engine-gui local bridge", docs_url=None, redoc_url=None, openapi_url=None)
     app.state.registry = registry or MatchRegistry()
+    app.state.fixed_seed = fixed_seed if fixed_seed is not None else _test_fixed_seed()
+    if app.state.fixed_seed is not None:
+        log.warning("テスト専用: 新しい対戦の seed を固定している（%s）。通常の利用では使わない", TEST_FIXED_SEED_ENV)
 
     @app.middleware("http")
     async def guard(request: Request, call_next):
@@ -112,6 +135,16 @@ def create_app(registry: MatchRegistry | None = None) -> FastAPI:
     def cards():
         return gui_ok({"cards": decks.card_catalog()})
 
+    @app.get("/api/card-definitions")
+    def card_definitions_route():
+        # 公開の静的なデータの全体の表（対戦に依存しない・対戦で使うカードに絞らない）。表は 1 回だけ作って使い回す
+        try:
+            body = card_definitions.catalog_json()
+        except card_definitions.CardDataUnavailable:
+            log.exception("カード定義を作れない")
+            return gui_error("GUI_CARD_DATA_UNAVAILABLE")
+        return Response(body, media_type="application/json")
+
     @app.get("/api/scenarios")
     def scenario_list():
         return gui_ok({"scenarios": scenarios.scenario_list()})
@@ -146,7 +179,8 @@ def create_app(registry: MatchRegistry | None = None) -> FastAPI:
         # デッキの診断は作成の画面だけへ返す（対戦の観測へ混ぜない）。エンジンの検査（deck_problems）の結果のまま
         diagnostics = [decks.problems(cards) for cards in lists]
         options = {} if CONVENTION_SETS[conventions] is None else {"conventions": CONVENTION_SETS[conventions]}
-        seed = secrets.randbelow(2**31)  # 接続層だけが持つ（ブラウザへ返さない・記録しない）
+        fixed = request.app.state.fixed_seed
+        seed = secrets.randbelow(2**31) if fixed is None else fixed  # 接続層だけが持つ（ブラウザへ返さない・記録しない）
         hub, notice = await run_in_threadpool(lambda: ClientHub.start(lists[0], lists[1], seed, **options))
         del seed
         origin = {"kind": "new_game", "label": "新しいローカル対戦", "conventions": conventions or None}

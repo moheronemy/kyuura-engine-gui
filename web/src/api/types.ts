@@ -98,6 +98,13 @@ export interface FieldPokemon {
 
 export interface FaceDownPokemon {
   face_down: true;
+  /** 公開の値（うらのカードでも観測が返す。マチスの秘策のカードなど）。どのカードかは来ない。 */
+  pokemon_id?: number;
+  damage?: number;
+  energy?: CardRef[];
+  /** 持ち主の観測だけにある、本人が知っている本当のカード（マチスの秘策など）。ほかの閲覧者の観測にはない（validate.ts が確かめる）。 */
+  real?: CardRef;
+  [key: string]: unknown;
 }
 
 export type FieldSlot = FieldPokemon | FaceDownPokemon;
@@ -170,6 +177,46 @@ export interface Candidate {
   input_disclosure: string;
   input_stages: { stage: number; input: string }[];
   choices_format?: string;
+  /** U7-5d（use_stadium）: 場のスタジアム（公開）。owner は出したプレイヤーで、使うのは番のプレイヤー（持ち主でなくても使える）。 */
+  stadium?: StadiumRef;
+  /** U7-5e（use_power）: 特殊能力を使う本人の場のポケモン（本人のうらのカードの特殊能力は候補にならない）。 */
+  pokemon?: PowerPokemon;
+  /** U7-5e（use_power）: 特殊能力の位置・名前と、印刷したカード（「ばける」・写した特殊能力では場のポケモンのカードと違うことがある）。 */
+  power?: PowerRef;
+}
+
+/** U7-5e: 特殊能力を使う本人の場のポケモン。 */
+export interface PowerPokemon {
+  pokemon: number;
+  card: number;
+  zone: "active" | "bench";
+  bench_index?: number;
+  card_id: string;
+}
+
+/** U7-5e: 特殊能力（index は印刷したカードの特殊能力の位置。入力の値ではない）。 */
+export interface PowerRef {
+  index: number;
+  name_ja: string;
+  card: number;
+  card_id: string;
+}
+
+/** U7-5d: 候補の場のスタジアム。 */
+export interface StadiumRef {
+  card: number;
+  card_id: string;
+  owner: PlayerIndex;
+}
+
+/** U7-5d: スタジアムで選ぶエネルギーカードがついている本人の場のポケモン（U7-5a の場のポケモンと同じ形。うらのポケモンは face_down で card_id なし）。 */
+export interface Holder {
+  pokemon: number;
+  card: number;
+  zone: "active" | "bench";
+  bench_index?: number;
+  card_id?: string;
+  face_down?: true;
 }
 
 export interface LegalActions {
@@ -203,7 +250,50 @@ export interface InputOption {
   placement?: string;
   eligible?: boolean;
   convention?: string;
+  /** U7-3: 処理可能性の理由（reactions_not_evaluated など）。 */
+  reasons?: string[];
+  /** U7-3: 手札のエネルギーカード・トラッシュするエネルギーが特殊エネルギーか。 */
+  special?: boolean;
+  /** U7-3: にげるでトラッシュするエネルギー 1 枚が出す個数（無色2個エネルギーは 2）。カードの枚数ではない。 */
+  units?: number;
+  /** U7-3: 場のポケモンの番号・場所。 */
+  pokemon?: number;
+  zone?: "active" | "bench";
+  bench_index?: number;
+  /** U7-3: 本人のうらのポケモン（場のポケモンの選べるものでは card_id はない）。U7-4: うらのバトル場のポケモンのワザ（card_id は本人が知るカード）。 */
+  face_down?: true;
+  /** U7-4（role: attack）: ワザの位置（印刷したカードの何番目のワザか）。入力の値ではない（送るのは id）。 */
+  attack_index?: number;
+  /** U7-4: ワザの持ち方（form・recall・psylink・prehistoric・puppet・mimic）。うらのバトル場のポケモンのワザにはない。 */
+  route?: string;
+  /** U7-4: ワザを供給する場のポケモンの番号（［サイコリンク］など）。 */
+  provider?: number;
+  /** U7-4: 必要なエネルギーを払うポケモンの番号（［にんぎょうつかい］）。 */
+  payer?: number;
+  /** U7-4: 許可を与える特殊能力を持つ場のポケモンの番号。 */
+  grantors?: number[];
+  /** U7-4: 印刷のワザの名前・必要なエネルギー・ダメージの表示（印刷のまま。与えるダメージの予測ではない）・説明。 */
+  name_ja?: string;
+  cost?: string[];
+  damage?: string | null;
+  text_ja?: string | null;
+  /** U7-4（role: declaration_options）: 宣言といっしょに選ぶものの種類。 */
+  addon?: string;
+  /** U7-4（addon: with_power）: 特殊能力の名前。 */
+  power?: string;
+  /** U7-5d（use_stadium の role: energy）: エネルギーカードがついている本人の場のポケモン。 */
+  holder?: Holder;
+  /** U7-5e（依存する段）: 直前の段の選ぶものの番号（この選ぶものはその選び方のあとだけに選べる）。 */
+  after?: string;
   [key: string]: unknown;
+}
+
+/** U7-3: 2 段の操作の、1 段目の番号ごとの組（2 段目の選べるもの・組ごとの可否）。 */
+export interface PairOption {
+  option: string;
+  eligible: boolean;
+  processability: string;
+  reasons?: string[];
 }
 
 export interface Count {
@@ -226,6 +316,17 @@ export interface OptionStage {
   order_preserved?: boolean;
   decline?: boolean;
   note?: string;
+  /** U7-3: 2 段目が 1 段目の選択に依存する（options_by_choice）。 */
+  depends_on_stage?: number;
+  options_by_choice?: Record<string, PairOption[]>;
+  /** U7-5e: 前のすべての段の番号（2 段目以降。depends_on_stage は直前の段）。 */
+  upstream_stages?: number[];
+  /** U7-3（にげる）: トラッシュするカードの units の合計の範囲（count は枚数）。 */
+  total_units?: Count;
+  /** U7-3（ベンチに出す）: 今のベンチの数と上限（公開の値）。 */
+  bench?: { count: number; limit: number };
+  /** U7-3（にげる）: こんらん（受理のあとにコイン）。 */
+  confused?: boolean;
 }
 
 export interface ValueStage {
@@ -239,6 +340,7 @@ export interface ValueStage {
   remaining?: number;
   decline?: boolean;
   note?: string;
+  name?: string;
 }
 
 export type InputStage = OptionStage | ValueStage;

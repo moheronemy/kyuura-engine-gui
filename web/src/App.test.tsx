@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import { App } from "./App";
 import { NetworkError } from "./api/transport";
-import { candidates, cand, commonRoutes, deferred, inputs, mockTransport, observation, player, pokemon, submitResult, view, type Call } from "./test/fixtures";
+import { candidates, cand, commonRoutes, deferred, inputs, mockRenderer, mockTransport, observation, player, pokemon, submitResult, view, type Call } from "./test/fixtures";
 
 const HAND0 = [{ card: 2, card_id: "PMCG1-058" }];
 const HAND1 = [{ card: 77, card_id: "SECRET-1" }];
@@ -38,7 +38,7 @@ function server(overrides: (c: Call) => unknown | undefined = () => undefined) {
 
 async function startGame(transport: ReturnType<typeof server>) {
   const user = userEvent.setup();
-  render(<App transport={transport} />);
+  render(<App transport={transport} cardRenderer={mockRenderer().renderer} />); // jsdom には Canvas 2D がないので模擬の描画
   const create = await screen.findByRole("button", { name: /対戦を作成/ });
   await waitFor(() => expect(create).toBeEnabled());
   await user.click(create);

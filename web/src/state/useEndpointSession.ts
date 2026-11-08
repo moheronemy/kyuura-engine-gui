@@ -10,7 +10,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ClientApiError, GuiServerError, NetworkError, type EndpointClient, type Handle } from "../api/transport";
 import { ProtocolError } from "../api/validate";
 import type { Candidate, CheckResponse, Choice, InputsResponse, LegalActions, Observation, SubmitResponse, ViewResponse } from "../api/types";
-import { OUTCOME_LABELS, labelOf } from "../labels";
+import { summarizeSubmit } from "./outcome";
 import type { SubmitGate } from "./submitGate";
 import { summarizeUpdate, type LogEntry } from "./logSummary";
 
@@ -21,11 +21,22 @@ export interface Notice {
   lines: string[];
 }
 
+/** check の結果。どの入力（choices を JSON にした文字列）への答えかを持つ。今の入力と同じときだけ使う。 */
+export interface CheckResult {
+  choices: string;
+  response: CheckResponse["response"];
+}
+
 export interface Selection {
   candidate: Candidate;
   handle: Handle;
   inputs: InputsResponse | null;
-  check: CheckResponse["response"] | null;
+  check: CheckResult | null;
+}
+
+/** check の結果と比べる入力の鍵（並びを変えない）。 */
+export function choicesKey(choices: Choice[]): string {
+  return JSON.stringify(choices);
 }
 
 export interface SessionState {
@@ -218,7 +229,9 @@ export function useEndpointSession({ client, canAct, gate, onMutated, refreshSig
           await refetchCandidates();
           return;
         }
-        setState((s) => (s.selection?.handle === sel.handle ? { ...s, selection: { ...s.selection, check: answer.response } } : s));
+        // 同じ取っ手の選択にだけ置く。入力の鍵を持たせ、画面は今の入力と同じときだけ使う（遅れた答えは今の入力に効かない）
+        const check = { choices: choicesKey(choices), response: answer.response };
+        setState((s) => (s.selection?.handle === sel.handle ? { ...s, selection: { ...s.selection, check } } : s));
       } catch (error) {
         handleError(error, gen);
       }
@@ -231,6 +244,7 @@ export function useEndpointSession({ client, canAct, gate, onMutated, refreshSig
     async (choices: Choice[]) => {
       const sel = state.selection;
       if (!sel) return;
+      const actor = state.legal?.actor ?? null;
       const gen = generation.current;
       opCounter.current += 1;
       const operationId = `${operationPrefix}-${opCounter.current}`;
@@ -254,16 +268,9 @@ export function useEndpointSession({ client, canAct, gate, onMutated, refreshSig
           return "error" as const;
         }
         if (!current(gen)) return result.outcome; // 閲覧者が切り替わった: この画面には反映しない
-        const diag = result.result;
-        const lines = [
-          ...(result.refusal ? [`${result.refusal.code}: ${result.refusal.message}`] : []),
-          ...(diag?.diagnostic_id ? [`${diag.diagnostic_id}（${diag.category ?? "—"}）`] : []),
-          ...(diag?.message ? [diag.message] : []),
-          ...(diag?.halt?.message ? [`停止: ${diag.halt.message}`] : []),
-          `operation_id: ${operationId}（対応付け用。重複の排除はありません）`,
-        ];
-        const tone = result.outcome === "accepted" ? "ok" : result.outcome === "failed" ? "error" : "warn";
-        notify(tone, `${labelOf(OUTCOME_LABELS, result.outcome)}: ${sel.candidate.kind}`, lines);
+        // 結果の区別（refused・rejected・accepted とそのあとの決定待ち・停止・終局・failed）はエンジンの語彙のまま（state/outcome.ts）
+        const summary = summarizeSubmit(result, sel.candidate.kind, actor);
+        notify(summary.tone, summary.title, [...summary.lines, `operation_id: ${operationId}（対応付け用。重複の排除はありません）`]);
         if (result.outcome === "accepted" || result.outcome === "failed" || result.refetch_required) {
           setState((s) => ({ ...s, selection: null, legal: result.outcome === "accepted" ? null : s.legal }));
         }
@@ -275,7 +282,7 @@ export function useEndpointSession({ client, canAct, gate, onMutated, refreshSig
       else if (alive.current) await refresh();
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [client, state.selection, gate, notify, refresh, onMutated, operationPrefix, handleError],
+    [client, state.selection, state.legal, gate, notify, refresh, onMutated, operationPrefix, handleError],
   );
 
   const clearSelection = useCallback(() => setState((s) => ({ ...s, selection: null })), []);

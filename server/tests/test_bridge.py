@@ -13,13 +13,17 @@ from kyuura_gui_server.safety import forbidden_paths
 
 from .conftest import ENVELOPE, act, tokens
 
-PINNED = "d0c5cfa9483aacae0cce2fd8d28166b1d8465500"
+import json as _json
+from pathlib import Path as _Path
+
+EXPECTED_VERSION = _json.loads((_Path(__file__).resolve().parents[2] / "contract" / "kyuura-client-api-v1.json").read_text(encoding="utf-8"))["engine"]["version"]
+
 
 
 def test_pinned_engine_is_used(bridge):
     health = bridge.client.get("/api/health").json()
-    assert (health["engine_version"], health["client_contract"], health["client_format"], health["local_only"]) == ("0.164.0", "kyuura-client-api", 1, True)
-    assert kyuura_engine.__version__ == "0.164.0"
+    assert (health["engine_version"], health["client_contract"], health["client_format"], health["local_only"]) == (EXPECTED_VERSION, "kyuura-client-api", 1, True)
+    assert kyuura_engine.__version__ == EXPECTED_VERSION == "0.171.0"
 
 
 def test_full_local_flow_until_game_over(bridge):

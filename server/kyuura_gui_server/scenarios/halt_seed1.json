@@ -1,7 +1,53 @@
 {
  "source": "kyuura-engine tests/test_replay_record_v0_153.py HALT_DECK（seed 1）",
- "engine_commit": "d0c5cfa9483aacae0cce2fd8d28166b1d8465500",
+ "engine_commit": "ffcc5cab5df1ebde0faed3fd23b481295374e1f9",
  "engine_version": "0.164.0",
+ "$engine_commit": "この記録を作ったエンジン（tools/build_scenarios.py）。新しいエンジンで確かめた結果は compatibility に追記する（ここは書き換えない）",
+ "compatibility": [
+  {
+   "engine_commit": "b4e62d9487c8438d26bbe862077195203627f16b",
+   "engine_version": "0.165.0",
+   "checked": "2026-11-07",
+   "result": "操作の列・到達点は同じ（来歴の追記だけ。記録し直していない）",
+   "method": "server/tools/scenario_views.py を記録のエンジン（engine_commit）と新しいエンジンの環境で実行し比べた。各時点の全入口（プレイヤー0・1・観戦者・ホスト）の view は同じ。candidates の違いは coverage.implemented_kinds に U7-3 の 4 種類が加わったことだけ"
+  },
+  {
+   "engine_commit": "9506d6305e90ec262fbe77740d9aa57f04b980b6",
+   "engine_version": "0.166.0",
+   "checked": "2026-11-08",
+   "result": "操作の列・到達点は同じ（来歴の追記だけ。記録し直していない）",
+   "method": "server/tools/scenario_views.py の --full を 0.165.0（b4e62d9）と 0.166.0（9506d63）の環境で実行し、応答の全体を項目ごとに比べた。各時点の全入口（プレイヤー0・1・観戦者・ホスト）の view は同じ（views_sha256 も同じ）",
+   "candidates_difference": {
+    "added_attack_candidates": "なし（どの時点も番の中ではないので、use_attack の候補は出ない）",
+    "other": "coverage.implemented_kinds に use_attack が加わった（U7-4 の種類の追加）。ほかの項目の違いはない"
+   }
+  },
+  {
+   "engine_commit": "0885d664913bc8e57279ed9e44ac51cc97d5a6bf",
+   "engine_version": "0.170.0",
+   "checked": "2026-11-08",
+   "result": "操作の列・到達点は同じ（ここの追記だけ。記録は作り直していない）",
+   "method": "server/tools/scenario_views.py の --full を 0.166.0（9506d63）と 0.170.0（0885d66）の環境で実行し、応答の全体を項目ごとに比べた。各時点の全入口（プレイヤー0・1・観戦者・ホスト）の view は同じ（views_sha256 も同じ）",
+   "candidates_difference": {
+    "added_u7_5_candidates": "なし（どの時点も番の中で場・手札にトレーナー・スタジアム・場の 3 操作の対象がなく、remove_disguise・discard_from_play・reveal_face_down・play_trainer・use_stadium の候補は出ない）",
+    "other": "coverage.implemented_kinds に U7-5 の 5 種類が加わった（種類の追加）。ほかの項目の違いはない"
+   }
+  },
+  {
+   "engine_commit": "74c8e1f8ca03d017d5c0a8a79e6fdaa33d25b7f8",
+   "engine_version": "0.171.0",
+   "checked": "2026-11-08",
+   "result": "操作の列・到達点は同じ（ここの追記だけ。記録は作り直していない）",
+   "method": "server/tools/scenario_views.py の --full を 0.170.0（0885d66）と 0.171.0（74c8e1f）の環境で実行し、応答の全体を項目ごとに比べた。各時点の全入口（プレイヤー0・1・観戦者・ホスト）の view は同じ（views_sha256 も同じ）",
+   "candidates_difference": {
+    "added_power_candidates": "なし（どの時点にも use_power の候補は出ない）",
+    "other": "coverage.implemented_kinds に use_power が加わった（種類の追加）。ほかの項目の違いはない"
+   }
+  }
+ ],
+ "views_sha256": {
+  "halt": "e30e36fdf5953646074cbdbcc94d77c9ae36ca665bb93f0ee9ad97b535470fcd"
+ },
  "decks": [
   [
    "PMCG1-035",

@@ -21,3 +21,43 @@ export const OUTCOMES = expected.outcomes as readonly string[];
 export const IMPLEMENTED_KINDS = expected.implemented_kinds as readonly string[];
 export const TURN_KINDS_NOT_COVERED = expected.turn_kinds_not_covered as readonly string[];
 export const REFETCH_REFUSALS = new Set<string>(expected.refetch_refusals);
+export const TURN_BASIC_KINDS = expected.turn_basic_kinds as readonly string[];
+export const MAIN_KINDS = expected.main_kinds as readonly string[];
+/** GUI が入力の画面を持つ種類。ほかの種類の候補は表示だけで選べない（新しい種類を古い入力の画面へ通さない）。 */
+export const GUI_OPERABLE_KINDS = new Set<string>(expected.gui_operable_kinds);
+/** 入力の段の項目。ほかの項目のある段は知らない制約かもしれないので、操作を止める（validate.ts）。 */
+export const STAGE_KEYS = new Set<string>(expected.stage_keys);
+export const PAIR_KEYS = new Set<string>(expected.pair_keys);
+export const ZONES = expected.zones as readonly string[];
+export const STATUS_VALUES = expected.status_values as readonly string[];
+export const NEXT_KINDS = expected.next_kinds as readonly string[];
+// U7-4: ワザの宣言。段の role の並び・route・addon・cost の値・選べるものの項目は契約の表のとおりで、ほかは操作を止める（validate.ts）
+export const ATTACK_KINDS = new Set<string>(expected.attack_kinds);
+export const STAGE_ROLES = expected.stage_roles as Readonly<Record<string, readonly string[]>>;
+export const ATTACK_ROUTES = expected.attack_routes as readonly string[];
+export const DECLARATION_ADDONS = expected.declaration_addons as readonly string[];
+export const ENERGY_TYPES = expected.energy_types as readonly string[];
+export const ATTACK_OPTION_KEYS = new Set<string>(expected.attack_option_keys);
+export const ADDON_OPTION_KEYS = new Set<string>(expected.addon_option_keys);
+/** 今の入力・今の取っ手への check が通ってから送信する種類（GUI の決まり。check は受理の保証ではない）。 */
+export const CHECK_BEFORE_SUBMIT_KINDS = new Set<string>(expected.check_before_submit_kinds);
+// U7-5a〜d: 場のポケモン 1 匹を指す操作・手札のトレーナー・場のスタジアム。段の role・選べるもの・holder・候補の stadium の項目は契約の表のとおりで、ほかは操作を止める（validate.ts）
+export const BOARD_KINDS = new Set<string>(expected.board_kinds);
+export const TRAINER_KINDS = new Set<string>(expected.trainer_kinds);
+export const STADIUM_KINDS = new Set<string>(expected.stadium_kinds);
+/** 段がない応答（入力なし。choices は []）も受ける種類（選ばせるもののない場のスタジアム）。 */
+export const STAGE_ROLES_OR_EMPTY = new Set<string>(expected.stage_roles_or_empty);
+/** stage_roles の role のうち、U7-3 の種類（にげる・エネルギーをつける）も同じ名前で使うもの。 */
+export const STAGE_ROLES_SHARED = new Set<string>(expected.stage_roles_shared);
+export const BOARD_OPTION_KEYS = new Set<string>(expected.board_option_keys);
+export const TRAINER_OPTION_KEYS = new Set<string>(expected.trainer_option_keys);
+export const STADIUM_ENERGY_OPTION_KEYS = new Set<string>(expected.stadium_energy_option_keys);
+export const HOLDER_KEYS = new Set<string>(expected.holder_keys);
+export const STADIUM_KEYS = new Set<string>(expected.stadium_keys);
+// U7-5e: 特殊能力（use_power）。同じ種類の候補がいくつも並ぶ（候補は id で区別する）。段の role の並び・依存（upstream_stages・after）・項目は契約の表のとおり
+export const POWER_KINDS = new Set<string>(expected.power_kinds);
+export const POWER_STAGE_SHAPES = expected.power_stage_shapes as readonly (readonly string[])[];
+export const POWER_ROLE_MEANINGS = expected.power_role_meanings as Readonly<Record<string, string>>;
+export const POWER_OPTION_KEYS = new Set<string>(expected.power_option_keys);
+export const POWER_CANDIDATE_POKEMON_KEYS = new Set<string>(expected.power_candidate_pokemon_keys);
+export const POWER_KEYS = new Set<string>(expected.power_keys);
