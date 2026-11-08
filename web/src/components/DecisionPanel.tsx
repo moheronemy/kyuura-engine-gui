@@ -417,7 +417,13 @@ export function DecisionPanel({ selection, actor = null, observation, names, bus
   }, [inputs]);
   const [picks, setPicks] = useState<Record<number, string[]>>({});
   const [values, setValues] = useState<Record<number, string>>({});
+  // 入力を変えて前の check の答えを捨てたか（捨てたことを表示する。答えそのものは session が捨てる）
+  const [discarded, setDiscarded] = useState(false);
   const headingId = useId();
+  const changed = () => {
+    if (selection.check !== null) setDiscarded(true);
+    onInputChange?.();
+  };
 
   if (!inputs) {
     return (
@@ -468,7 +474,7 @@ export function DecisionPanel({ selection, actor = null, observation, names, bus
   );
 
   const toggle = (stage: OptionStage, id: string) => {
-    onInputChange?.(); // 入力が変わる: 前の check の答えと、届いていない答えを使わない（更新関数の外で知らせる）
+    changed(); // 入力が変わる: 前の check の答えと、届いていない答えを使わない（更新関数の外で知らせる）
     setPicks((p) => {
       const list = p[stage.stage] ?? [];
       let next: string[];
@@ -491,7 +497,7 @@ export function DecisionPanel({ selection, actor = null, observation, names, bus
   };
 
   const move = (stageNo: number, index: number, delta: number) => {
-    onInputChange?.();
+    changed();
     setPicks((p) => {
       const list = [...(p[stageNo] ?? [])];
       const target = index + delta;
@@ -504,7 +510,7 @@ export function DecisionPanel({ selection, actor = null, observation, names, bus
   const withheld = body.withheld;
   // 今の入力への check の答え（入力が変わったら前の答えは使わない。取っ手が変われば選択ごと作り直される）
   const check = selection.check && selection.check.choices === choicesKey(choices) ? selection.check.response : null;
-  const staleCheck = selection.check !== null && check === null;
+  const staleCheck = (selection.check !== null && check === null) || (discarded && selection.check === null);
   // 個数で数える段がある操作（にげる）は、今の入力が check を通ってから送る（個数の表示だけで合法と決めない）
   // ワザ（check_before_submit_kinds）も同じ（check を通っても、宣言の受理・完走の保証ではない）
   const needsCheck = CHECK_BEFORE_SUBMIT_KINDS.has(candidate.kind) || stages.some((s) => s.input === "choose_option" && s.total_units !== undefined);
@@ -556,7 +562,7 @@ export function DecisionPanel({ selection, actor = null, observation, names, bus
                 stage={stage}
                 value={values[stage.stage] ?? ""}
                 onChange={(v) => {
-                  onInputChange?.();
+                  changed();
                   setValues((s) => ({ ...s, [stage.stage]: v }));
                 }}
               />
