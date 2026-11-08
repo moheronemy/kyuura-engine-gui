@@ -70,7 +70,8 @@ def test_enumerations_match_engine():
     assert {L.REASON_REACTIONS, L.REASON_FACE_DOWN, L.REASON_STOPS, L.REASON_PREFLIGHT, L.REASON_CONTINUATION,
             L.REASON_NO_PRINTED_ATTACK, L.REASON_USE_CONDITION} <= set(EXPECTED["reason_codes"])
     assert set(EXPECTED["check_before_submit_kinds"]) <= set(EXPECTED["implemented_kinds"])
-    assert {L.KIND_USE_ATTACK, *L.BOARD_KINDS, L.KIND_PLAY_TRAINER, L.KIND_USE_STADIUM, L.KIND_USE_POWER} == set(EXPECTED["check_before_submit_kinds"])
+    # GUI の方針（エンジンの要求ではない）: attach_energy は 1 枚・2 枚とも送る前に check を必須にする
+    assert {L.KIND_ATTACH_ENERGY, L.KIND_USE_ATTACK, *L.BOARD_KINDS, L.KIND_PLAY_TRAINER, L.KIND_USE_STADIUM, L.KIND_USE_POWER} == set(EXPECTED["check_before_submit_kinds"])
 
 
 def test_attack_enumerations_match_engine():

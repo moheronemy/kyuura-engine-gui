@@ -34,11 +34,14 @@ import { useId, useMemo, useState } from "react";
 // - 表示だけの種類（check_face_up_deck）: エンジンが返した owner・position だけを表示し、check・submit を呼ばない（未裁定。ゲーム上の禁止ではない）
 // - attach_energy の任意の 3 段目（energy2。カツラの 2 枚目）: 1・2 段目の今の選択の鍵（"o1/o8"）の options_by_path の一覧だけ。1 段目・2 段目を変えたら
 //   3 段目の選択と検査の結果を捨てる。選ばなければ今までどおり 1 枚。カツラの許可・炎・付け先・回数・レインボーは GUI で判定しない
+// - attach_energy は 1 枚・2 枚とも、今の取っ手・今の候補・今の入力への check が通ってから送る（GUI の方針。エンジンは check なしの submit も受け付ける）。
+//   3 段目の 2 枚目を選ぶ・変える・外すのも入力の変更で、前の check の答えを使わない
 // - 本人のうらのカードの特殊能力: 本人が知る本当のカード（power.card_id）を、公開の盤面の情報と分けて文字で示す（盤面は裏面のまま）
-import { ATTACK_KINDS, CHECK_BEFORE_SUBMIT_KINDS, DISPLAY_ONLY_KINDS, EXECUTABLE_PROCESSABILITY, PATH_STAGE_KINDS, POWER_KINDS, STADIUM_KINDS, TRAINER_KINDS } from "../api/contract";
+import { ATTACK_KINDS, DISPLAY_ONLY_KINDS, EXECUTABLE_PROCESSABILITY, PATH_STAGE_KINDS, POWER_KINDS, STADIUM_KINDS, TRAINER_KINDS } from "../api/contract";
 import type { Candidate, Choice, FieldSlot, Holder, InputOption, InputStage, Observation, OptionStage, PairOption, PlayerIndex, StadiumRef } from "../api/types";
 import { CardBack, CardFace, usePowerText } from "../cards/CardImages";
-import { choicesKey, type Selection } from "../state/useEndpointSession";
+import { currentCheck, needsCheckBeforeSubmit } from "../state/checkGate";
+import type { Selection } from "../state/useEndpointSession";
 import {
   ADDON_LABELS,
   DECISION_TEXT,
@@ -509,11 +512,12 @@ export function DecisionPanel({ selection, actor = null, observation, names, bus
 
   const withheld = body.withheld;
   // 今の入力への check の答え（入力が変わったら前の答えは使わない。取っ手が変われば選択ごと作り直される）
-  const check = selection.check && selection.check.choices === choicesKey(choices) ? selection.check.response : null;
+  const check = currentCheck(selection, choices);
   const staleCheck = (selection.check !== null && check === null) || (discarded && selection.check === null);
   // 個数で数える段がある操作（にげる）は、今の入力が check を通ってから送る（個数の表示だけで合法と決めない）
-  // ワザ（check_before_submit_kinds）も同じ（check を通っても、宣言の受理・完走の保証ではない）
-  const needsCheck = CHECK_BEFORE_SUBMIT_KINDS.has(candidate.kind) || stages.some((s) => s.input === "choose_option" && s.total_units !== undefined);
+  // ワザ・U7-5 の操作・attach_energy（1 枚・2 枚とも。check_before_submit_kinds）も同じ（GUI の方針。check を通っても受理・完走の保証ではない）
+  // 送信の入口（useEndpointSession の submit）も同じ関数（state/checkGate.ts）で確かめる
+  const needsCheck = needsCheckBeforeSubmit(candidate, stages);
   const executable = EXECUTABLE_PROCESSABILITY.has(candidate.processability);
   const canSend = !withheld && satisfied && !busy && !blocked && executable && (!needsCheck || check?.valid === true);
   const hasPathStage = stages.some((s) => s.input === "choose_option" && s.path_stages !== undefined && PATH_STAGE_KINDS[candidate.kind] !== undefined);
@@ -609,7 +613,7 @@ export function DecisionPanel({ selection, actor = null, observation, names, bus
             入力を検査
           </button>
         ) : null}
-        <button type="button" className="primary" onClick={() => onSubmit(choices)} disabled={!canSend}>
+        <button type="button" className="primary" onClick={() => canSend && onSubmit(choices)} disabled={!canSend}>
           {busy ? "送信中…" : "送信"}
         </button>
         <button type="button" onClick={onCancel} disabled={busy}>
