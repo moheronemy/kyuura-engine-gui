@@ -135,6 +135,12 @@ export function CandidatesPanel({
                 <DisclosureBadge value={c.input_disclosure} />
               </div>
               {c.reasons.length ? <p className="small muted">理由: {reasonsText(c.reasons)}</p> : null}
+              {c.stadium ? (
+                // U7-5d: 場のスタジアム（公開）。持ち主は出したプレイヤーで、使うのは番のプレイヤー
+                <p className="small">
+                  場のスタジアム: <code>{c.stadium.card_id}</code>（持ち主: {playerLabel(c.stadium.owner)}）
+                </p>
+              ) : null}
               <details>
                 <summary>保証の範囲（guarantees）</summary>
                 <dl className="guarantees">
@@ -168,7 +174,7 @@ export function CandidatesPanel({
 
 export function CoveragePanel({ legal }: { legal: LegalActions }) {
   const cov = legal.coverage;
-  // U7-3〜U7-4: scope_kinds は「評価した種類」と未対応の種類。評価して候補に出さなかった種類は、この状態ではゲーム上できない（または入力がない）もの
+  // U7-3〜U7-5: scope_kinds は「評価した種類」と未対応の種類。評価して候補に出さなかった種類は、この状態ではゲーム上できない（または入力がない）もの
   const notOffered = cov.scope_kinds.filter((k) => !cov.offered_kinds.includes(k) && !cov.not_covered_kinds.includes(k));
   return (
     <details className="coverage" open={cov.not_covered_kinds.length > 0}>
@@ -204,7 +210,7 @@ export function CoveragePanel({ legal }: { legal: LegalActions }) {
       {cov.not_covered_kinds.length ? (
         <div className="unsupported" aria-label="未対応の操作">
           <h3>未対応の操作（not_covered_kinds）</h3>
-          <p className="small">この API の版（U7-1〜U7-4）では評価も候補の作成もしない種類です。ゲーム上の禁止ではありません。この GUI では操作として作っていません。</p>
+          <p className="small">この API の版（U7-1〜U7-5d）では評価も候補の作成もしない種類です（特殊能力・おもての山札のカードの確かめ）。ゲーム上の禁止ではありません。この GUI では操作として作っていません。</p>
           <ul className="inline-list">
             {cov.not_covered_kinds.map((k) => (
               <li key={k}>
@@ -226,13 +232,13 @@ export function ScopeNote() {
     <details className="panel scope-note">
       <summary>この GUI でできること・できないこと</summary>
       <p>
-        できる操作: 最初のポケモンを置く・切り直しの補償・ジャンケンの結果の入力（ホスト）・番を終える・{TURN_BASIC_KINDS.map((k) => labelOf(KIND_LABELS, k)).join("・")}・ワザの宣言（ワザ → 宣言といっしょに選ぶもの）・決定への回答（サイドを取る・バトル場に出す・ワザの対象などの決定）・サドン・デスの開始（ホスト）。番の操作は、エンジンが候補に出したものだけを選べます。
+        できる操作: 最初のポケモンを置く・切り直しの補償・ジャンケンの結果の入力（ホスト）・番を終える・{TURN_BASIC_KINDS.map((k) => labelOf(KIND_LABELS, k)).join("・")}・ワザの宣言（ワザ → 宣言といっしょに選ぶもの）・手札のトレーナーを使う（どうぐ・手札から出すスタジアム・化石・人形を含む）・場のスタジアムを使う・「ばける」でのせたカードを外す・化石・人形を場からすてる・うらのカードをおもてにする・決定への回答（サイドを取る・バトル場に出す・ワザやトレーナーの対象・相手が答える決定などの決定）・サドン・デスの開始（ホスト）。番の操作は、エンジンが候補に出したものだけを選べます。
       </p>
       <p>
         未対応（この API の版で操作できない）: {TURN_KINDS_NOT_COVERED.map((k) => labelOf(KIND_LABELS, k)).join("・")}。
       </p>
       <p className="small">
-        ワザで終局・停止まで進められますが、トレーナー・特殊能力などは未対応で、通常の対戦機能が完成したという意味ではありません。
+        ワザ・トレーナー・場のスタジアムで終局・停止まで進められますが、特殊能力などは未対応で、通常の対戦機能が完成したという意味ではありません。
       </p>
     </details>
   );

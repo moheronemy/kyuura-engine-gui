@@ -44,7 +44,17 @@ function PokemonCard({ slot, names, place, size }: { slot: FieldSlot; names: Nam
         <CardBack label="裏向きのポケモン" size={size} />
         <div className="pokemon-body">
           <div className="pokemon-head">裏向きのポケモン</div>
-          <p className="small muted">最初の番の前で、この閲覧者には見えません。</p>
+          {/* 最初の番の前のポケモンと、マチスの秘策などでうらにしたカード。どのカードか（カード ID・名前）は補わない。おもてにしたあとは観測で表示する */}
+          {slot.real ? (
+            // 持ち主の観測にだけある本人の知識（相手・観戦者の観測にはない）。表の画像は描かず（場ではうらのまま）、文字だけで示す
+            <p className="small">
+              うらのカードです。あなたにだけ見えるカード: {nameOf(slot.real, names)} <code className="muted small">{slot.real.card_id}</code>（相手・観戦者には見えません）
+            </p>
+          ) : (
+            <p className="small muted">うらのカードです。この閲覧者には、どのカードか見えません。</p>
+          )}
+          {typeof slot.damage === "number" && slot.damage > 0 ? <p className="small">ダメージ {slot.damage}（観測の値）</p> : null}
+          {Array.isArray(slot.energy) && slot.energy.length ? <p className="small">ついているエネルギー {slot.energy.length} 枚（観測の値）</p> : null}
         </div>
       </div>
     );

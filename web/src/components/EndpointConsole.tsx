@@ -74,6 +74,7 @@ export function EndpointConsole({ client, kind, viewer, gate, names, refreshSign
             <DecisionPanel
               key={selectionKey}
               selection={session.selection}
+              actor={session.legal?.actor ?? null}
               observation={observation}
               names={names}
               busy={gate.busy}

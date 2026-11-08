@@ -18,9 +18,15 @@
 //   GUI で決めず、エンジンの check が確かめる。ワザを変えたら 2 段目の選択を捨てる（check の答えも今の入力と違うので使わない）
 // - 対象・トラッシュ・山札から選ぶカード・写すワザ・コインの結果は、ここで聞かない（受理のあとのエンジンの決定で答える）
 // - 送る前に、今の入力・今の取っ手への check が通っていることを必須にする（check_before_submit_kinds。受理の保証ではない）
+// U7-5（1 段の操作。段の role・候補の stadium・選べるものの holder で組み立てる。カード名・画像で分けない）:
+// - 場のポケモン 1 匹を指す操作（remove_disguise・discard_from_play・reveal_face_down）: 本人の場のポケモンを選ぶ。うらのポケモンは裏面で、
+//   カード ID・名前を補わない。おもてにしたあと残るか・トラッシュするかを予告しない（結果は受理のあとの観測で表示する）
+// - 手札のトレーナー（play_trainer）: 手札のカード 1 枚だけを選ぶ。対象・費用・検索・相手が答える決定（錯乱ジム・［ちえくらべ］）は受理のあとの決定
+// - 場のスタジアム（use_stadium）: 候補の stadium（持ち主）と、使う主体（番のプレイヤー）を分けて示す。選ばせるもののない効果は choices []、
+//   エネルギーを選ばせる効果はエネルギーカードとついているポケモン（holder）を示す。回数・使えるかは GUI で決めない（エンジンの候補と check）
 import { useId, useMemo, useState } from "react";
-import { ATTACK_KINDS, CHECK_BEFORE_SUBMIT_KINDS, EXECUTABLE_PROCESSABILITY } from "../api/contract";
-import type { Choice, FieldSlot, InputOption, InputStage, Observation, OptionStage } from "../api/types";
+import { ATTACK_KINDS, CHECK_BEFORE_SUBMIT_KINDS, EXECUTABLE_PROCESSABILITY, STADIUM_KINDS, TRAINER_KINDS } from "../api/contract";
+import type { Choice, FieldSlot, Holder, InputOption, InputStage, Observation, OptionStage, PlayerIndex, StadiumRef } from "../api/types";
 import { CardBack, CardFace } from "../cards/CardImages";
 import { choicesKey, type Selection } from "../state/useEndpointSession";
 import {
@@ -43,6 +49,8 @@ type Names = (cardId: string) => string | undefined;
 
 interface Props {
   selection: Selection;
+  /** 送る主体（場のスタジアムの持ち主と分けて書く）。 */
+  actor?: PlayerIndex | "host" | null;
   observation: Observation | null;
   names: Names;
   busy: boolean;
@@ -108,6 +116,8 @@ const KNOWN_OPTION_KEYS = new Set([
   "text_ja",
   "addon",
   "power",
+  // U7-5d（スタジアムで選ぶエネルギーがついているポケモン。専用の表示で示す）
+  "holder",
 ]);
 
 function zonePlace(option: InputOption): string | null {
@@ -122,6 +132,10 @@ export function optionLabel(option: InputOption, stage: OptionStage, observation
   if (typeof option.attack_index === "number" && typeof option.name_ja === "string") return `［${option.name_ja}］`; // U7-4: エンジンが返したワザの名前
   if (typeof option.addon === "string") return addonLabel(option, observation, names);
   if (option.face_down) return `裏向きのポケモン${place ? `（${place}）` : ""}`; // 本人のうらのカード: カード ID は来ない
+  if (option.holder && typeof option.card_id === "string") {
+    // U7-5d: エネルギーカード（ついているカードは公開）と、ついている本人の場のポケモン（エンジンが返した holder）
+    return `${names(option.card_id) ?? "（カード名表にない）"} ${option.card_id}（ついている: ${holderLabel(option.holder, names)}）`;
+  }
   if (typeof option.card_id === "string") {
     const name = names(option.card_id);
     return `${name ?? "（カード名表にない）"} ${option.card_id}${place ? `（${place}）` : ""}`;
@@ -139,6 +153,52 @@ function optionExtras(option: InputOption): string[] {
   return Object.entries(option)
     .filter(([k]) => !KNOWN_OPTION_KEYS.has(k))
     .map(([k, v]) => `${k}: ${typeof v === "object" ? JSON.stringify(v) : String(v)}`);
+}
+
+/** U7-5d: エネルギーがついている本人の場のポケモン（うらのポケモンはカード ID・名前を補わない）。 */
+export function holderLabel(holder: Holder, names: Names): string {
+  const place = holder.zone === "active" ? "バトル場" : `ベンチ${(holder.bench_index ?? 0) + 1}`;
+  if (holder.face_down || typeof holder.card_id !== "string") return `裏向きのポケモン（${place}）`;
+  return `${names(holder.card_id) ?? holder.card_id}（${place}）`;
+}
+
+/** U7-5d: 場のスタジアム（候補の stadium。持ち主）と、使う主体（番のプレイヤー）。回数・使えるかは示さない（エンジンが候補と check で決める）。 */
+function StadiumInfo({ stadium, actor, names }: { stadium: StadiumRef; actor: PlayerIndex | "host" | null; names: Names }) {
+  const owner = actor === stadium.owner ? `あなた（${playerLabel(stadium.owner)}）` : playerLabel(stadium.owner);
+  return (
+    <div className="stadium-info" aria-label="場のスタジアム">
+      <CardFace cardId={stadium.card_id} name={names(stadium.card_id) ?? stadium.card_id} size="s" decorative />
+      <p className="small">
+        場のスタジアム: <strong>{names(stadium.card_id) ?? stadium.card_id}</strong> <code className="muted">{stadium.card_id}</code>
+        <br />
+        持ち主（出したプレイヤー）: {owner} ／ 使うのは: 番のプレイヤー{actor === 0 || actor === 1 ? `（あなた・${playerLabel(actor)}）` : ""}
+        <br />
+        <span className="muted">持ち主でなくても、番のプレイヤーが使えます。回数・使えるかはエンジンが決めます（GUI は数えません）。</span>
+      </p>
+    </div>
+  );
+}
+
+/** U7-5: 種類ごとの説明（入力の画面は段の role で同じ部品を使う。ここは何を聞かないかと、受理のあとの続きの説明だけ）。 */
+function kindNote(kind: string, noStages: boolean): string | null {
+  if (TRAINER_KINDS.has(kind)) {
+    return "ここで選ぶのは手札のトレーナーカード 1 枚だけです。対象・枚数・費用・山札から選ぶカード・相手が答える決定（錯乱ジム・［ちえくらべ］など）は、受理のあとにエンジンが決定として聞きます。コインはエンジンが投げます（結果は入力しません）。どうぐ・手札から出すスタジアム・化石・人形もこの操作です（場のスタジアムの効果は「場のスタジアムを使う」）。";
+  }
+  if (STADIUM_KINDS.has(kind)) {
+    return noStages
+      ? "場のスタジアムの効果を使います（手札から出すのは「手札のトレーナーを使う」）。この効果に選ぶものはありません（choices: [] で送ります）。コイン・効果の決定は受理のあとにエンジンが行います。"
+      : "場のスタジアムの効果を使います（手札から出すのは「手札のトレーナーを使う」）。選べるのはエンジンが示したエネルギーカードだけです。コイン・効果の決定は受理のあとにエンジンが行います。";
+  }
+  if (kind === "reveal_face_down") {
+    return "おもてにしたあと場に残るか・トラッシュするかは、エンジンが本当のカードで決めます（ここでは予告しません）。結果は受理のあとの観測で表示します。バトル場が空けば、バトル場に出すポケモンを選ぶ決定に続きます。";
+  }
+  if (kind === "discard_from_play") {
+    return "ついているカードもいっしょにトラッシュします（きぜつではありません）。バトル場が空けば、バトル場に出すポケモンを選ぶ決定に続きます。";
+  }
+  if (kind === "remove_disguise") {
+    return "のせたカードを持ち主のトラッシュに置き、元の姿にもどします。元の姿の最大HPの確かめなどで、エンジンが受け付けないことがあります（送るまで分かりません）。";
+  }
+  return null;
 }
 
 /** U7-4: 宣言といっしょに選ぶものの表示名（addon の種類と、エンジンが返した場所・名前だけ）。 */
@@ -231,7 +291,7 @@ export function unitsOf(stage: OptionStage, picked: string[]): number {
   return picked.reduce((sum, id) => sum + (byId.get(id)?.units ?? 0), 0);
 }
 
-export function DecisionPanel({ selection, observation, names, busy, blocked, onCheck, onSubmit, onCancel }: Props) {
+export function DecisionPanel({ selection, actor = null, observation, names, busy, blocked, onCheck, onSubmit, onCancel }: Props) {
   const { candidate, inputs } = selection;
   const stages = useMemo(() => {
     if (!inputs || !("stages" in inputs.response)) return [];
@@ -344,7 +404,9 @@ export function DecisionPanel({ selection, observation, names, busy, blocked, on
         </div>
       ) : null}
 
+      {candidate.stadium ? <StadiumInfo stadium={candidate.stadium} actor={actor} names={names} /> : null}
       {!withheld && stages.length === 0 ? <p>この操作に入力はありません。</p> : null}
+      {kindNote(candidate.kind, stages.length === 0) ? <p className="small">{kindNote(candidate.kind, stages.length === 0)}</p> : null}
       {ATTACK_KINDS.has(candidate.kind) ? (
         <p className="small">
           ここで選ぶのは、ワザと、宣言といっしょに選ぶもの（あれば）だけです。ワザの対象・トラッシュするエネルギー・山札から選ぶカード・写すワザは、受理のあとにエンジンが決定として聞きます。コインはエンジンが投げます（結果は入力しません）。

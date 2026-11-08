@@ -6,6 +6,9 @@
 import type { PlayerIndex, SubmitResponse } from "../api/types";
 import { HALT_CATEGORY_LABELS, KIND_LABELS, NEXT_LABELS, OUTCOME_LABELS, REFUSAL_TEXT, labelOf, playerLabel } from "../labels";
 
+/** 拒否・断りは送った主体にだけ返る（エンジンは相手・観戦者へ知らせない。GUI も通知・更新・件数を加えない）。 */
+const PRIVATE_LINE = "この結果は送ったあなたにだけ表示しています（相手・観戦者には知らせません）。";
+
 export interface OutcomeSummary {
   tone: "ok" | "info" | "warn" | "error";
   title: string;
@@ -31,11 +34,13 @@ export function summarizeSubmit(result: SubmitResponse, kind: string, actor: Pla
   const lines: string[] = [];
   if (result.outcome === "refused") {
     lines.push("ホストの段で止めました。エンジンには渡していません（状態は変わりません）。");
+    lines.push(PRIVATE_LINE);
     if (result.refusal) lines.push(`${result.refusal.code}: ${REFUSAL_TEXT[result.refusal.code] ?? result.refusal.message}`);
     return { tone: "warn", title: `${OUTCOME_LABELS.refused}: ${kindLabel}`, lines };
   }
   if (result.outcome === "rejected") {
     lines.push("エンジンが受け付けませんでした（状態は変わりません）。");
+    lines.push(PRIVATE_LINE);
     const category = categoryLine(diag?.category);
     if (category) lines.push(category);
     if (diag?.diagnostic_id) lines.push(`診断: ${diag.diagnostic_id}`);
@@ -50,7 +55,11 @@ export function summarizeSubmit(result: SubmitResponse, kind: string, actor: Pla
   }
   if (result.outcome !== "accepted") return { tone: "warn", title: `${labelOf(OUTCOME_LABELS, result.outcome)}: ${kindLabel}`, lines };
   const status = diag?.status ?? null;
-  for (const next of diag?.next ?? []) lines.push(`次: ${whose(next.player, actor)}${labelOf(NEXT_LABELS, next.kind)}`);
+  for (const next of diag?.next ?? []) {
+    // 決める人が送った主体と違う（錯乱ジム・［ちえくらべ］など）: 相手が答えるまで待つ。入力は答える人の画面にだけ出る
+    const other = next.kind === "answer_decision" && next.player != null && actor !== "host" && next.player !== actor;
+    lines.push(`次: ${whose(next.player, actor)}${labelOf(NEXT_LABELS, next.kind)}${other ? "（相手が答えます。答えるまで待ちます）" : ""}`);
+  }
   if (status === "halted") {
     lines.unshift("受理のあと、エンジンが対戦を止めました（停止）。宣言の拒否ではありません。");
     const category = categoryLine(diag?.halt?.category ?? diag?.category);

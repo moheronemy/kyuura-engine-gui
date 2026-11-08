@@ -14,12 +14,12 @@ export const KIND_LABELS: Record<string, string> = {
   evolve: "進化させる",
   retreat: "にげる",
   use_attack: "ワザを使う",
-  play_trainer: "トレーナーを使う",
+  play_trainer: "手札のトレーナーを使う",
   use_power: "ポケモンパワーを使う",
-  use_stadium: "スタジアムを使う",
-  remove_disguise: "ばけているカードを外す",
-  discard_from_play: "場のカードをトラッシュする",
-  reveal_face_down: "裏向きのカードを表にする",
+  use_stadium: "場のスタジアムを使う",
+  remove_disguise: "「ばける」でのせたカードを外す",
+  discard_from_play: "化石・人形を場からすてる",
+  reveal_face_down: "うらのカードをおもてにする",
   check_face_up_deck: "表向きの山札のカードを確かめる",
 };
 
@@ -84,7 +84,8 @@ export const PROCESSABILITY_TEXT: Record<string, Explained> = {
   },
   unverified: {
     label: "未確認",
-    description: "保証はありません（例: 本人のうらのカードの進化・にげる・ワザ）。最終の判定はエンジンが送信のときに行います。",
+    description:
+      "保証はありません（例: 本人のうらのカードの進化・にげる・ワザ、使うための条件をエンジンが前もって確かめないトレーナー）。送れますが、使えるかは送るまで分かりません。最終の判定はエンジンが送信のときに行います。",
   },
 };
 
@@ -192,6 +193,7 @@ export const REASON_LABELS: Record<string, string> = {
   no_eligible_card: "出せるカードがない",
   preflight_not_evaluated: "エンジンの宣言の前の先読み（コインの結果・ワザの途中の決定を試す）を評価していない（エンジンが宣言を断ることがある）",
   no_printed_attack: "うらのカードに印刷のワザがない（この版は入力の形を作らない）",
+  use_condition_not_evaluated: "カードの使うための条件をエンジンが前もって確かめていない（使えるかは送信のときにエンジンが決める）",
 };
 
 export function reasonsText(reasons: readonly string[]): string {
@@ -222,6 +224,11 @@ const ROLE_LABELS: Record<string, string> = {
   "retreat:discard": "トラッシュするエネルギー",
   "use_attack:attack": "ワザ",
   "use_attack:declaration_options": "宣言といっしょに選ぶもの（任意。0 個でもよい）",
+  "remove_disguise:disguised": "「ばける」でカードをのせている自分の場のポケモン",
+  "discard_from_play:discard": "場からすてる自分の化石・人形",
+  "reveal_face_down:face_down": "おもてにする自分のうらのカード",
+  "play_trainer:trainer": "使うトレーナーカード（手札）",
+  "use_stadium:energy": "スタジアムの効果で選ぶエネルギーカード（ついている自分の場のポケモン）",
 };
 
 /** ワザの持ち方（route）。エンジンが返した値の説明で、カード名・画像からワザを補わない。 */
