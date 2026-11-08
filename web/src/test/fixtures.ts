@@ -68,7 +68,27 @@ export function view(viewerLabel: 0 | 1 | "spectator" | "host", obs: Observation
   };
 }
 
+/**
+ * v0.172（U7-5g-3）の coverage に加わった項目（固定版のエンジン e26df79 の実応答の値。classes の note はエンジンの文の要約）。
+ * GUI は 0.172.0 の形だけを受けるので、古いエンジンの形を写した例にもこれを加える（partial_residual は番のプレイヤーの MAIN の R-2）。
+ */
+export const RESIDUAL_CLASSES_V172 = [
+  { id: "R-2", kind: "use_attack", field: "declaration_options", situation: "turn_player_main", status: "not_offered", reason: "face_down_reveal_not_evaluated", subject: "own_face_down_active", note: "自分のうらのバトル場のポケモンのワザといっしょに選ぶもの" },
+  { id: "R-3", kind: "use_power", field: "power_inputs", situation: "turn_player_main", status: "input_withheld", reason: "face_down_reveal_not_evaluated", subject: "own_face_down_pokemon", note: "自分のうらのカードの特殊能力のうち、入力を本人の知識だけで作れないもの" },
+  { id: "R-4", kind: "check_face_up_deck", field: "position", situation: "other_than_turn_player_main", status: "out_of_scope", reason: "api_scope_turn_player_main", subject: "opponent_face_up_deck_below_top", note: "CheckFaceUpDeckCard は番のプレイヤーの MAIN にだけ表示する" },
+  { id: "R-5", kind: null, field: "inputs", situation: "any", status: "input_withheld", reason: "input_boundary_unconfirmed", subject: "withheld_input_candidates", note: "情報境界を確かめていない入力" },
+];
+
+export const COVERAGE_V172_EXTRA = {
+  display_only_kinds: [] as string[],
+  completeness_basis: "complete は、scope_kinds の種類の候補の取得が網羅していることだけを言う。全部の操作が受理・完走することではない",
+  partial_residual: ["R-2"],
+  residual: { classes: RESIDUAL_CLASSES_V172, present: [] as { id: string; scope: string; candidate?: string }[] },
+  unverified_paths: [] as { reason: string; candidates: string[] }[],
+};
+
 export const COVERAGE_TURN = {
+  ...COVERAGE_V172_EXTRA,
   // 固定版のエンジン（0.165.0）の番の coverage。基本の 4 種類は評価した（scope_kinds）が、この例では候補に出していない
   implemented_kinds: ["take_prize", "promote_active", "answer_decision", "end_turn", "place_starting", "mulligan_draw", "play_basic", "attach_energy", "evolve", "retreat", "report_janken", "start_sudden_death"],
   scope_kinds: ["end_turn", "play_basic", "attach_energy", "evolve", "retreat", "use_attack", "play_trainer", "use_power", "use_stadium", "remove_disguise", "discard_from_play", "reveal_face_down", "check_face_up_deck"],

@@ -61,3 +61,28 @@ export const POWER_ROLE_MEANINGS = expected.power_role_meanings as Readonly<Reco
 export const POWER_OPTION_KEYS = new Set<string>(expected.power_option_keys);
 export const POWER_CANDIDATE_POKEMON_KEYS = new Set<string>(expected.power_candidate_pokemon_keys);
 export const POWER_KEYS = new Set<string>(expected.power_keys);
+// U7-5f: 表示だけの種類（check_face_up_deck）。implemented_kinds にあるが gui_operable_kinds にない。候補と inputs を表示し、check・submit を呼ばない
+export const DISPLAY_ONLY_KINDS = new Set<string>(expected.display_only_kinds);
+export const DISPLAY_ONLY_STAGES = expected.display_only_stages as Readonly<Record<string, { role: string; meaning: string }>>;
+export const FACE_UP_OPTION_KEYS = new Set<string>(expected.face_up_option_keys);
+// U7-5g-1: 前の段の選び方の組で引く段（path_stages・options_by_path）。U7-5e の依存する段（upstream_stages・after）とは別の形
+export const PATH_STAGE_KINDS = expected.path_stage_kinds as Readonly<
+  Record<string, { stage: number; role: string; meaning: string; path_stages: readonly number[]; count: { min: number; max: number }; decline: boolean }>
+>;
+export const ATTACH_ENERGY_ROLE_SHAPES = expected.attach_energy_role_shapes as readonly (readonly string[])[];
+export const ENERGY2_OPTION_KEYS = new Set<string>(expected.energy2_option_keys);
+// U7-5g-3: coverage の項目と残り（residual）の分類。知らない項目・分類は止める
+export const COVERAGE_KEYS = new Set<string>(expected.coverage_keys);
+export const RESIDUAL_CLASSES = expected.residual_classes as readonly {
+  id: string;
+  kind: string | null;
+  field: string;
+  situation: string;
+  status: string;
+  reason: string;
+  subject: string;
+}[];
+export const RESIDUAL_CLASS_KEYS = new Set<string>(expected.residual_class_keys);
+export const RESIDUAL_STATUSES = expected.residual_statuses as readonly string[];
+export const RESIDUAL_SCOPES = expected.residual_scopes as readonly string[];
+export const RESIDUAL_PRESENT_KEYS = new Set<string>(expected.residual_present_keys);

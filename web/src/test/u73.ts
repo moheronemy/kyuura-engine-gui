@@ -1,5 +1,6 @@
 // U7-3（番の基本の操作）の模擬の応答。形は固定版のエンジン（v0.165.0・b4e62d9）の実際の応答（seed を固定した new_game）に合わせている。
 import type { InputStage } from "../api/types";
+import { COVERAGE_V172_EXTRA } from "./fixtures";
 
 export const PLAY_BASIC_STAGES: InputStage[] = [
   {
@@ -127,6 +128,7 @@ export const RETREAT_STAGES = retreatStages({ min: 2, max: 2 }, [
 ]);
 
 export const COVERAGE_U73 = {
+  ...COVERAGE_V172_EXTRA,
   implemented_kinds: ["take_prize", "promote_active", "answer_decision", "end_turn", "place_starting", "mulligan_draw", "play_basic", "attach_energy", "evolve", "retreat", "report_janken", "start_sudden_death"],
   scope_kinds: ["end_turn", "play_basic", "attach_energy", "evolve", "retreat", "use_attack", "play_trainer", "use_power", "use_stadium", "remove_disguise", "discard_from_play", "reveal_face_down", "check_face_up_deck"],
   offered_kinds: ["end_turn", "play_basic", "attach_energy"],
