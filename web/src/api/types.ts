@@ -179,6 +179,27 @@ export interface Candidate {
   choices_format?: string;
   /** U7-5d（use_stadium）: 場のスタジアム（公開）。owner は出したプレイヤーで、使うのは番のプレイヤー（持ち主でなくても使える）。 */
   stadium?: StadiumRef;
+  /** U7-5e（use_power）: 特殊能力を使う本人の場のポケモン（本人のうらのカードの特殊能力は候補にならない）。 */
+  pokemon?: PowerPokemon;
+  /** U7-5e（use_power）: 特殊能力の位置・名前と、印刷したカード（「ばける」・写した特殊能力では場のポケモンのカードと違うことがある）。 */
+  power?: PowerRef;
+}
+
+/** U7-5e: 特殊能力を使う本人の場のポケモン。 */
+export interface PowerPokemon {
+  pokemon: number;
+  card: number;
+  zone: "active" | "bench";
+  bench_index?: number;
+  card_id: string;
+}
+
+/** U7-5e: 特殊能力（index は印刷したカードの特殊能力の位置。入力の値ではない）。 */
+export interface PowerRef {
+  index: number;
+  name_ja: string;
+  card: number;
+  card_id: string;
 }
 
 /** U7-5d: 候補の場のスタジアム。 */
@@ -262,6 +283,8 @@ export interface InputOption {
   power?: string;
   /** U7-5d（use_stadium の role: energy）: エネルギーカードがついている本人の場のポケモン。 */
   holder?: Holder;
+  /** U7-5e（依存する段）: 直前の段の選ぶものの番号（この選ぶものはその選び方のあとだけに選べる）。 */
+  after?: string;
   [key: string]: unknown;
 }
 
@@ -296,6 +319,8 @@ export interface OptionStage {
   /** U7-3: 2 段目が 1 段目の選択に依存する（options_by_choice）。 */
   depends_on_stage?: number;
   options_by_choice?: Record<string, PairOption[]>;
+  /** U7-5e: 前のすべての段の番号（2 段目以降。depends_on_stage は直前の段）。 */
+  upstream_stages?: number[];
   /** U7-3（にげる）: トラッシュするカードの units の合計の範囲（count は枚数）。 */
   total_units?: Count;
   /** U7-3（ベンチに出す）: 今のベンチの数と上限（公開の値）。 */

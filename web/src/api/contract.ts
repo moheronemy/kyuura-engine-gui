@@ -54,3 +54,10 @@ export const TRAINER_OPTION_KEYS = new Set<string>(expected.trainer_option_keys)
 export const STADIUM_ENERGY_OPTION_KEYS = new Set<string>(expected.stadium_energy_option_keys);
 export const HOLDER_KEYS = new Set<string>(expected.holder_keys);
 export const STADIUM_KEYS = new Set<string>(expected.stadium_keys);
+// U7-5e: 特殊能力（use_power）。同じ種類の候補がいくつも並ぶ（候補は id で区別する）。段の role の並び・依存（upstream_stages・after）・項目は契約の表のとおり
+export const POWER_KINDS = new Set<string>(expected.power_kinds);
+export const POWER_STAGE_SHAPES = expected.power_stage_shapes as readonly (readonly string[])[];
+export const POWER_ROLE_MEANINGS = expected.power_role_meanings as Readonly<Record<string, string>>;
+export const POWER_OPTION_KEYS = new Set<string>(expected.power_option_keys);
+export const POWER_CANDIDATE_POKEMON_KEYS = new Set<string>(expected.power_candidate_pokemon_keys);
+export const POWER_KEYS = new Set<string>(expected.power_keys);

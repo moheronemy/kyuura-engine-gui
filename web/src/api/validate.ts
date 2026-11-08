@@ -19,6 +19,12 @@ import {
   NEXT_KINDS,
   OUTCOMES,
   PAIR_KEYS,
+  POWER_CANDIDATE_POKEMON_KEYS,
+  POWER_KEYS,
+  POWER_KINDS,
+  POWER_OPTION_KEYS,
+  POWER_ROLE_MEANINGS,
+  POWER_STAGE_SHAPES,
   PROCESSABILITY,
   STADIUM_ENERGY_OPTION_KEYS,
   STADIUM_KEYS,
@@ -261,6 +267,26 @@ function candidate(value: unknown, i: number): Candidate {
     str(st.card_id, `${w}.stadium.card_id`);
     if (st.owner !== 0 && st.owner !== 1) fail(`${w}.stadium.owner`);
   }
+  // U7-5e: 特殊能力を使うポケモンと特殊能力（use_power の候補だけ）。表示に使う。入力の形は inputs の段だけから決める（名前・カード ID から推測しない）
+  for (const key of ["pokemon", "power"] as const) {
+    if (!(key in o)) continue;
+    if (!POWER_KINDS.has(o.kind as string)) fail(`${w}.${key}: ${String(o.kind)} の候補ではない`);
+    const v = obj(o[key], `${w}.${key}`);
+    const allowed = key === "pokemon" ? POWER_CANDIDATE_POKEMON_KEYS : POWER_KEYS;
+    for (const k of Object.keys(v)) if (!allowed.has(k)) fail(`${w}.${key}.${k}: 知らない項目`);
+    if (key === "pokemon") {
+      int(v.pokemon, `${w}.pokemon.pokemon`);
+      int(v.card, `${w}.pokemon.card`);
+      oneOf(v.zone, ZONES, `${w}.pokemon.zone`);
+      str(v.card_id, `${w}.pokemon.card_id`); // 本人のうらのカードの特殊能力は候補にならない（うらの pokemon は来ない）
+      if ("bench_index" in v && int(v.bench_index, `${w}.pokemon.bench_index`) < 0) fail(`${w}.pokemon.bench_index`);
+    } else {
+      if (int(v.index, `${w}.power.index`) < 0) fail(`${w}.power.index`);
+      str(v.name_ja, `${w}.power.name_ja`);
+      int(v.card, `${w}.power.card`);
+      str(v.card_id, `${w}.power.card_id`);
+    }
+  }
   return o as unknown as Candidate;
 }
 
@@ -316,6 +342,7 @@ function option(value: unknown, where: string): InputOption {
     if ("card_id" in o && !("attack_index" in o)) fail(`${where}: うらのポケモンにカード ID がある`);
   }
   if ("holder" in o) holder(o.holder, `${where}.holder`);
+  if ("after" in o) str(o.after, `${where}.after`);
   return o as unknown as InputOption;
 }
 
@@ -332,6 +359,26 @@ function holder(value: unknown, where: string): void {
   } else {
     str(h.card_id, `${where}.card_id`);
   }
+}
+
+/** U7-5e: 特殊能力の段の選べるもの（role ごとの meaning の形）。相手のうらのカードは位置と face_down だけ（カード・カード ID がない）。 */
+function powerOption(meaning: string, o: InputOption, where: string): void {
+  for (const key of Object.keys(o)) if (!POWER_OPTION_KEYS.has(key)) fail(`${where}.${key}: 知らない特殊能力の項目`);
+  if (!("eligible" in o)) fail(`${where}.eligible`);
+  if (meaning === "pokemon") {
+    int(o.pokemon, `${where}.pokemon`);
+    oneOf(o.zone, ZONES, `${where}.zone`);
+    if (o.face_down === true) {
+      if ("card_id" in o) fail(`${where}: うらのポケモンにカード ID がある`);
+    } else {
+      int(o.card, `${where}.card`);
+      str(o.card_id, `${where}.card_id`);
+    }
+    return;
+  }
+  if ("pokemon" in o || "zone" in o || "face_down" in o) fail(`${where}: カードの選べるものに場のポケモンの項目`);
+  int(o.card, `${where}.card`);
+  str(o.card_id, `${where}.card_id`);
 }
 
 /** U7-5: 1 段の選べるもの（場のポケモン・手札のトレーナー・スタジアムで選ぶエネルギー）の項目の形。知らない項目は止める。 */
@@ -399,6 +446,13 @@ function kindStages(kind: string, stages: InputStage[]): void {
   const expectedRoles = STAGE_ROLES[kind];
   // U7-3 の種類も同じ名前で使う role（にげるの discard・エネルギーをつけるの energy）は除く
   const special = new Set(Object.values(STAGE_ROLES).flat().filter((r) => !STAGE_ROLES_SHARED.has(r)));
+  if (POWER_KINDS.has(kind)) return powerStages(stages);
+  // U7-5e の依存の形（upstream_stages・after）と role の source は、特殊能力の段だけ（ほかの種類に来たら知らない依存の形として止める）
+  for (const s of stages) {
+    if (s.input !== "choose_option") continue;
+    if (s.upstream_stages !== undefined || (s.options ?? []).some((op) => "after" in op)) fail(`stages[${s.stage}]: ${kind} の段に依存の形（upstream_stages・after）`);
+    if (s.role === "source") fail(`stages[${s.stage}].role: ${kind} の段ではない`);
+  }
   if (!expectedRoles) {
     for (const s of stages) if (s.input === "choose_option" && s.role !== undefined && special.has(s.role)) fail(`stages[${s.stage}].role: ${kind} の段ではない`);
     return;
@@ -424,6 +478,49 @@ function kindStages(kind: string, stages: InputStage[]): void {
   second.options.forEach((op, j) => addonOption(op, `stages[2].options[${j}]`));
 }
 
+/**
+ * U7-5e: 特殊能力の段（0〜3 段）。role の並びが契約の表のどれか、どの段も 1 つを選ぶ、meaning が role のとおり、
+ * 2 段目以降は直前の段に依存し upstream_stages が前のすべての段、選べるものの after が直前の段の選ぶもの（chainedStages）。
+ */
+function powerStages(stages: InputStage[]): void {
+  const roles = stages.map((s) => (s.input === "choose_option" ? s.role : undefined));
+  if (!POWER_STAGE_SHAPES.some((shape) => shape.length === roles.length && shape.every((r, i) => r === roles[i]))) fail("stages: use_power の段の並び");
+  stages.forEach((raw, i) => {
+    const s = raw as OptionStage;
+    const w = `stages[${s.stage}]`;
+    if (s.stage !== i + 1 || !s.options || s.count.min !== 1 || s.count.max !== 1) fail(`${w}: use_power の段`);
+    if (s.meaning !== POWER_ROLE_MEANINGS[s.role as string]) fail(`${w}.meaning`);
+    if (i > 0 && s.upstream_stages === undefined) fail(`${w}.upstream_stages`);
+    s.options.forEach((op, j) => powerOption(s.meaning as string, op, `${w}.options[${j}]`));
+  });
+}
+
+/**
+ * U7-5e: 依存する段（upstream_stages のある段）の形。段の番号は 1 からの並び、depends_on_stage は直前の段、upstream_stages は前のすべての段、
+ * 選べるものの after は options_by_choice の鍵で、その鍵の組にある。組の選べるものの after はその鍵（別の上流の選び方の番号を混ぜない）。
+ * エンジンの stage_dependency_problems と同じ確かめ。合わなければ止める（項目を読み飛ばして古い 2 段の扱いで送らない）。
+ */
+function chainedStages(stages: InputStage[]): void {
+  if (!stages.some((s) => s.input === "choose_option" && s.upstream_stages !== undefined)) return;
+  stages.forEach((raw, i) => {
+    const s = raw as OptionStage;
+    const w = `stages[${s.stage}]`;
+    if (s.stage !== i + 1 || s.input !== "choose_option" || !s.options) fail(`${w}: 依存する段の番号`);
+    if (i === 0) {
+      if (s.depends_on_stage !== undefined || s.upstream_stages !== undefined || s.options.some((op) => "after" in op)) fail(`${w}: 1 段目が依存する`);
+      return;
+    }
+    const upstream = s.upstream_stages ?? [];
+    if (s.depends_on_stage !== i || upstream.length !== i || upstream.some((n, k) => n !== k + 1)) fail(`${w}.upstream_stages`);
+    const by = s.options_by_choice ?? {};
+    const afterOf = new Map(s.options.map((op) => [op.id, op.after]));
+    for (const op of s.options) {
+      if (typeof op.after !== "string" || !(op.after in by) || !by[op.after]!.some((p) => p.option === op.id)) fail(`${w}.options.${op.id}.after`);
+    }
+    for (const [key, pairs] of Object.entries(by)) for (const p of pairs) if (afterOf.get(p.option) !== key) fail(`${w}.options_by_choice.${key}: ${p.option}`);
+  });
+}
+
 function stage(value: unknown, i: number): InputStage {
   const w = `stages[${i}]`;
   const o = obj(value, w);
@@ -435,6 +532,7 @@ function stage(value: unknown, i: number): InputStage {
   str(o.order, `${w}.order`);
   if ("role" in o) str(o.role, `${w}.role`);
   if ("note" in o) str(o.note, `${w}.note`);
+  if ("upstream_stages" in o) intList(o.upstream_stages, `${w}.upstream_stages`);
   if (kind === "choose_option") {
     if ("options" in o) arr(o.options, `${w}.options`).forEach((op, j) => option(op, `${w}.options[${j}]`));
     else if (!("options_from_stage" in o)) fail(`${w}.options`);
@@ -514,6 +612,7 @@ export function inputsResponse(value: unknown): InputsResponse {
     if ("withheld" in r) refusal(r.withheld, "response.withheld");
     const stages = arr(r.stages, "response.stages").map((s, i) => stage(s, i));
     stagesConsistent(stages);
+    chainedStages(stages);
     if (!("withheld" in r)) kindStages(r.kind as string, stages);
   }
   return o as unknown as InputsResponse;
