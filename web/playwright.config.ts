@@ -14,16 +14,20 @@ const serverPort = process.env.KYUURA_E2E_SERVER_PORT ?? "8766";
 // 0.171.0・74c8e1f でも同じ。U7-5e の e2e（u75e.spec.ts）も固定例から始める
 // 0.172.0・e26df79 でも同じ。U7-5f・g の e2e（u75fg.spec.ts）も固定例から始める
 // 0.174.0・f7bf450 の P6 の e2e（p6.spec.ts）は構築盤面から始める（テスト専用の入口。下の KYUURA_E2E_SERVER_MODULE）。この seed は使わない
+// 0.175.0・81e9e99 の U-R3a の e2e（u-r3a.spec.ts）も構築盤面から始める（テスト専用の入口 tests.r3a_server）。この seed は使わない
 export const E2E_FIXED_SEED = "21";
 const webPort = process.env.KYUURA_E2E_WEB_PORT ?? "5174";
 const python = process.platform === "win32" ? join("..", "server", ".venv", "Scripts", "python.exe") : join("..", "server", ".venv", "bin", "python");
 // 0.174.0（P6）: KYUURA_E2E_SERVER_MODULE=tests.p6_server のときだけ、テスト専用の入口（server/tests/p6_server.py。名前の決まった構築盤面を固定例の表に加える）で
-// 接続層を起動する（e2e/p6.spec.ts）。既定は通常の入口。決まった名前のほかは受け付けない（任意のモジュールを起動しない）
+// 接続層を起動する（e2e/p6.spec.ts）。0.175.0（U-R3a）: tests.r3a_server（server/tests/r3a_server.py。e2e/u-r3a.spec.ts）。
+// 既定は通常の入口。決まった名前のほかは受け付けない（任意のモジュールを起動しない）
+const TEST_SERVER_MODULES = ["tests.p6_server", "tests.r3a_server"] as const;
 const testServerModule = process.env.KYUURA_E2E_SERVER_MODULE;
-if (testServerModule !== undefined && testServerModule !== "tests.p6_server") throw new Error("KYUURA_E2E_SERVER_MODULE は tests.p6_server だけ");
+const testModule = TEST_SERVER_MODULES.find((m) => m === testServerModule);
+if (testServerModule !== undefined && testModule === undefined) throw new Error(`KYUURA_E2E_SERVER_MODULE は ${TEST_SERVER_MODULES.join("・")} だけ`);
 const serverCommand =
-  testServerModule === "tests.p6_server"
-    ? `"${python}" -m tests.p6_server --port ${serverPort}`
+  testModule !== undefined
+    ? `"${python}" -m ${testModule} --port ${serverPort}`
     : `"${python}" -m kyuura_gui_server --port ${serverPort} --test-fixed-seed ${E2E_FIXED_SEED}`;
 
 export default defineConfig({

@@ -20,12 +20,13 @@ from kyuura_gui_server.app import create_app
 from . import p6_boards
 
 
-def main(argv=None) -> None:
-    parser = argparse.ArgumentParser(description="P6 の構築盤面の e2e 用の接続層（テスト専用。127.0.0.1 だけ）")
+def main(argv=None, *, install=p6_boards.install, description="P6 の構築盤面の e2e 用の接続層（テスト専用。127.0.0.1 だけ）") -> None:
+    """``install`` は名前の決まった構築盤面を固定例の表に加える関数（P6 は p6_boards.install、U-R3a は tests/r3a_server.py から r3a_boards.install）。"""
+    parser = argparse.ArgumentParser(description=description)
     parser.add_argument("--port", type=int, required=True)
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO)
-    p6_boards.install(scenarios)
+    install(scenarios)
     uvicorn.run(create_app(), host=HOST, port=args.port, log_level="info", access_log=False)
 
 

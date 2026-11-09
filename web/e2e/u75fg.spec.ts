@@ -158,7 +158,9 @@ test("うらのマンキー: 本人の画面だけに［スパイ］（盤面は
   await expect(viewer(page).locator('.player-area[aria-label^="プレイヤー0"] .bench-slot')).toContainText("マンキー");
 });
 
-test("うらのロケット団のヒトカゲ: 2 段の型は入力を返さず送れない（R-3 は本人の画面だけ）", async ({ page }) => {
+// 0.175.0（U-R3a）から 2 段の型も組が完成すれば入力を返す。この固定例の番 1 は自分の場にカードがついたポケモンがなく組が完成しないので、今までどおり入力を返さない
+// （2〜3 段の入力は e2e/u-r3a.spec.ts の構築盤面）
+test("うらのロケット団のヒトカゲ: 組が完成しない場面では入力を返さず送れない（R-3 は本人の画面だけ）", async ({ page }) => {
   await secretPlan(page, "PMCG4-012");
   await expect(faceDownPower(page)).toContainText("［ほのおをもらう］");
   await openCoverage(page);

@@ -51,9 +51,12 @@ SOURCE = {
 }
 
 
-def _initial(real: str) -> GameState:
-    """プレイヤー 0 の番 3 の MAIN。0: バトル場は闘エネルギー 2 枚のエビワラー・手札はマチスの秘策・``real``・闘エネルギー・山札は炎エネルギー 10 枚。
-    1: バトル場は闘エネルギー 1 枚のエビワラー・山札は炎エネルギー 10 枚。サイドは各 6 枚（炎エネルギー）。"""
+def _initial(real: str, *, hand_extra: tuple[str, ...] = (FIGHTING,), bench: tuple[tuple[str, list[str]], ...] = ()) -> GameState:
+    """プレイヤー 0 の番 3 の MAIN。0: バトル場は闘エネルギー 2 枚のエビワラー・ベンチは ``bench``・手札はマチスの秘策・``real``・``hand_extra``・山札は炎エネルギー 10 枚。
+    1: バトル場は闘エネルギー 1 枚のエビワラー・山札は炎エネルギー 10 枚。サイドは各 6 枚（炎エネルギー）。
+
+    カード・場のポケモンの番号の振り方は ``build_test_state`` と同じ順（バトル場 → ベンチ → 手札 → 山札 → サイド）。P6 は既定（ベンチなし・手札に闘エネルギー）、
+    U-R3a（``tests/r3a_boards.py``）はベンチに炎・水エネルギーのコラッタ・手札に追加なし。"""
     pool = load_card_pool()
     cards: dict[int, CardInstance] = {}
     next_pokemon_id = [1]
@@ -74,14 +77,14 @@ def _initial(real: str) -> GameState:
         return result
 
     specs = [
-        {"active": (HITMONCHAN, [FIGHTING, FIGHTING]), "hand": [SECRET_PLAN, real, FIGHTING]},
-        {"active": (HITMONCHAN, [FIGHTING]), "hand": []},
+        {"active": (HITMONCHAN, [FIGHTING, FIGHTING]), "bench": list(bench), "hand": [SECRET_PLAN, real, *hand_extra]},
+        {"active": (HITMONCHAN, [FIGHTING]), "bench": [], "hand": []},
     ]
     players = []
     for owner, spec in enumerate(specs):
         p = PlayerState(deck=[])
         p.active = pokemon(*spec["active"], owner)
-        p.bench = []
+        p.bench = [pokemon(card_id, list(energy), owner) for card_id, energy in spec["bench"]]
         p.hand = [new_uid(c, owner) for c in spec["hand"]]
         p.deck = [new_uid(c, owner) for c in [FIRE] * 10]
         p.prizes = [new_uid(c, owner) for c in [FIRE] * 6]
@@ -149,14 +152,20 @@ DESCRIPTION = ("テスト専用の構築盤面（エンジンの P6 のテスト
 
 def install(scenarios_module, monkeypatch=None) -> None:
     """固定例の表に 3 つの構築盤面を加える（同じプロセスの中だけ。テストは monkeypatch で戻す）。"""
+    install_boards(scenarios_module, {board_id: (LABELS[board_id], DESCRIPTION, build) for board_id in BOARDS}, monkeypatch)
+
+
+def install_boards(scenarios_module, boards, monkeypatch=None) -> None:
+    """名前の決まった構築盤面（名前 → (表示名, 説明, 名前から ClientHub を作る関数)）を固定例の表に加える。P6・U-R3a（``tests/r3a_boards.py``）で共用。
+    任意の状態は受け取らない（名前の表にない盤面は作れない）。"""
     original = scenarios_module.build
     table = dict(scenarios_module.SCENARIOS)
-    for board_id in BOARDS:
-        table[board_id] = {"label": LABELS[board_id], "file": "", "point": "constructed", "description": DESCRIPTION}
+    for board_id, (label, description, _builder) in boards.items():
+        table[board_id] = {"label": label, "file": "", "point": "constructed", "description": description}
 
     def build_with_boards(scenario_id: str):
-        if scenario_id in BOARDS:
-            return build(scenario_id), None
+        if scenario_id in boards:
+            return boards[scenario_id][2](scenario_id), None
         return original(scenario_id)
 
     if monkeypatch is not None:
