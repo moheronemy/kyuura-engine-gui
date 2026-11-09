@@ -143,6 +143,17 @@
     "added_u7_5fg_candidates": "なし（どの時点にも check_face_up_deck の候補・attach_energy の 3 段目・本人のうらのカードの特殊能力の候補は出ない）",
     "other": "coverage に display_only_kinds・completeness_basis・partial_residual・residual（classes は R-2〜R-5 の固定の分類）・unverified_paths が加わり、implemented_kinds に check_face_up_deck が加わった（U7-5f・g の項目の追加）。どの時点・入口も completeness・not_covered_kinds は変わらず、display_only_kinds・partial_residual・residual.present・unverified_paths は空。候補の並び・中身の違いはない"
    }
+  },
+  {
+   "engine_commit": "f7bf450580bf0d02573b4d032271be6b8e12d699",
+   "engine_version": "0.174.0",
+   "checked": "2026-11-09",
+   "result": "操作の列・到達点は同じ（来歴の追記だけ。記録は作り直していない。0.172.0 の記録・スナップショットを流用して識別を書き換えたものではない）",
+   "method": "server/tools/scenario_views.py の --full を 0.172.0（e26df79。既存の GUI の作業場所 kyuura-engine-gui-wt-u75fg の .venv）と 0.174.0（f7bf450）の環境で実行し、応答の全体を項目ごとに比べた。固定例の名前ごとの時点で、全入口（プレイヤー0・1・観戦者・ホスト）の view と candidates、作成の知らせがすべて同じ（views_sha256 も同じ）。再生する固定例は記録の操作の列を新しい対戦で再生した互換性の確かめで、旧記録の正式な再実行・復元ではない",
+   "candidates_difference": {
+    "added_p6_inputs": "なし（どの時点にも本人のうらのバトル場のポケモンのにげるの候補は出ない。cost_evaluation の段もない）",
+    "other": "なし（CN-1 の修正（ReplayCollector・ViewHost の failure）は ClientHub.start・from_state の固定例の応答に現れない）"
+   }
   }
  ]
 }

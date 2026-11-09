@@ -23,7 +23,7 @@ EXPECTED = json.loads((ROOT / "contract" / "kyuura-client-api-v1.json").read_tex
 def test_engine_identity():
     """導入元は direct_url.json の vcs_info で確かめる（site-packages で git rev-parse をしない）。"""
     summary = verify_engine_source(EXPECTED["engine"]["commit"], EXPECTED["engine"]["version"])
-    assert summary["commit_id"] == EXPECTED["engine"]["commit"] and summary["version"] == kyuura_engine.__version__ == EXPECTED["engine"]["version"] == "0.172.0"
+    assert summary["commit_id"] == EXPECTED["engine"]["commit"] and summary["version"] == kyuura_engine.__version__ == EXPECTED["engine"]["version"] == "0.174.0"
     assert "site-packages" in Path(summary["module"]).parts and ".venv/src" not in Path(summary["module"]).as_posix()
     reqs = (ROOT / "server" / "requirements.txt").read_text(encoding="utf-8")
     assert f"kyuura-engine @ git+https://github.com/moheronemy/kyuura-engine@{EXPECTED['engine']['commit']}" in reqs
@@ -70,8 +70,36 @@ def test_enumerations_match_engine():
     assert {L.REASON_REACTIONS, L.REASON_FACE_DOWN, L.REASON_STOPS, L.REASON_PREFLIGHT, L.REASON_CONTINUATION,
             L.REASON_NO_PRINTED_ATTACK, L.REASON_USE_CONDITION} <= set(EXPECTED["reason_codes"])
     assert set(EXPECTED["check_before_submit_kinds"]) <= set(EXPECTED["implemented_kinds"])
-    # GUI の方針（エンジンの要求ではない）: attach_energy は 1 枚・2 枚とも送る前に check を必須にする
-    assert {L.KIND_ATTACH_ENERGY, L.KIND_USE_ATTACK, *L.BOARD_KINDS, L.KIND_PLAY_TRAINER, L.KIND_USE_STADIUM, L.KIND_USE_POWER} == set(EXPECTED["check_before_submit_kinds"])
+    # GUI の方針（エンジンの要求ではない）: attach_energy は 1 枚・2 枚とも送る前に check を必須にする。0.174.0 対応で retreat を種類として加えた
+    # （P6 の段には total_units がないので、個数の段の有無では決めない）
+    assert {L.KIND_RETREAT, L.KIND_ATTACH_ENERGY, L.KIND_USE_ATTACK, *L.BOARD_KINDS, L.KIND_PLAY_TRAINER, L.KIND_USE_STADIUM,
+            L.KIND_USE_POWER} == set(EXPECTED["check_before_submit_kinds"])
+
+
+def test_retreat_contract_matches_engine_source():
+    """0.174.0（P6）: にげるの段の形と cost_evaluation が、固定版のエンジンの定数・ソースと同じ（docs/legal-actions-p6-face-down-retreat.md 2 章）。
+
+    おもての段は total_units とすべての選べるものの units、本人のうらのバトル場のポケモンの段は total_units・units を省いて cost_evaluation を持つ。"""
+    import inspect
+
+    assert L.COST_NOT_EVALUATED == EXPECTED["retreat_cost_evaluation"]["status"] == "not_evaluated"
+    assert L.REASON_FACE_DOWN == EXPECTED["retreat_cost_evaluation"]["reason"] == "face_down_reveal_not_evaluated"
+    assert EXPECTED["retreat_cost_evaluation"]["omitted"] == ["total_units", "units"]
+    assert set(EXPECTED["retreat_cost_evaluation"]) == {"status", "reason", "omitted"}
+    source = inspect.getsource(L._retreat_candidate)
+    assert 'discard["cost_evaluation"] = {"status": COST_NOT_EVALUATED, "reason": REASON_FACE_DOWN, "omitted": ["total_units", "units"]}' in source
+    assert 'discard["total_units"] = {"min": cost.minimum, "max": cost.maximum}' in source
+    assert '{**shown, "units": energy_unit_count(state, (uid,), active), "processability": processability}' in source  # おもて: eligible・reasons なし
+    assert "energy_options.append(_option(shown, processability, reasons))" in source  # うら: units なし・eligible・reasons あり
+    assert 'shown = {"id": oid, "card": uid, "card_id": state.cards[uid].card_id, "special": state.card_def(uid).is_special_energy}' in source
+    assert set(EXPECTED["retreat_discard_option_keys"]) == {"id", "card", "card_id", "special", "units", "eligible", "processability", "reasons"}
+    assert '"role": "new_active", "meaning": "pokemon", "count": {"min": 1, "max": 1}' in source and '"role": "discard", "meaning": "card"' in source
+    assert EXPECTED["retreat_stage_roles"] == ["new_active", "discard"]
+    assert '"distinct": True, "order": ORDER_SIGNIFICANT, "order_preserved": True' in source
+    assert "_pokemon_option(state, pokemon, \"bench\", index)" in source  # 1 段目は場のポケモンの形（board_option_keys）
+    assert "GUARANTEE_FACE_DOWN_RETREAT if face_down else GUARANTEE_TURN_ACTION" in source
+    # check はうらのとき形だけ（エンジンの確かめを呼ばない）
+    assert "if face_down:\n            return None  # エンジンがおもてにしてから確かめる" in source
 
 
 def test_attack_enumerations_match_engine():
