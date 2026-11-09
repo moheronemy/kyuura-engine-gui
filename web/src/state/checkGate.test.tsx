@@ -4,7 +4,8 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { endpointClient } from "../api/transport";
 import { cand, candidates, deferred, EMPTY_UPDATES, inputs, mockTransport, observation, player, pokemon, view, type Call } from "../test/fixtures";
-import { ATTACH_STAGES } from "../test/u73";
+import { OWN_FACE_DOWN_ACTIVE, P6_RETREAT, P6_STAGES } from "../test/p6";
+import { ATTACH_STAGES, RETREAT_STAGES } from "../test/u73";
 import { submit as envelope } from "../test/u74";
 import { BLAINE_ATTACH, BLAINE_STAGES } from "../test/u75fg";
 import type { SubmitGate } from "./submitGate";
@@ -112,5 +113,105 @@ describe("送信の入口の check の門（attach_energy。GUI の方針）", (
     await selectAttach(hook, "c3");
     await act(() => hook.result.current.submit(["o1", "o3"]));
     expect(submits()).toHaveLength(0);
+  });
+});
+
+// 0.174.0（P6）: retreat は種類で check が要る（本人のうらのバトル場のポケモンの段には total_units がない）。おもてのにげるも同じ条件
+describe("送信の入口の check の門（retreat。P6 とおもて）", () => {
+  const FACE_UP = cand("retreat", "supported", { id: "c4", input_stages: [1, 2].map((stage) => ({ stage, input: "choose_option" })) });
+
+  function setupRetreat(override: (c: Call) => unknown = () => undefined) {
+    const transport = mockTransport((c) => {
+      const o = override(c);
+      if (o !== undefined) return o;
+      if (c.method === "GET") return EMPTY_UPDATES;
+      const type = c.body?.type;
+      if (type === "view") return view(0, observation(0, [player(0, { handCards: [], active: OWN_FACE_DOWN_ACTIVE as never }), player(1, { handCards: null })]));
+      if (type === "candidates") return candidates("r1", [P6_RETREAT, FACE_UP]);
+      if (type === "inputs") return c.body?.candidate === "c4" ? inputs("retreat", RETREAT_STAGES, { candidate: "c4" }) : inputs("retreat", P6_STAGES, { candidate: "c2" });
+      if (type === "check") return VALID;
+      if (type === "submit") return envelope("accepted", { next: [{ kind: "turn_action", player: 0 }] });
+      throw new Error(`想定外 ${c.path} ${String(type)}`);
+    });
+    const client = endpointClient(transport, { route: "seat", token: "tok0" });
+    const hook = renderHook(() => useEndpointSession({ client, canAct: true, gate, operationPrefix: "t" }));
+    const submits = () => transport.calls.filter((c) => c.body?.type === "submit");
+    return { hook, submits, transport };
+  }
+
+  async function selectRetreat(hook: ReturnType<typeof setupRetreat>["hook"], candidate = P6_RETREAT) {
+    await waitFor(() => expect(hook.result.current.legal).not.toBeNull());
+    await act(() => hook.result.current.select(candidate));
+    await waitFor(() => expect(hook.result.current.selection?.inputs).not.toBeNull());
+  }
+
+  it("P6: check の前の submit は要求を出さない。check した入力と違う入力・通らなかった check でも出さない", async () => {
+    let answer: unknown = INVALID;
+    const { hook, submits } = setupRetreat((c) => (c.body?.type === "check" ? answer : undefined));
+    await selectRetreat(hook);
+    await act(() => hook.result.current.submit(["o1"]));
+    expect(submits()).toHaveLength(0);
+    expect(hook.result.current.notices[0]?.title).toBe("送信していません");
+    await act(() => hook.result.current.check(["o1", "o2"]));
+    await act(() => hook.result.current.submit(["o1", "o2"])); // 通らなかった
+    expect(submits()).toHaveLength(0);
+    answer = VALID;
+    await act(() => hook.result.current.check(["o1", "o2"]));
+    await act(() => hook.result.current.submit(["o1", "o3", "o2"])); // 別の入力
+    await act(() => hook.result.current.submit(["o1", "o2", "o3"]));
+    expect(submits()).toHaveLength(0);
+    await act(() => hook.result.current.submit(["o1", "o2"]));
+    expect(submits().map((c) => c.body?.choices)).toEqual([["o1", "o2"]]);
+  });
+
+  it("P6: 入力を変えて元の入力に戻しても、変える前に始めた check の遅れた答えでは送らない", async () => {
+    const late = deferred<unknown>();
+    let checks = 0;
+    const { hook, submits } = setupRetreat((c) => {
+      if (c.body?.type !== "check") return undefined;
+      checks += 1;
+      return checks === 1 ? late.promise : undefined;
+    });
+    await selectRetreat(hook);
+    let pending: Promise<void> = Promise.resolve();
+    act(() => {
+      pending = hook.result.current.check(["o1", "o2", "o3"]); // 遅れる
+    });
+    act(() => hook.result.current.inputChanged()); // トラッシュの順序を変えた
+    act(() => hook.result.current.inputChanged()); // 元の順序 [o1, o2, o3] に戻した
+    late.resolve(VALID);
+    await act(() => pending);
+    expect(hook.result.current.selection?.check).toBeNull();
+    await act(() => hook.result.current.submit(["o1", "o2", "o3"]));
+    expect(submits()).toHaveLength(0);
+    await act(() => hook.result.current.check(["o1", "o2", "o3"]));
+    await act(() => hook.result.current.submit(["o1", "o2", "o3"]));
+    expect(submits()).toHaveLength(1);
+  });
+
+  it("候補・取っ手を選び直すと、前の候補の check では送らない。おもてのにげるも同じ門（total_units の有無で決めない）", async () => {
+    const { hook, submits } = setupRetreat();
+    await selectRetreat(hook);
+    await act(() => hook.result.current.check(["o1"]));
+    await selectRetreat(hook, FACE_UP);
+    await act(() => hook.result.current.submit(["o1"]));
+    expect(submits()).toHaveLength(0);
+    await act(() => hook.result.current.check(["o1", "o2", "o3"]));
+    await act(() => hook.result.current.submit(["o1", "o2", "o3"]));
+    expect(submits().map((c) => c.body?.candidate)).toEqual(["c4"]);
+  });
+
+  it("拒否のあと自動では送り直さない（同じ取っ手の選択は残る。送るのは利用者の操作だけ）", async () => {
+    const { hook, submits } = setupRetreat((c) =>
+      c.body?.type === "submit" ? envelope("rejected", { status: "in_progress", diagnostic_id: "d1", category: "invalid_input", message: "エネルギーが足りない" }) : undefined,
+    );
+    await selectRetreat(hook);
+    await act(() => hook.result.current.check(["o1", "o2"]));
+    await act(() => hook.result.current.submit(["o1", "o2"]));
+    expect(submits()).toHaveLength(1);
+    expect(hook.result.current.notices[0]?.title).toBe("拒否（エンジン）: にげる");
+    expect(hook.result.current.notices[0]?.lines).toContain("この結果は送ったあなたにだけ表示しています（相手・観戦者には知らせません）。");
+    await waitFor(() => expect(hook.result.current.loading).toBe(false));
+    expect(submits()).toHaveLength(1);
   });
 });
