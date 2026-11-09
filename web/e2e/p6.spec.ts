@@ -41,7 +41,7 @@ test("構築盤面 A: エネルギー 0 枚で送る → 受理。おもてに�
 
 test("構築盤面 B: エネルギー 1 枚 → 拒否は本人の画面だけ。うらのまま・自動で再送しない。相手・観戦者に診断・本当のカードが出ない", async ({ page }) => {
   const { units } = await openRetreat(page, "B");
-  await stage(page, 2).getByRole("checkbox").first().check();
+  await stage(page, 2).getByRole("radio", { name: /PMCG1-102/ }).check(); // 0〜1 枚の段は 1 つを選ぶ形（「選ばない」もある）
   await expect(units).toContainText("選んでいるカード: 1 枚");
   await checkShape(page);
   const submits: string[] = [];
