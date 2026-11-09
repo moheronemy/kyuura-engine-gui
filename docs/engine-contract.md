@@ -1,10 +1,11 @@
-# エンジンの契約と GUI の対応（kyuura-engine v0.176.0・PT-5e。v0.172.0・U7-5f・g までは 13 章まで）
+# エンジンの契約と GUI の対応（kyuura-engine v0.177.0・from_state の入口の確かめ。v0.172.0・U7-5f・g までは 13 章まで）
 
 GUI が使うエンジンの公開の境界と、その確かめ方・更新の方法の記録です。推測でなく、固定コミットの文書・コードと実際の応答で確かめた内容だけを書きます。
 
 ## 0. 固定と導入
 
-- 版 0.176.0、導入する完全なコミット `6f627007a2a7101be066ac6ba035e838a75e36e1`（公開ブランチ `claude/pt-5e-impl` の「版を 0.176.0 にする」。PT-5e を含む。Git の URL からの通常のインストール。16 章）。文書だけの後続のコミット・検証用 AI の追従（`claude/vai-0176-follow`）・エンジンの main へは自動で変えない。renderer の固定（`af88231`）は変えていない
+- 版 0.177.0、導入する完全なコミット `01317a649e65461dfeffabfa0b4893840ae6d9ee`（公開ブランチ `claude/pt5e-from-state-fix` の「版を 0.177.0 にする」。`from_state` の入口の不変条件の確かめを含む。Git の URL からの通常のインストール。17 章）。文書だけの後続のコミット・エンジンの main へは自動で変えない。renderer の固定（`af88231`）は変えていない
+- 以前の固定: 0.176.0、`6f627007a2a7101be066ac6ba035e838a75e36e1`（公開ブランチ `claude/pt-5e-impl` の「版を 0.176.0 にする」。PT-5e を含む。Git の URL からの通常のインストール。16 章）
 - 以前の固定: 0.175.0、`81e9e99f76c2a2071fbbc50f852d6c28a026d080`（公開ブランチ `claude/u-r3a-face-down-multistage-power` の「版を 0.175.0 にする」。U-R3a を含む。Git の URL からの通常のインストール。15 章）。文書だけの後続のコミット（`43debdd` など）・検証用 AI の追従（`claude/vai-u-r3a-follow`）・エンジンの main へは自動で変えない。renderer の固定（`af88231`）は変えていない
 - 以前の固定: 0.174.0、`f7bf450580bf0d02573b4d032271be6b8e12d699`（公開ブランチ `claude/p6-face-down-retreat` の「版を 0.174.0 にする」。P6 と 0.173.0 の CN-1 の修正を含む。Git の URL からの通常のインストール。14 章）。文書だけの後続のコミット・エンジンの main へは自動で変えない。renderer の固定（`af88231`）は変えていない
 - 以前の固定: 0.172.0、`e26df79cc6dec913c1d15b5d8203df066334d65d`（公開ブランチ `claude/u7-5fg-impl` の「版を 0.172.0 にする」。U7-5f・g を含む。Git の URL からの通常のインストール。`server/requirements.txt`）。文書だけが違う後続のコミット（`05a6749`。限定の検証と配布の記録）・エンジンの main へは自動で変えない。renderer の固定（`af88231`）は変えていない
@@ -19,7 +20,7 @@ GUI が使うエンジンの公開の境界と、その確かめ方・更新の�
 - 契約の確かめ（1〜5 章）は `d0c5cfa` で行った。`d0c5cfa` から `ffcc5ca` までの差分は配布の設定（`pyproject.toml`・`MANIFEST.in`）・文書・配布物の確かめの道具とテストだけで、`kyuura_engine/` の中身は変わっていない。API の契約は変わっていないものとして扱い、接続層のテスト・ブラウザの接続確認を `ffcc5ca` の通常のインストールで通した
 - 導入元は `direct_url.json` の `vcs_info.commit_id` で確かめる（`kyuura_gui_server/engine_source.py`）。site-packages で `git rev-parse` をしない（GUI 自身の HEAD を返しうる）
 
-## 1. 参照した資料（1〜5 章は固定コミット d0c5cfa で確かめ、b4e62d9・9506d63・0885d66・74c8e1f・e26df79 で変わっていないことを確かめた。U7-3 は 9 章、U7-4 は 10 章、U7-5 は 11 章、U7-5e は 12 章、U7-5f・g は 13 章、P6（0.174.0）は 14 章、U-R3a（0.175.0）は 15 章、PT-5e（0.176.0）は 16 章。14 章では 1〜13 章、15 章では 1〜14 章、16 章では 1〜15 章の確かめを、それぞれ f7bf450・81e9e99・6f62700 でやり直していない（15 章で選んだテストの範囲は 15.8、16 章は 16.8）
+## 1. 参照した資料（1〜5 章は固定コミット d0c5cfa で確かめ、b4e62d9・9506d63・0885d66・74c8e1f・e26df79 で変わっていないことを確かめた。U7-3 は 9 章、U7-4 は 10 章、U7-5 は 11 章、U7-5e は 12 章、U7-5f・g は 13 章、P6（0.174.0）は 14 章、U-R3a（0.175.0）は 15 章、PT-5e（0.176.0）は 16 章、from_state の入口の確かめ（0.177.0）は 17 章。14 章では 1〜13 章、15 章では 1〜14 章、16 章では 1〜15 章、17 章では 1〜16 章の確かめを、それぞれ f7bf450・81e9e99・6f62700・01317a6 でやり直していない（15 章で選んだテストの範囲は 15.8、16 章は 16.8、17 章は 17.7）
 
 - `docs/client-api-v0.164.md`（入口・要求と応答・更新・導入）
 - `docs/legal-actions-u7-1.md`（決定への回答・番を終える・取っ手・処理可能性・coverage）
@@ -37,7 +38,7 @@ GUI が使うエンジンの公開の境界と、その確かめ方・更新の�
 | 境界 | 使い方 |
 |---|---|
 | `ClientHub.start(deck0, deck1, seed, **options)` | 新しい対戦（seed は接続層が決める。`conventions` を任意で渡す） |
-| `ClientHub.from_state(state)` | 検証用の固定例（公開の `new_game`・`apply_command`・`command_from_dict` で再生した状態） |
+| `ClientHub.from_state(state)` | 検証用の固定例（公開の `new_game`・`apply_command`・`command_from_dict` で再生した状態）。0.177.0 から、エンジンが複製の不変条件を確かめ、崩れていれば hub を作る前に `UnusableStateError` で拒否する（接続層は既存の `GUI_INTERNAL_ERROR` だけを返す。17 章） |
 | `hub.player(0/1)`・`hub.spectator()`・`hub.host()` | 入口。接続層が保持する |
 | 入口の `handle(dict) -> dict` | `view`・`candidates`・`inputs`・`check`・`submit`・`updates` |
 | `preset_deck`・`preset_deck_ids`・`expand_decklist`・`deck_problems`・`load_card_pool` | サンプルデッキ・デッキの検査・カード名の表 |
@@ -760,3 +761,91 @@ GUI の実行時の検証（`web/src/api/validate.ts` の `costEvaluation`・`re
 - 既存の 0.175.0 の `.venv` からの入れ替えそのもの、preview、クリーンな環境での再構築
 - エンジンを更新するときは、PT-5e・U-R3a・P6 の構築盤面とエンジンの tests の盤面の一致を確かめ直す（README「エンジンの更新の手順」5）
 - 残る R-3・R-2・R-4・R-5、P6 で記録した「受理のあと同じ番にもう一度 retreat の候補が出る」観察（14.10）は変わっていない（着手していない）
+
+## 17. 構築した状態の入口の確かめ（PT5E-FROM-STATE-INVARIANT。0.177.0・01317a6 の文書・コードと実際の接続層で確かめた）
+
+基点は GUI の `dbb6456`（`feature/engine-pt5e-trainers`。PT-5e・P6・U-R3a の追従と送る前の check の修正を含む公開コミット。`origin/main`（`088822c`）には入っていない）。作業ブランチは `feature/engine-0177-from-state`（専用の worktree）。エンジン・AI・renderer は読むだけ。
+
+### 17.1 固定と依存の更新（0.176.0 → 0.177.0）
+
+- `server/requirements.txt`・契約の表の `engine` を `01317a6`（0.177.0。公開ブランチ `claude/pt5e-from-state-fix` の「版を 0.177.0 にする」）にした。`npm run setup` で新しい作業場所の新しい `.venv` に入れ、`direct_url.json` のコミットの一致・編集可能でないこと・配布メタデータとパッケージの版（0.177.0）・site-packages からの読み込みを確かめた（`engine_source` と `test_contract.py::test_engine_identity`）
+- `6f62700` から `01317a6` までの `kyuura_engine/` の差分は `adapter.py`（`checked_state_copy`・`UnusableStateError`・コードの定数・`HostedGame` の docstring）、`client_api.py`・`legal_actions.py`（`from_state` が `checked_state_copy` を呼ぶ。import とコメント）、版だけ。読んだ文書: エンジンの `docs/pt5e-from-state-invariant-audit.md`（監査と計画）、`docs/implementation-status.md` の v0.177 の節、テスト `tests/test_from_state_integrity_v0_177.py`・`tests/test_legal_actions_pt5e_v0_176.py` の差分
+- 契約の識別・形式の版、要求・応答の JSON の形、処理可能性・理由・拒否のコードの語彙は同じ。契約の表は `engine` と `$comment` の説明だけを変えた
+- renderer（`af88231`）・`package.json`・lockfile・カード定義の契約は変えていない
+
+### 17.2 エンジンの変化（入口の契約）
+
+- `ClientHub.from_state`・`ActionHost.from_state` は共通の `adapter.checked_state_copy` を呼ぶ: 型（`GameState` そのもの。違えば `TypeError`）→ 複製 → 複製の `check_invariants`。問題があれば `UnusableStateError`（`code` が `STATE_INTEGRITY`、`problems` に問題の文）。複製・確かめの途中の `Exception` は `STATE_CHECK_ERROR`（元の例外は `__cause__`）。`MemoryError` は投げ直し、`KeyboardInterrupt`・`SystemExit` は捕まえない（通常の入力の拒否として扱わない）
+- 拒否は hub・ホスト・セッション・取っ手を作る前。渡した状態は変えない
+- `UnusableStateError` は `ValueError` の子（`EngineError` の子ではない。処理の途中の不整合 `StateIntegrityError` とは別の型）。`str()` は `code` ごとの決まった文。`problems`（カードの番号・ゾーン・持ち主が入る）と `__cause__` はホスト・検証者だけが読む
+- 信頼された内部の直接の組み立て（`HostedGame(state)`・`ClientHub(game)`・`ActionHost(game)`）は今までどおり確かめない
+- **受け付ける状態**: 不変条件を満たす `GameState`。受け付けても、合法な対戦から到達できる保証ではない。規約集合・決定の再開先・効果の登録・カードデータ・乱数の確かめは今回の変更に入っていない（規約集合・決定の再開先はコマンドごとに処理の前に確かめる既存のまま）
+- 旧版の記録・snapshot は、識別を書き換えて流用しない（GUI は snapshot を使わない。固定例は記録の操作の列を新しい版で再生して比べる）
+
+### 17.3 GUI の入口と製品のコードの要否（変えていない）
+
+| 経路 | エンジンの入口 | 0.177.0 での扱い |
+|---|---|---|
+| 新しい対戦（`mode: "decks"`） | `ClientHub.start` | `from_state` を使わない。変化なし |
+| 固定例のうち new_game から始めるもの（`point: "start"`） | `ClientHub.start` | 同上 |
+| 固定例のうち再生するもの | 公開の `new_game`・`apply_command`（各コマンドの終わりで不変条件を確かめる）→ `ClientHub.from_state` | 入口の確かめを通る（17.6） |
+| テスト専用の構築盤面（P6 3・U-R3a 2・PT-5e 2） | `ClientHub.from_state`（作るたびに `check_invariants` が空であることも確かめる） | 入口の確かめを通る（17.6）。内部の組み立てへ移していない |
+
+- 作成の口は任意の状態を受け取らない（デッキと規約集合、または名前の決まった固定例だけ）。GUI に状態の検査を二重に作らない（不変条件はエンジンだけが確かめる）
+- 拒否の例外は、接続層の既存の middleware（`app.py` の `guard`）が `GUI_INTERNAL_ERROR`（500・決まった文）にし、ホストのログ（`log.exception`）にだけ残す。固定例の作成の前に例外になるので、`registry.replace` を呼ばず、対戦を作らない（前の対戦はそのまま。`GUI_SCENARIO_UNAVAILABLE` の既存の扱いと同じ）。新しい画面の表示・エラーの形は要らない
+- そのため製品のコード（`server/kyuura_gui_server`・`web/src`）は変えていない。変えたのは依存・契約の表の `engine`・版のテスト・固定例の来歴の追記・テスト・文書
+
+### 17.4 例外の公開の範囲（接続層のテスト `server/tests/test_from_state.py`）
+
+`str()` が決まった文であることだけを根拠にせず、HTTP の応答の全体を確かめた。
+
+| 対象 | プレイヤー（ブラウザ）向けの応答 | ホスト向けのログ・検証の証跡 |
+|---|---|---|
+| `problems`（カードの番号・ゾーン） | 出ない（応答の全体が `{"gui_server":1,"ok":false,"error":{"code":"GUI_INTERNAL_ERROR","message":…}}` と一致。問題の文のどれも含まない） | 例外のオブジェクトにある（ログの文には `str()` の決まった文と traceback。`problems` の文は書かれない） |
+| `__cause__`（確かめの途中の例外） | 出ない（原因の文に入れた印 `SECRET-CAUSE …` を含まない） | ログの traceback に原因の例外の連鎖が出る（ホストだけ） |
+| traceback・例外の型・`code`・エンジンの決まった文 | 出ない（`Traceback`・`UnusableStateError`・`RuntimeError`・`STATE_INTEGRITY`・`STATE_CHECK_ERROR`・エンジンの文を含まない） | ログに出る |
+| 対戦・入口 | 新しい hub・入口・取っ手はない（応答に `match` がない）。前の対戦が今の対戦のまま、その入口が使える | — |
+
+- 不整合な状態はテストの中だけで作る（PT-5e の構築盤面 1 の山札の 1 枚目を手札にも置く。カードが 2 か所にある）。確かめの途中の例外は、テストの中だけでエンジンの `adapter.check_invariants` を差し替えて作る。どちらも名前の決まった盤面としてテストの中だけで固定例の表に加える（`p6_boards.install_boards`）。製品の API に任意の状態を受け付ける機能は加えていない。エンジンの tests は import しない
+- 正常な診断の表示（デッキの診断・エンジンの拒否の診断を送った本人へ）は変えていない（`test_bridge.py`・既存の固定例のテストが通る）
+
+### 17.5 依存の更新の影響（固定例の旧版と新版の比べ）
+
+- `server/tools/scenario_views.py --full` を 0.176.0（`6f62700`。既存の作業場所 `kyuura-engine-gui-wt-pt5e` の `.venv` を読むだけ）と 0.177.0 の環境で実行し、項目ごとに比べた。14 の固定例・15 の時点で、全入口の view・candidates・作成の知らせはすべて同じ。違いは比べた出力の外側の `engine_version` の 1 か所だけ（版・識別の差。ゲームの応答の差はない）。`views_sha256` の要約も 15 時点すべて同じ
+- 固定例の JSON の `compatibility` に 0.177.0 の確かめを追記した（元の来歴・`engine_commit` は変えていない。CRLF・字下げを保ち、各ファイル 11 行の追加だけ）。再生は記録の操作の列を新しい版の対戦で再生した互換性の確かめで、旧記録の正式な再実行・復元ではない
+- カード定義: 正規化した sha256 `b82354d6…`・1,374 件で同じ。導入物のバイト列（`8ac177e8…`・CRLF 127,782）も同じ
+
+### 17.6 構築盤面（テスト専用）
+
+- 7 つの構築盤面（PT-5e 2・P6 3・U-R3a 2）を、0.177.0 の `ClientHub.from_state`・`ActionHost.from_state` の両方がすべて受け付けた（拒否はなし。個別の調査は要らなかった）
+- 01317a6 のエンジンの tests（読むだけ。scratchpad へ書き出した）の盤面と、状態の書き出し・乱数の指紋がすべて同じ（PT-5e の `table` は 0.177.0 で変わっていない。変わったのはテストの `queries` が崩れた状態で内部の組み立てを使う点だけ）。盤面の `SOURCE`（写した元のコミット）は変えていない
+- 接続層のテスト `test_p6.py`・`test_r3a.py`・`test_pt5e.py` が 0.177.0 の入口を通して通る（17.7 の R3）
+
+### 17.7 実行した検証（2026-11-10。限定）
+
+計画（対象・比べる基準・予算）は実行の前に保存した。記録した実行は各 1 回で、失敗はなかった。
+
+| 記録 | コミット | 対象 | 結果 |
+|---|---|---|---|
+| R1 | `86e5bcb` | 型検査（`npm run typecheck`） | 終了コード 0 |
+| R2 | `86e5bcb` | ビルド（`npm run build`） | 終了コード 0 |
+| R3 | `86e5bcb` | 接続層（pytest）: `test_contract`・`test_engine_source`・`test_bridge`（new_game の作成と既存の操作）・`test_card_definitions`・`test_scenarios`（固定例 14）・`test_p6`・`test_r3a`・`test_pt5e`（構築盤面 7）・`test_from_state`（新） | 111 件成功・失敗 0（JUnit） |
+| R4 | `86e5bcb` | 導入元の要約（`python -m kyuura_gui_server.engine_source`） | 終了コード 0（git・`01317a6`・0.177.0・site-packages） |
+
+- 記録の前に開発中に手元で流したもの（`test_from_state` と `test_contract`・`test_card_definitions`・`test_scenarios`）は記録の対象外
+- 画面のコードを変えていないので、フロントの単体テスト・ブラウザ確認は流していない
+- サーバーは起動していない（TestClient）。ポートは使っていない
+- 実行のときの作業ツリーの差分は README（この文書と同じコミットに入れた文書の変更）だけ
+
+### 17.8 証跡
+
+GUI のリポジトリの外の `C:\dev\kyuura-engine-verification-gui-0177`（既存の証跡とは別）。非公開の `verifier/`（計画・導入の記録・固定例の新旧の応答の全体・カード定義の比べ・構築盤面の照合と入口の受け付け・各実行の記録と JUnit）と、非機密の集計だけの `public/`。`MANIFEST.md`・`manifest.json`・`sha256.json`。
+
+### 17.9 未確認・次へ残すこと
+
+- 0.176.0 の `.venv` からの入れ替えそのもの（新しい作業場所の新しい `.venv` で確かめた）
+- `ActionHost.from_state` の HTTP の経路（GUI は使わない。エンジンの入口としては 17.6 で直接確かめた）・型の違う値の HTTP の経路（作成の口は状態を受け取らないので届かない）
+- 確かめの途中の例外のうち、エンジンの本当の不具合で起きるもの（テストでは差し替えで作った）
+- フロントの単体テストの全件・e2e・preview・エンジンの全体テスト・クリーンな環境での全工程
+- 1〜16 章の確かめを `01317a6` でやり直していない（固定例・構築盤面・選んだ接続層のテストだけ）
+- エンジン側: 規約集合・決定の再開先の入口での確かめ（エンジンの監査の 7 章で採否の判断）、信頼された内部の組み立てからの崩れた状態（PT-5e の候補の側のガードが残る）
