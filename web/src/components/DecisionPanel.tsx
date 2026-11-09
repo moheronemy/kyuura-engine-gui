@@ -43,6 +43,11 @@ import { useId, useMemo, useState } from "react";
 // - 選べるのはエンジンが返した控えとエネルギーカードだけ（count の範囲・重なりなし・選んだ順のまま送る）。対象・費用の可否を GUI で推測しない
 // - retreat は種類として check_before_submit_kinds（今の主体・取っ手・候補・入力への check が通ってから送る）。P6 の check は参照・数・重なり・段の並びの
 //   形の検査で、費用・受理を保証しない。結果（受理・拒否・そのあとの決定）は予告せず、送信の応答と観測で表示する
+// 0.175.0（U-R3a。本人のうらのカードの宣言が 2〜3 段の特殊能力）:
+// - 入力の形はおもての特殊能力（U7-5e）と同じ（depends_on_stage・upstream_stages・options_by_choice・after）。新しい形・項目はなく、上の段の扱いをそのまま使う
+//   （後の段は今の上流の選び方の組だけ・上流を変えたら依存するすべての段と check の答えを捨てる・check が通ってから送る）
+// - 組は構造だけ（エンジンは受け付けるかで絞らない。1 段目の note）。check の答えは「形の検査」と表示し、使えること・受理・完走を保証しない。
+//   受理（使った）・トラッシュ（たねでない）・拒否は予告せず、送信の応答・公開のログ・観測で表示する（うらの数の変化で区別しない）
 import { ATTACK_KINDS, DISPLAY_ONLY_KINDS, EXECUTABLE_PROCESSABILITY, PATH_STAGE_KINDS, POWER_KINDS, STADIUM_KINDS, TRAINER_KINDS } from "../api/contract";
 import type { Candidate, Choice, FieldSlot, Holder, InputOption, InputStage, Observation, OptionStage, PairOption, PlayerIndex, StadiumRef } from "../api/types";
 import { CardBack, CardFace, usePowerText } from "../cards/CardImages";
@@ -261,6 +266,11 @@ function PowerInfo({ candidate, names }: { candidate: Candidate; names: Names })
       <p className="small attack-text">{text ?? "説明なし（公開カード定義に合う説明がない）"}</p>
     </div>
   );
+}
+
+/** v0.172〜（U7-5g-2・U-R3a）: 本人のうらのカードの特殊能力の候補か（候補の power・pokemon の face_down）。 */
+function isFaceDownPower(candidate: Candidate): boolean {
+  return POWER_KINDS.has(candidate.kind) && (candidate.power?.face_down === true || candidate.pokemon?.face_down === true);
 }
 
 /** 0.174.0（P6）: にげるのトラッシュの段が費用を評価していない（cost_evaluation）か。 */
@@ -628,7 +638,9 @@ export function DecisionPanel({ selection, actor = null, observation, names, bus
           {check.valid
             ? costNotEvaluated(stages)
               ? "エンジンの形の検査を通りました（参照・枚数・重なり・段の順序だけ。費用が足りるか・受理されるかは保証しません。結果は送信の応答で決まります）"
-              : "エンジンの検査を通りました（受理・完走の保証ではありません。結果は送信の応答で決まります）"
+              : isFaceDownPower(candidate)
+                ? "エンジンの形の検査を通りました（段の数・番号・前の段との組だけ。特殊能力を使えること・受理・完走の保証ではありません。エンジンが送信のあとカードをおもてにしてから決めます）"
+                : "エンジンの検査を通りました（受理・完走の保証ではありません。結果は送信の応答で決まります）"
             : `通りません ${check.refusal?.code ?? ""}${check.refusal ? `（${REFUSAL_TEXT[check.refusal.code] ?? check.refusal.message}）` : ""}`}
         </p>
       ) : null}
