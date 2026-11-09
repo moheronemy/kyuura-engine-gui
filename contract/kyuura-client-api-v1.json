@@ -1,6 +1,6 @@
 {
-  "$comment": "GUI が前提にする kyuura-engine の client_api の契約の値（エンジンの版 0.174.0。導入する完全なコミットは engine.commit）。TypeScript の型・実行時検証（web/src/api）と、Python のテスト（server/tests/test_contract.py）が同じこの表を読み、エンジンの定数と照らす。エンジンを更新したら、ここを直してから両方のテストを通す（README「エンジンの更新」）。",
-  "engine": {"commit": "f7bf450580bf0d02573b4d032271be6b8e12d699", "version": "0.174.0"},
+  "$comment": "GUI が前提にする kyuura-engine の client_api の契約の値（エンジンの版 0.175.0。導入する完全なコミットは engine.commit）。TypeScript の型・実行時検証（web/src/api）と、Python のテスト（server/tests/test_contract.py）が同じこの表を読み、エンジンの定数と照らす。エンジンを更新したら、ここを直してから両方のテストを通す（README「エンジンの更新」）。",
+  "engine": {"commit": "81e9e99f76c2a2071fbbc50f852d6c28a026d080", "version": "0.175.0"},
   "contract": "kyuura-client-api",
   "format": 1,
   "legal_actions_format": 1,
@@ -23,7 +23,7 @@
   "board_kinds": ["remove_disguise", "discard_from_play", "reveal_face_down"],
   "trainer_kinds": ["play_trainer"],
   "stadium_kinds": ["use_stadium"],
-  "$power": "U7-5e の特殊能力（UsePokemonPower。エンジンの docs/legal-actions-u7-5e.md・legal_actions.py の _power_candidates と実応答で確かめた）。use_power は特殊能力の位置ごとに 1 つの候補で、同じ種類の候補がいくつも並ぶ（候補は id で区別し、種類で区別しない）。power_stage_shapes は段の role の並びとして受け付けるもの（エンジンの effects.POWER_INPUT_STAGES の形と、段のない形）。power_role_meanings は role ごとの meaning。2 段目以降は depends_on_stage が直前の段・upstream_stages が前のすべての段・選べるものの after が直前の段の選ぶものの番号。ほかの並び・依存は「不明な応答」として止める。v0.172（U7-5g-2）: 本人のうらのカードの特殊能力は、候補の pokemon・power に face_down: true（pokemon にカード ID がない。power の card_id は本人が知る本当のカード。本人の候補にだけ出る）。入力は 0 段か 1 段だけ（ほかは入力を返さない。residual R-3）",
+  "$power": "U7-5e の特殊能力（UsePokemonPower。エンジンの docs/legal-actions-u7-5e.md・legal_actions.py の _power_candidates と実応答で確かめた）。use_power は特殊能力の位置ごとに 1 つの候補で、同じ種類の候補がいくつも並ぶ（候補は id で区別し、種類で区別しない）。power_stage_shapes は段の role の並びとして受け付けるもの（エンジンの effects.POWER_INPUT_STAGES の形と、段のない形）。power_role_meanings は role ごとの meaning。2 段目以降は depends_on_stage が直前の段・upstream_stages が前のすべての段・選べるものの after が直前の段の選ぶものの番号。ほかの並び・依存は「不明な応答」として止める。v0.172（U7-5g-2）: 本人のうらのカードの特殊能力は、候補の pokemon・power に face_down: true（pokemon にカード ID がない。power の card_id は本人が知る本当のカード。本人の候補にだけ出る）。入力は 0 段か 1 段だけ（ほかは入力を返さない。residual R-3）。v0.175（U-R3a。エンジンの docs/legal-actions-u-r3a-v0.175.md）から、本人のうらのカードの宣言が 2〜3 段の型も、おもてと同じ形（power_stage_shapes の並び・depends_on_stage・upstream_stages・options_by_choice・after）で入力を返す。組は構造だけ（受け付けるかで絞らない）で、候補・選べるもの・参照はどれも unverified（face_down_reveal_not_evaluated）、1 段目に note がある。新しい項目・入力の形はない。完成する組がない・宣言のない型などは今までどおり入力を返さない（residual R-3。input_disclosure unconfirmed）。check は段の数・番号・前の段との依存の形だけで、使えること・受理・完走を保証しない（たねでなければおもてにしてトラッシュして受理、たねならおもてにしたあとエンジンが確かめる）",
   "power_kinds": ["use_power"],
   "power_stage_shapes": [[], ["source", "energy", "target"], ["source", "energy"], ["energy", "target"], ["energy"], ["source", "target"], ["source"], ["target"]],
   "power_role_meanings": {"source": "pokemon", "target": "pokemon", "energy": "card"},

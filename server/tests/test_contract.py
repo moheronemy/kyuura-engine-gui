@@ -23,7 +23,7 @@ EXPECTED = json.loads((ROOT / "contract" / "kyuura-client-api-v1.json").read_tex
 def test_engine_identity():
     """導入元は direct_url.json の vcs_info で確かめる（site-packages で git rev-parse をしない）。"""
     summary = verify_engine_source(EXPECTED["engine"]["commit"], EXPECTED["engine"]["version"])
-    assert summary["commit_id"] == EXPECTED["engine"]["commit"] and summary["version"] == kyuura_engine.__version__ == EXPECTED["engine"]["version"] == "0.174.0"
+    assert summary["commit_id"] == EXPECTED["engine"]["commit"] and summary["version"] == kyuura_engine.__version__ == EXPECTED["engine"]["version"] == "0.175.0"
     assert "site-packages" in Path(summary["module"]).parts and ".venv/src" not in Path(summary["module"]).as_posix()
     reqs = (ROOT / "server" / "requirements.txt").read_text(encoding="utf-8")
     assert f"kyuura-engine @ git+https://github.com/moheronemy/kyuura-engine@{EXPECTED['engine']['commit']}" in reqs
@@ -181,9 +181,30 @@ def test_power_shapes_match_engine():
     # どの段も 1 つを選ぶ（任意の段はない）。2 段目以降は直前の段に依存し、upstream_stages・after を持つ
     import inspect
 
-    source = inspect.getsource(L._power_candidate)
+    # 0.175.0（U-R3a）: 段・番号・options_by_choice・after の組み立ては _staged_power_candidate に分けられ、おもてのカードとうらのカードの 2〜3 段で共用
+    source = inspect.getsource(L._staged_power_candidate)
+    assert "_staged_power_candidate(" in inspect.getsource(L._power_candidate)
     assert '"count": {"min": 1, "max": 1}' in source and '"depends_on_stage": k - 1, "upstream_stages": list(range(1, k))' in source
     assert '{"after": parents[oid]} if k > 1' in source
+
+
+def test_face_down_staged_power_matches_engine():
+    """0.175.0（U-R3a）: 本人のうらのカードの宣言が 2〜3 段の型は、おもてと同じ組み立て（_staged_power_candidate）で入力を返す。うらのカードとして示せる
+    宣言の role の並びは契約の表（power_stage_shapes）にあり、新しい段の項目はない（1 段目の note だけ。note は stage_keys にある）。どの選べるものも unverified。"""
+    import inspect
+
+    from kyuura_engine.effects import POWER_INPUT_STAGES
+
+    assert (L._FACE_DOWN_MIN_STAGED, L._FACE_DOWN_MAX_STAGED) == (2, 3)
+    staged = [decl for decl in POWER_INPUT_STAGES.values() if 2 <= len(decl) <= 3 and L._face_down_staged_declaration(decl)]
+    assert staged  # 今の登録で当てはまる型がある（エンジンの監査の 7 つ）
+    shapes = {tuple(shape) for shape in EXPECTED["power_stage_shapes"]}
+    assert {tuple(field for field, _ in decl) for decl in staged} <= shapes
+    source = inspect.getsource(L._face_down_power_candidates)
+    assert "_staged_power_candidate(decl, paths, common, head, first_note=_FACE_DOWN_STAGED_NOTE)" in source
+    assert 'stage["note"] = first_note' in inspect.getsource(L._staged_power_candidate) and "note" in EXPECTED["stage_keys"]
+    assert "found = (UNVERIFIED, [REASON_FACE_DOWN])" in inspect.getsource(L._face_down_power_paths)
+    assert L.REASON_FACE_DOWN == "face_down_reveal_not_evaluated"
 
 
 def test_power_option_keys_cover_engine_source():

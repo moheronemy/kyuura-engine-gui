@@ -143,6 +143,17 @@
     "added_p6_inputs": "なし（どの時点にも本人のうらのバトル場のポケモンのにげるの候補は出ない。cost_evaluation の段もない）",
     "other": "なし（CN-1 の修正（ReplayCollector・ViewHost の failure）は ClientHub.start・from_state の固定例の応答に現れない）"
    }
+  },
+  {
+   "engine_commit": "81e9e99f76c2a2071fbbc50f852d6c28a026d080",
+   "engine_version": "0.175.0",
+   "checked": "2026-11-09",
+   "result": "操作の列・到達点は同じ（来歴の追記だけ。記録は作り直していない。0.174.0 の記録・スナップショットを流用して識別を書き換えたものではない）",
+   "method": "server/tools/scenario_views.py の --full を 0.174.0（f7bf450。既存の GUI の作業場所 kyuura-engine-gui-wt-p6 の .venv を読むだけで使った）と 0.175.0（81e9e99）の環境で実行し、応答の全体を項目ごとに比べた。固定例の名前ごとの時点で、全入口（プレイヤー0・1・観戦者・ホスト）の view と作成の知らせはすべて同じ（views_sha256 も同じ）。candidates の違いは coverage.residual.classes の R-3 の note の文だけ（下）。再生する固定例は記録の操作の列を新しい対戦で再生した互換性の確かめで、旧記録の正式な再実行・復元ではない",
+   "candidates_difference": {
+    "added_face_down_staged_power_inputs": "なし（どの時点にも本人のうらのカードの 2〜3 段の特殊能力の入力は出ない）",
+    "other": "residual の R-3 の note の文（エンジンの説明の直し。0.175.0 から 2〜3 段の型も unverified で示す旨）。分類の値（id・kind・field・situation・status・reason・subject）は同じ。GUI は note を文字列であることだけ確かめる"
+   }
   }
  ]
 }
