@@ -1,10 +1,11 @@
-# エンジンの契約と GUI の対応（kyuura-engine v0.172.0・U7-5f・g）
+# エンジンの契約と GUI の対応（kyuura-engine v0.174.0・P6。v0.172.0・U7-5f・g までは 13 章まで）
 
 GUI が使うエンジンの公開の境界と、その確かめ方・更新の方法の記録です。推測でなく、固定コミットの文書・コードと実際の応答で確かめた内容だけを書きます。
 
 ## 0. 固定と導入
 
-- 版 0.172.0、導入する完全なコミット `e26df79cc6dec913c1d15b5d8203df066334d65d`（公開ブランチ `claude/u7-5fg-impl` の「版を 0.172.0 にする」。U7-5f・g を含む。Git の URL からの通常のインストール。`server/requirements.txt`）。文書だけが違う後続のコミット（`05a6749`。限定の検証と配布の記録）・エンジンの main へは自動で変えない。renderer の固定（`af88231`）は変えていない
+- 版 0.174.0、導入する完全なコミット `f7bf450580bf0d02573b4d032271be6b8e12d699`（公開ブランチ `claude/p6-face-down-retreat` の「版を 0.174.0 にする」。P6 と 0.173.0 の CN-1 の修正を含む。Git の URL からの通常のインストール。14 章）。文書だけの後続のコミット・エンジンの main へは自動で変えない。renderer の固定（`af88231`）は変えていない
+- 以前の固定: 0.172.0、`e26df79cc6dec913c1d15b5d8203df066334d65d`（公開ブランチ `claude/u7-5fg-impl` の「版を 0.172.0 にする」。U7-5f・g を含む。Git の URL からの通常のインストール。`server/requirements.txt`）。文書だけが違う後続のコミット（`05a6749`。限定の検証と配布の記録）・エンジンの main へは自動で変えない。renderer の固定（`af88231`）は変えていない
 - `74c8e1f`（0.171.0）から `e26df79` までの `kyuura_engine/` の差分: `legal_actions.py`（U7-5f の表示だけの候補、U7-5g-3 の coverage の残り、U7-5g-1 の経路で引く段、U7-5g-2 の本人のうらのカードの特殊能力）と版の番号（`__init__.py`）だけ。`engine.py`・`resolution/`・`effects.py`・`client_api.py`・同梱のカードデータは変わっていない（カードデータの blob も同じ。導入物の改行は 8.2）。契約の識別・形式の版は同じで、応答は加える方向（13 章）。意図した意味の変更は、番のプレイヤーの MAIN の `not_covered_kinds` が空になることと、番でない主体・決定の回答者が R-4 で partial になること
 - 以前の固定: 0.171.0（`74c8e1f8ca03d017d5c0a8a79e6fdaa33d25b7f8`。U7-5e。12 章）
 - `0885d66`（0.170.0）から `74c8e1f` までの差分: `kyuura_engine/legal_actions.py`（U7-5e の特殊能力の候補・宣言の段・依存する段の確かめ）・`engine.py`（特殊能力の宣言の前の確かめを `check_use_pokemon_power` に分けた。処理は同じ）・`effects.py`（型ごとの宣言の表 `POWER_INPUT_STAGES` などを加えた。挙動は同じ）・版の番号・文書・テスト。`client_api.py` と同梱のカードデータは変わっていない。契約の識別・形式の版は同じで、応答は加える方向だけ（12 章）
@@ -16,7 +17,7 @@ GUI が使うエンジンの公開の境界と、その確かめ方・更新の�
 - 契約の確かめ（1〜5 章）は `d0c5cfa` で行った。`d0c5cfa` から `ffcc5ca` までの差分は配布の設定（`pyproject.toml`・`MANIFEST.in`）・文書・配布物の確かめの道具とテストだけで、`kyuura_engine/` の中身は変わっていない。API の契約は変わっていないものとして扱い、接続層のテスト・ブラウザの接続確認を `ffcc5ca` の通常のインストールで通した
 - 導入元は `direct_url.json` の `vcs_info.commit_id` で確かめる（`kyuura_gui_server/engine_source.py`）。site-packages で `git rev-parse` をしない（GUI 自身の HEAD を返しうる）
 
-## 1. 参照した資料（1〜5 章は固定コミット d0c5cfa で確かめ、b4e62d9・9506d63・0885d66・74c8e1f・e26df79 で変わっていないことを確かめた。U7-3 は 9 章、U7-4 は 10 章、U7-5 は 11 章、U7-5e は 12 章、U7-5f・g は 13 章）
+## 1. 参照した資料（1〜5 章は固定コミット d0c5cfa で確かめ、b4e62d9・9506d63・0885d66・74c8e1f・e26df79 で変わっていないことを確かめた。U7-3 は 9 章、U7-4 は 10 章、U7-5 は 11 章、U7-5e は 12 章、U7-5f・g は 13 章、P6（0.174.0）は 14 章。14 章では 1〜13 章の確かめを f7bf450 でやり直していない）
 
 - `docs/client-api-v0.164.md`（入口・要求と応答・更新・導入）
 - `docs/legal-actions-u7-1.md`（決定への回答・番を終える・取っ手・処理可能性・coverage）
@@ -479,3 +480,94 @@ renderer の `renderToCanvas` は、同じ Canvas では最後に始めた要求
 - 事故: G4 の `u75.spec.ts`・`u75e.spec.ts` の後始末で、検証の道具（ParentProcessId をたどって子孫を集め、残りを `taskkill /T /F` で止めていた）が、pid の再利用で今回の実行でないプロセスを子孫と誤って数え、181 件に `taskkill /T /F` を要求した（今回の実行の過程は 0 件）。あとの確かめで 53 件（常駐のアプリ・デスクトップの部品など）がいなかったが、止められたのか自分で終わったのかは区別できない（2026-11-08 に訂正: 以前は「53 件を止めた」と書いていた）。テストの結果とは別。道具は直したが、直したあとは実行していない（エンジンの文書の 6.6 節）
 - G5 の確かめ直し（2026-11-08。ファイルと git の読み取りだけ。インストール・テストの再実行なし）: 2 つの場所の `web/package.json`・`web/package-lock.json` は `b1037bc` の木と同じ sha256。入れた renderer は 77 ファイル（package.json・README.md・`dist-lib/` 75）で、道の一覧と sha256 は 2 つの場所で全部同じ。`dist-lib/` は renderer の `af88231` の木になく（`.gitignore` にあり、`prepare` が `build:lib`）、クリーンな場所では G4 の準備のあいだ（18:39:27）に作られた。75 の内訳は、木の素材と同じバイトの画像 51 と、ビルドで作る `.js`・`.d.ts` 24（CRLF・絶対パス・source map の参照なし）。フォント `@fontsource/noto-sans-jp` 5.3.1 の 2,319 ファイルも 2 つの場所で同じ。詳細はエンジンの文書の 6.4 節
 - 終わったあと: 作業場所とクリーンな場所の指紋は E0 と同じ・変更なし。利用者の作業場所の未コミットの 13 件は E0 の記録と同じ
+
+## 14. P6（本人のうらのバトル場のポケモンのにげる。0.174.0・f7bf450 の文書・コードと実応答で確かめた）
+
+作業場所: `C:\dev\kyuura-engine-gui-wt-p6`（ブランチ `feature/engine-p6-retreat-facedown`。基点 `78c02a6` = `feature/u7-verification-e0-g1`。U7-5f・g と attach_energy の送る前の check の修正 `83faeb0`・`b1037bc` を含む）。エンジン・renderer・検証用 AI の道具は読むだけで、変えていない。
+
+### 14.1 固定と依存の更新（0.172.0 → 0.174.0）
+
+- 固定: `kyuura-engine @ git+https://github.com/moheronemy/kyuura-engine@f7bf450580bf0d02573b4d032271be6b8e12d699`（0.174.0）。文書だけの後続のコミット・エンジンの main には自動で追従しない。renderer の固定（`af88231`）・`web/package.json`・lockfile は変えていない（`npm run setup` の `npm install` のあとも差分なし）
+- 導入の確かめ（新しい作業場所の新しい `.venv`）: `direct_url.json` の `vcs_info` は git・`commit_id` が `f7bf450…`・編集可能でない、配布メタデータとパッケージの版がどちらも 0.174.0、`kyuura_engine` は `server/.venv/Lib/site-packages` から読む。`python -m kyuura_gui_server.engine_source` と `server/tests/test_contract.py::test_engine_identity` が同じことを確かめる
+- `e26df79` から `f7bf450` までの `kyuura_engine/` の差分: `legal_actions.py`（P6。`_retreat_candidate` のうらの分岐だけ。`GUARANTEE_FACE_DOWN_RETREAT`・`COST_NOT_EVALUATED` を加えた）、`replay_record.py`・`view_record.py`（0.173.0 の CN-1 の正式な修正。`ReplayCollector`・`ViewHost` に `failure` を加え、包んだ対戦の値をそのまま返す）、版の番号。`client_api.py`・`engine.py`・同梱のカードデータは変わっていない。GUI の接続層は `ClientHub.start`・`from_state` だけを使い、`ReplayCollector`・`ViewHost` を包まないので、CN-1 の修正は GUI の応答に現れない（14.7 の比べで確かめた）
+- 契約の識別・形式の版（`kyuura-client-api`・1、`kyuura_legal_actions_format` 1）は同じ。ただし、項目の追加（`cost_evaluation`）と省略（`total_units`・`units`）を含むので、契約の版が同じことを古いクライアントとの機能の互換の保証とは扱わない（0.172.0 対応の GUI の検証は、`cost_evaluation` を知らない段の項目として止める）
+
+### 14.2 入力契約（エンジンの `docs/legal-actions-p6-face-down-retreat.md` 2 章・`legal_actions.py` と実応答）
+
+| | おもてのバトル場のポケモン（変わらない） | 本人のうらのバトル場のポケモン（P6） |
+|---|---|---|
+| 候補 | 確かめの結果の `processability`・`GUARANTEE_TURN_ACTION` | `unverified`・`["face_down_reveal_not_evaluated"]`・`input_disclosure: confirmed`・`GUARANTEE_FACE_DOWN_RETREAT` |
+| 段 1（`new_active`・`pokemon`・1〜1） | 場のポケモンの形（`board_option_keys`） | 同じ形。各選べるものは `eligible` 真・`unverified` |
+| 段 2（`discard`・`card`・0〜枚数・`distinct`・`significant`・`order_preserved`） | `total_units` と、すべての選べるものに `units`（`eligible`・`reasons` なし） | `total_units`・`units` を省き、`cost_evaluation: {"status": "not_evaluated", "reason": "face_down_reveal_not_evaluated", "omitted": ["total_units", "units"]}`。選べるものは `id`・`card`・`card_id`・`special`・`eligible`・`processability`・`reasons` |
+
+GUI の実行時の検証（`web/src/api/validate.ts` の `costEvaluation`・`retreatStages`。契約の表 `retreat_stage_roles`・`retreat_discard_option_keys`・`retreat_cost_evaluation`。`server/tests/test_contract.py::test_retreat_contract_matches_engine_source` がエンジンの定数・ソースと照らす）:
+
+- `cost_evaluation` は項目がちょうど `status`・`reason`・`omitted`、値は表と同じ（`omitted` は並びも同じ）。知らない値・項目・型は止める
+- `retreat` の段 2 だけで使う。段 1・ほかの種類の段・値の段の `cost_evaluation`、ほかの種類の段の `total_units`・`units` は止める
+- 段 2 はどちらか 1 つの表し方だけ: `total_units` とすべての `units`（おもて）か、`cost_evaluation` で `units` なし（P6）。両方ある・両方ない（費用 0 と見なさない）・一部の選べるものだけ `units` は止める
+- 段の並び・数（段 2 の `count` は 0〜選べるものの数）・重なりなし・`significant`・選べるものの項目を確かめる。段のない `retreat`（宣言の確かめが止める送れない候補）は今までどおり受ける
+
+### 14.3 表示
+
+- 費用（必要なエネルギーの個数）とカードごとのエネルギーの個数は「評価していません」。選んだカードの枚数は表示するが、エネルギーの個数・足りることとは別と書く。`total_units` がないことを費用 0 と読まない
+- 本人の観測の `real`・公開カード定義から費用・タイプ・個数を計算しない。盤面のうらのカードは裏面のまま（`real` は本人の画面の文字だけ。画像にしない）
+- 選べるのはエンジンが返した控えとエネルギーカードだけ。うらの候補を、ねむり・マヒなどを根拠に GUI で使えなくしない（`unverified` は送れる区分）。結果は予告しない
+- おもてのにげるは今までどおり `total_units`・`units` の個数と枚数を分けて表示する（`TurnBasics.test.tsx`・`P6.test.tsx` の回帰・既存の e2e）
+
+### 14.4 送る前の check（GUI の決まり）と保証の範囲
+
+- `check_before_submit_kinds` に `retreat` を加え、`needsCheckBeforeSubmit` を種類だけで決める（以前の「`total_units` のある段があるとき」は外した）。条件は 1 つ:「今の主体・取っ手・候補・入力への check が通っている場合だけ送信できる」。送信のボタン（`DecisionPanel`）と送信の入口（`useEndpointSession` の submit）が同じ `checkGatePassed` を呼ぶ
+- 前の答えを使わない変更: 控えの変更、トラッシュするカードの選択・解除・順序の変更（`onInputChange` → `inputChanged`）、候補・取っ手の変更（`select`）、閲覧者の切り替え（画面の作り直し・世代の番号）。元の入力に戻しても、変える前に始めた check の遅れた答えは既存の `checkEpoch` で捨てる（別の状態の管理は加えていない）
+- P6 の check（エンジン）が確かめるのは、番号が候補にあること・段の並び（1 つめが段 1、残りが段 2）・段 2 の重なり（したがって数）だけ。費用・タイプ・受理は確かめない。足りないエネルギーの入力でも形が合えば通る（構築盤面 B）。存在しない番号・重なり・並びの違いなどは `CANDIDATE_INPUT_INVALID` で通らない
+- check・submit を自動で実行・再送しない
+
+### 14.5 送信の結果と情報境界
+
+- エンジンはコマンドの入口でこのポケモンをおもてにしてから決める。たねポケモンなら、ふつうに確かめて受理（にげる）か拒否。拒否は送った本人にだけ診断が返り、状態・乱数・ログはもどり、おもてにしたことも公開されない。たねでなければ、ついているカードといっしょにトラッシュして受理（にげるはおこらない）、空いたバトル場は `promote_active` の決定になる
+- 拒否のあとの取っ手: エンジンの契約では拒否で取っ手は失効しない（構築盤面 B で、拒否のあと同じ取っ手の check が通ることを確かめた）。GUI の既存の方針では、送信のあと（結果によらず）観測と候補を取り直し、取っ手（`revision`）が同じなら選択を残す。check の答えは入力の鍵ごとに残るので、利用者が同じ入力をもう一度送ることはできるが、GUI は自動で送り直さない。受理では取っ手は失効し（`CANDIDATES_STALE`）、GUI は選択と古い候補を捨てて取り直す
+- 情報境界: 本人の候補・inputs・check・診断・`real` は相手・観戦者の応答に出ない（接続層のテストで 3 つの盤面の相手・観戦者の view・candidates・updates に本当のカード ID がないことを確かめた。拒否では相手・観戦者の更新が増えず、view も同じ）。受理では、おもてにしたカード・にげた・トラッシュしたことが公開の更新と観測で全員に公開される（正当な公開）。双子（本当のカードだけが違う 3 つの盤面）で、本人の候補・inputs・check の答えが同じ（費用・タイプ・段階によらない）
+
+### 14.6 構築盤面（テスト専用）
+
+- new_game からの到達ではない。seed の探索はしていない。`server/tests/p6_boards.py` に、エンジンのテスト `tests/test_legal_actions_p6_face_down_retreat_v0_174.py` の `face_down_active(real)`（`tests/test_secret_plan_v0_67.py` の `board`・`place`・`to_active`・`opponent_turn`、`tests/helpers.py` の `build_test_state`）の、この盤面に要る部分だけを写した。初期の盤面だけを導入したエンジンの状態の型で組み立て、そこから先は公開のコマンド（`apply_command`）だけで進める。`check_invariants` が空であることを作るたびに確かめる
+- 出典との一致: エンジンの固定コミットの `tests/` を `git archive f7bf450 tests` で作業ツリーの外に取り出し（エンジンの木は読むだけ）、3 つの盤面（本当のカードはコラッタ・イワーク・ユンゲラー。エンジンのテストの `TWINS`）で、エンジンの tests の盤面と GUI の盤面の `state_to_dict(format_version=22)` と乱数の指紋が同じことを確かめた（状態の sha256: A `e349918b…`・B `4b8214f0…`・C `53983e9f…`。出典のファイルの sha256 は証跡の `p6_board_provenance/compare.json`）
+- 閉じ込め: 製品のコード（`kyuura_gui_server`）はこのモジュールを import しない。接続層のテストは `p6_boards.install(scenarios, monkeypatch)` で固定例の表に 3 つの名前を加え、e2e はテスト専用の起動の入口 `server/tests/p6_server.py`（`web/playwright.config.ts` で `KYUURA_E2E_SERVER_MODULE=tests.p6_server` のときだけ。ほかの値は設定の読み込みで止める）が同じことをする。作成の口が受け取るのは固定例の名前だけで、任意の状態を受け取る口は加えていない。導入したパッケージに tests がないので、製品のコードもテストも実行時にエンジンの tests を読まない（出典との一致の確かめだけが、取り出した tests を読む）
+- 盤面の名前（A・B・C）は結果を予告しない。画面の表示はラベルと説明だけ（「テスト専用・new_game からではない」）
+
+### 14.7 依存の更新の影響（固定例の旧版と新版の比べ）
+
+- `server/tools/scenario_views.py --full` を、0.172.0（`e26df79`。既存の作業場所 `kyuura-engine-gui-wt-u75fg` の `.venv` を読むだけで使った）と 0.174.0（`f7bf450`）の環境で、同じ GUI のコード（この作業場所）から 1 回ずつ実行し、応答の全体を項目ごとに比べた。14 の固定例のすべての時点で、全入口（プレイヤー0・1・観戦者・ホスト）の view・candidates と作成の知らせが同じ（`views_sha256` も同じ）。どの時点にも P6 の候補・`cost_evaluation` は出ない
+- 各固定例の JSON の `compatibility` に 0.174.0 の確かめを追記した。記録を作ったエンジン（`engine_commit`・`engine_version`・`source`）・操作の列・`views_sha256` は書き換えていない。0.172.0 の完全な記録・スナップショットを、識別を書き換えて新しい版へ流用していない。再生する固定例（ピカチュウ・ばける・エナジートランス・フラッシュ）は、記録の操作の列を新しい対戦で再生した互換性の確かめで、旧記録の正式な再実行・復元ではない
+- カード定義: 同梱データ `kyuura_engine/data/kyuura_cards.json` の導入物のバイト列は 0.172.0 と 0.174.0 で違う（0.174.0 の導入物は CRLF の改行 127,782 個。Windows での Git の取り出しによる）が、正規化した JSON の sha256（方式 `kyuura-gui canonical-json 1`）は同じ `b82354d6…`、件数は同じ 1,374。改行などのバイト列の差と内容の差を分けて扱う（`schema_version` 2 のとおり）
+
+### 14.8 実行した検証（2026-11-09。限定）
+
+作業場所だけで、変更に関係する対象を 1 回ずつ実行した（予算は実行の前に証跡の `PLAN.md` に記録: 合計 40 分以内。実際は約 4 分）。証跡は 14.9。
+
+| 実行 | コミット | 対象 | 結果 |
+|---|---|---|---|
+| R1 | `2587ede` | 型検査 `npx tsc --noEmit` | 終了コード 0 |
+| R2 | `2587ede` | `npm run build` | 終了コード 0 |
+| R3 | `2587ede` | vitest **全件**（20 ファイル）。`validate.ts` の `kindStages` の変更（ほかの種類の段の `total_units`・`units`・`cost_evaluation` を止める）がすべての種類の入力の検証に効くので、全件を選んだ | 259 件・失敗 0・エラー 0・skip 0 |
+| R4 | `2587ede` | pytest 7 ファイル（`test_contract`・`test_engine_source`・`test_bridge`・`test_card_definitions`・`test_scenarios`・`test_turn_basics`・`test_p6`） | 101 件・失敗 0・エラー 0・skip 0 |
+| R5 | `2587ede` | e2e `p6.spec.ts` 3 件（構築盤面。接続層 8786・Vite 5186） | A・C 成功、**B 失敗**（120 秒の期限切れ。終了コード 1） |
+| R5b | `cbac66b` | e2e `p6.spec.ts:42`（B だけ） | 1 件成功・終了コード 0 |
+| R6 | `cbac66b` | 既存のおもてのにげるの e2e `turn-basics.spec.ts:92`（通常の new_game・seed 21。接続層 8787・Vite 5187） | 1 件成功・終了コード 0 |
+| R7 | `cbac66b` | 型検査（R5b の修正が `e2e/` の型検査の範囲なので） | 終了コード 0 |
+
+- R5 の B の失敗の原因: 構築盤面 B のトラッシュの段は 0〜1 枚で、画面は 1 つを選ぶ形（「選ばない」と radio）を出すが、テストが checkbox を選ぼうとしていた（テストの誤り。画面の挙動は正しい。失敗の画面の記録で確かめた）。`cbac66b` でテストの選び方だけを直し、失敗した B だけを再実行した。成功した A・C・ほかの対象は再実行していない（件数を数えるための再実行はしていない）
+- 開発の途中に、同じテストを作りながら何度か実行した（記録していない・数えない）
+- e2e の接続層と Vite は Playwright の `webServer`（`reuseExistingServer: false`）が起動・終了した。始める前と終わったあと、8786・5186・8787・5187 に TCP でつながらないことを確かめた。終わったあと、この作業場所・これらのポートの python・node のプロセスはなかった（一覧を読むだけ。ほかのプロセスを止める処理は使っていない）
+
+### 14.9 証跡
+
+- 保存先: `C:\dev\kyuura-engine-verification-gui-p6`（Git に入れない。既存の `kyuura-engine-verification-u7` とは別）。`verifier/runs/2026-11-09-p6/` に計画・導入の記録・固定例の比べの全体（ホストの view を含む）・構築盤面の出典の確かめ・各実行のコマンド・標準出力・標準エラー・終了コード・JUnit・失敗の画面の記録（外へ出さない）。`public/runs/2026-11-09-p6/summary.md` は中身を読んで秘密を含まないと確かめた集計だけ。`manifest.json` と `sha256.json`
+- ハッシュは `MANIFEST.md` に書く（この文書のコミットのあとに作るので、ここには書かない）
+
+### 14.10 未確認・次へ残すこと
+
+- new_game からの通常の進行で P6 に届くか（構築盤面だけで確かめた）。こんらん（`confused`）・特殊エネルギー・2 枚以上のエネルギーのうらのにげる（模擬の応答の単体テストだけ）。preview（本番ビルドの e2e）・全体の e2e・接続層のテストの残り（R4 は 7 ファイル）・クリーンな場所での再構築は実行していない
+- 既存の 0.172.0 の `.venv` から `npm run setup` での入れ替えそのものは確かめていない（新しい `.venv` で確かめた）
+- 構築盤面はスナップショットを使わない（Python の版によらず作れる）が、盤面の組み立てはエンジンの状態の型（`kyuura_engine.state`）に依存する。エンジンを更新したら 14.6 の一致を確かめ直す
+- 観察（判断していない）: 構築盤面 A で受理のあと、同じ番の候補にまた `retreat`（`supported`）が出た。1 つの番ににげる回数の扱いはエンジンの規則の範囲で、GUI は数えない。エンジンの側で確かめる事項として残す
+- R-5 のほかの候補（入力を返さない候補）と R-2〜R-4 は変わらない
