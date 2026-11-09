@@ -82,8 +82,8 @@ describe("U-R3a の入力の検証（既存の依存の形。新しい項目は�
   });
 
   it("候補の pokemon・power の face_down が合わない・うらの pokemon にカード ID があれば止める（今までどおり）", () => {
-    const half = { ...RC_POWER, power: { ...RC_POWER.power!, face_down: undefined } } as unknown as Candidate;
-    delete (half.power as Raw).face_down;
+    const { face_down: _faceDown, ...plainPower } = RC_POWER.power!;
+    const half = { ...RC_POWER, power: plainPower } as Candidate; // pokemon だけ face_down
     expect(() => V.candidatesResponse(candidates("r1", [half]))).toThrow(V.ProtocolError);
     const leaked = { ...RC_POWER, pokemon: { ...RC_POWER.pokemon!, card_id: "PMCG4-012" } } as Candidate;
     expect(() => V.candidatesResponse(candidates("r1", [leaked]))).toThrow(V.ProtocolError);
