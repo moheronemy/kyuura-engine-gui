@@ -34,13 +34,13 @@ scripts/   setup・dev・test の補助（Node）
 
 ## エンジンの固定
 
-- **版**: kyuura-engine 0.174.0（`kyuura_engine.__version__`・配布メタデータの版）。API の契約（`kyuura-client-api`・形式 1）とあわせて、画面が前提にする機能の範囲を表す
-- **完全なコミット**: `f7bf450580bf0d02573b4d032271be6b8e12d699`（公開ブランチ `claude/p6-face-down-retreat` の「版を 0.174.0 にする」。U7-3（番の基本の操作）・U7-4（ワザの宣言）・U7-5a〜d（場の 3 操作・手札のトレーナー・場のスタジアム）・U7-5e（特殊能力と 2〜3 段の宣言の入力）・U7-5f・g（おもての山札の確かめの表示・coverage の残り・カツラの 2 枚目・本人のうらのカードの特殊能力）・0.173.0 の CN-1 の正式な修正（`ReplayCollector`・`ViewHost` の `failure`）・0.174.0 の P6（本人のうらのバトル場のポケモンのにげるの入力）を含む。エンジンの main にはまだ入っていない。文書だけの後続のコミット・エンジンの main には自動で追従しない）。導入する中身を一意に決める。版の番号だけでは中身を決められない（過去に同じ版の番号で中身の違う配布物があった）ので、固定にはコミットを使う
+- **版**: kyuura-engine 0.175.0（`kyuura_engine.__version__`・配布メタデータの版）。API の契約（`kyuura-client-api`・形式 1）とあわせて、画面が前提にする機能の範囲を表す
+- **完全なコミット**: `81e9e99f76c2a2071fbbc50f852d6c28a026d080`（公開ブランチ `claude/u-r3a-face-down-multistage-power` の「版を 0.175.0 にする」。U7-3（番の基本の操作）・U7-4（ワザの宣言）・U7-5a〜d（場の 3 操作・手札のトレーナー・場のスタジアム）・U7-5e（特殊能力と 2〜3 段の宣言の入力）・U7-5f・g（おもての山札の確かめの表示・coverage の残り・カツラの 2 枚目・本人のうらのカードの特殊能力）・0.173.0 の CN-1 の正式な修正（`ReplayCollector`・`ViewHost` の `failure`）・0.174.0 の P6（本人のうらのバトル場のポケモンのにげるの入力）・0.175.0 の U-R3a（本人のうらのカードの、宣言が 2〜3 段の特殊能力の入力）を含む。エンジンの main にはまだ入っていない。文書だけの後続のコミット・エンジンの main には自動で追従しない）。導入する中身を一意に決める。版の番号だけでは中身を決められない（過去に同じ版の番号で中身の違う配布物があった）ので、固定にはコミットを使う
 - 依存の定義: [`server/requirements.txt`](server/requirements.txt)（Git の URL からの通常のインストール）
   ```
-  kyuura-engine @ git+https://github.com/moheronemy/kyuura-engine@f7bf450580bf0d02573b4d032271be6b8e12d699
+  kyuura-engine @ git+https://github.com/moheronemy/kyuura-engine@81e9e99f76c2a2071fbbc50f852d6c28a026d080
   ```
-- 導入元の確かめ: 接続層のテスト（`server/tests/test_contract.py`）と `python -m kyuura_gui_server.engine_source` が、配布メタデータの `direct_url.json`（`vcs_info.vcs` が git・`vcs_info.commit_id` が上のコミット・編集可能でない）と版 0.174.0（配布メタデータとパッケージの両方）、読み込んだ `kyuura_engine` が site-packages の導入物であることを確かめる。確認できなければ失敗する
+- 導入元の確かめ: 接続層のテスト（`server/tests/test_contract.py`）と `python -m kyuura_gui_server.engine_source` が、配布メタデータの `direct_url.json`（`vcs_info.vcs` が git・`vcs_info.commit_id` が上のコミット・編集可能でない）と版 0.175.0（配布メタデータとパッケージの両方）、読み込んだ `kyuura_engine` が site-packages の導入物であることを確かめる。確認できなければ失敗する
 - 固定先は自動で変えない（エンジンの main の先頭・文書だけが違う後続のコミット・別のマージコミットへ追従しない）。変えるときは「エンジンの更新の手順」に従う
 
 ### 通常の利用と開発用の編集可能インストール
@@ -50,7 +50,7 @@ scripts/   setup・dev・test の補助（Node）
 
 ### 既存の環境からの更新
 
-0.172.0（`e26df79`）・0.171.0（`74c8e1f`）・0.170.0（`0885d66`）・0.166.0（`9506d63`）・0.165.0（`b4e62d9`）・0.164.0（`ffcc5ca`）の通常インストールで作った `server/.venv` は、`npm run setup` をそのまま実行し直すと 0.174.0（`f7bf450`）に入れ替わる（Git の URL のコミットが変わるため。0.174.0 の導入は新しい作業場所の新しい `.venv` で確かめた。既存の 0.172.0 の `.venv` からの入れ替えそのものは今回は確かめていない）。最後に下の `engine_source` で確かめる。renderer（`af88231`）は変わらないので、web の依存はそのまま（`npm run setup` が `npm install` を実行し直すだけ）。起動は今までどおり `npm run dev`。
+0.174.0（`f7bf450`）・0.172.0（`e26df79`）・0.171.0（`74c8e1f`）・0.170.0（`0885d66`）・0.166.0（`9506d63`）・0.165.0（`b4e62d9`）・0.164.0（`ffcc5ca`）の通常インストールで作った `server/.venv` は、`npm run setup` をそのまま実行し直すと 0.175.0（`81e9e99`）に入れ替わる（Git の URL のコミットが変わるため。0.175.0 の導入は新しい作業場所の新しい `.venv` で確かめた。既存の 0.174.0 の `.venv` からの入れ替えそのものは確かめていない）。最後に下の `engine_source` で確かめる。renderer（`af88231`）は変わらないので、web の依存はそのまま（`npm run setup` が `npm install` を実行し直すだけ）。起動は今までどおり `npm run dev`。
 
 ### 古い仮想環境からの切り替え
 
@@ -64,12 +64,12 @@ scripts/   setup・dev・test の補助（Node）
 ```sh
 # Windows は server\.venv\Scripts\python
 cd server && .venv/bin/python -m kyuura_gui_server.engine_source
-# → {"install": "git", "commit_id": "f7bf450580bf0d02573b4d032271be6b8e12d699", "version": "0.174.0", "module": ".../site-packages/kyuura_engine/__init__.py"}
+# → {"install": "git", "commit_id": "81e9e99f76c2a2071fbbc50f852d6c28a026d080", "version": "0.175.0", "module": ".../site-packages/kyuura_engine/__init__.py"}
 ```
 
 ## カード画像の renderer の固定
 
-- **kyuura-card-renderer** の完全なコミット: `af882310059c7f33bc371d31b859b09f5428f6d1`（エンジンを 0.165.0・0.166.0・0.170.0・0.171.0・0.172.0・0.174.0 に更新したときも変えていない。同じ Canvas では最後に始めた要求だけが描く、非同期の描画の修正を含む）。renderer の main の先頭へは自動で追従しない
+- **kyuura-card-renderer** の完全なコミット: `af882310059c7f33bc371d31b859b09f5428f6d1`（エンジンを 0.165.0・0.166.0・0.170.0・0.171.0・0.172.0・0.174.0・0.175.0 に更新したときも変えていない。同じ Canvas では最後に始めた要求だけが描く、非同期の描画の修正を含む）。renderer の main の先頭へは自動で追従しない
 - 依存の定義: `web/package.json` の `"kyuura-card-renderer": "github:moheronemy/kyuura-card-renderer#af882310059c7f33bc371d31b859b09f5428f6d1"`。`web/package-lock.json` も同じコミット。導入のときに renderer の `prepare`（`npm run build:lib`。tsc で `dist-lib/` を作り、素材画像を写す）が動く。npm の `allowScripts` で、このコミットの `prepare` だけを許可している
 - 固定の記録: [`contract/kyuura-gui-card-definitions-v2.json`](contract/kyuura-gui-card-definitions-v2.json) の `renderer.commit`（接続層のテストが `package.json`・lockfile と照らす）
 - 使う公開 API（パッケージの入口の export だけ。`src/` の中を直接 import しない）: `fromEngineCard`・`renderToCanvas`・`cancelRenderToCanvas`・型 `EngineCardRecord`・`RenderableCard` など（`web/src/cards/renderer.ts`）
@@ -228,7 +228,7 @@ cd web && npm run dev
 
 - **カツラの 2 枚目（attach_energy の任意の 3 段目 `energy2`）**: カツラの効果がはたらく番だけ、エネルギーをつける操作に 3 段目が加わります（`count` 0〜1・`decline`）。3 段目は `path_stages: [1, 2]` と `options_by_path` で引く段で、画面は今の 1・2 段目の選択の番号を `/` でつないだ鍵（`"o1/o8"`）の一覧だけを出します（鍵がない組は 3 段目を選べず、1 枚だけ）。1 段目か 2 段目を変えたら、3 段目の選択と検査の結果を捨てます。送る順は段の順（`[エネルギー, つける先]` か `[エネルギー, つける先, 2 枚目]`）。カツラの許可・炎の判定・つける先・回数・レインボーは GUI で判定せず、エンジンが組と送信で決めます。`options_by_path` の知らない鍵・存在しない参照・重なり・逆の並び・循環（`path_stages` が自分やあとの段を指す）・`options_by_choice`・`depends_on_stage`・`upstream_stages` との併用は「不明な応答」として止めます（U7-5e の依存する段とは別の形として確かめる）
 - **おもての山札の確かめ（`check_face_up_deck`。表示だけ）**: 番のプレイヤーの MAIN に、相手の山札の 2 枚目より下のおもての位置が出ます。画面は「表示だけ（送れません）」とし、エンジンが返した `owner`・`position` だけを「相手の山札・上から n 枚目（`position` は 0 がいちばん上）」として表示します。カード ID・uid・名前・表面の画像は補いません。未裁定（FU2）で、ゲーム上の禁止ではありません。`gui_operable_kinds` に加えず、この候補には check・submit を呼びません（inputs だけ）。相手の山札の位置を GUI で列挙しません
-- **本人のうらのカードの特殊能力**: マチスの秘策でうらにしたカードの、本人が知る本当のカードの特殊能力が、本人の候補にだけ出ます（`pokemon.face_down`・`power.face_down`。`pokemon` にカード ID はない）。画面は盤面の情報（裏向きのポケモン・場所。盤面の画像は裏面のまま）と、本人が知る本当のカード（`power.card_id`。印刷の情報）を分けて文字で示します。`unverified` を使える・受理されるという意味にしません。入力は 0 段（`choices: []`）か 1 段だけで、2 段以上の型・宣言のない型などは入力を返さず（入力非公開）、送れません（coverage の R-3）。送ると、エンジンがおもてにしてから受理・拒否・トラッシュを決め、結果は受理のあとの観測で表示します。相手・観戦者の画面には能力の名前・本当のカード・候補・入力は出ません（サーバが出さない。拒否は送った人にだけ表示）
+- **本人のうらのカードの特殊能力**: マチスの秘策でうらにしたカードの、本人が知る本当のカードの特殊能力が、本人の候補にだけ出ます（`pokemon.face_down`・`power.face_down`。`pokemon` にカード ID はない）。画面は盤面の情報（裏向きのポケモン・場所。盤面の画像は裏面のまま）と、本人が知る本当のカード（`power.card_id`。印刷の情報）を分けて文字で示します。`unverified` を使える・受理されるという意味にしません。入力は 0.172.0〜0.174.0 では 0 段（`choices: []`）か 1 段だけでした。0.175.0 から宣言が 2〜3 段の型も入力を返します（下の「本人のうらのカードの 2〜3 段の特殊能力（U-R3a）」）。完成する組がない場面・宣言のない型などは入力を返さず（入力非公開）、送れません（coverage の R-3）。送ると、エンジンがおもてにしてから受理・拒否・トラッシュを決め、結果は受理のあとの観測で表示します。相手・観戦者の画面には能力の名前・本当のカード・候補・入力は出ません（サーバが出さない。拒否は送った人にだけ表示）
 - **coverage の残り（residual）**: `display_only_kinds`・`residual.classes`（R-2〜R-5。API 全体で同じ）・`residual.present`（その応答に当てはまる残り。`public` は公開の状態から、`actor` は本人の候補から）・`partial_residual`・`completeness_basis`・`unverified_paths` を契約の表・型・実行時検証で確かめ、表示で分けます: 評価した種類 ／ 表示だけで送れない種類 ／ 種類の中に示していない経路（R-2 など）／ この応答に当てはまる残り ／ 入力を返していない候補 ／ 送るまで受理が分からない経路。`not_covered_kinds` が空でも「全部の操作に対応」「必ず完走」と表示しません（番のプレイヤーの MAIN は R-2 が残るので partial）。番でないプレイヤー・決定の回答者でも R-4 で partial になることがあり、候補がなくても「操作がない」と言いません（coverage から操作できる主体を推測しない）。残りは届いた主体の応答の範囲だけで表示します（本人の `actor` の残りは相手・観戦者の画面に出ない）
 - **検査の答え**: 入力を変えたら、前の check の答えと、変える前に始めた check の遅れた答えを使いません（元の入力に戻しても使わず、検査し直す。U7-5g の上流の変更と同じ扱い）。閲覧者を切り替えたあとの check・submit の遅れた答えも画面に戻りません
 - **カツラの番の送信**: 2 枚目を省く（2 段だけ送る）場合も、2 枚の場合も、今の入力への check が通ってから送れます（GUI の決まり。上の「送る前の check」。エンジンは check なしの submit も受け付ける）。2 枚目を選ぶ・変える・外すのも入力の変更で、検査し直します
@@ -241,9 +241,9 @@ cd web && npm run dev
 |---|---|---|
 | カツラ | new_game（エンジンのテストの BLAINE_DECK 同士・seed 1） | カツラの前は 2 段 → カツラ → 3 段（今の組の一覧だけ）。同じカードの 2 回・1 段目を変えた古い 3 段目・知らない番号・4 つ・逆の順は断る（他者に更新なし）→ 2 枚で受理 → 観測で 2 枚 → 同じ番には候補が出ない。1 枚だけの入力も受理（別の対戦）。画面では 1 段目を変えると 3 段目と遅れた check の答えを捨てる |
 | フラッシュ | 再生（準備・番を終える・フラッシュ・先攻の並べ替えを U7 の候補で送った列。seed は上限 1〜20 の探索の最初の 2） | 後攻（決定の回答者）は R-4 で partial → 並べ替えに答えて番を終える → 先攻の MAIN に表示だけの候補（位置 4 つ。`owner`・`position` だけ。画面は check・submit を呼ばない）→ 番でない後攻は候補なし・R-4 で partial |
-| うらのカードの特殊能力 | new_game（マンキー・ロケット団のヒトカゲ・マチスの秘策 対 RC_DECK。seed は上限 1〜40 の探索の最初の 8） | マンキーをうらに出す → 本人の画面だけに［スパイ］（入力なし・未確認。盤面はうら）→ 相手・観戦者に出ない → check → 受理（おもてにしてから決定）→ 相手の観測でおもて。ロケット団のヒトカゲをうらに出すと［ほのおをもらう］は入力非公開で送れない（R-3 は本人の画面だけ） |
+| うらのカードの特殊能力 | new_game（マンキー・ロケット団のヒトカゲ・マチスの秘策 対 RC_DECK。seed は上限 1〜40 の探索の最初の 8） | マンキーをうらに出す → 本人の画面だけに［スパイ］（入力なし・未確認。盤面はうら）→ 相手・観戦者に出ない → check → 受理（おもてにしてから決定）→ 相手の観測でおもて。ロケット団のヒトカゲをうらに出すと［ほのおをもらう］は入力非公開で送れない（R-3 は本人の画面だけ。番 1 で自分の場にカードがついたポケモンがなく組が完成しないため。0.175.0・81e9e99 でも同じ） |
 
-実エンジンの通常の操作で届いていないもの（模擬の応答の単体テストだけ）: 1・2 段目の組のうち鍵がない組（ベンチのつけ先）、本人のうらのカードの 1 段の特殊能力（アンノーンB など）、送ったあとの拒否（おもてにしたあとの確かめが受け付けない）とトラッシュ（たねポケモンでない本当のカード）、R-2 が当てはまる場面（うらのバトル場のポケモン）、R-5 の present、レインボーエネルギー・特殊エネルギーの 2 枚目、`state_not_supported` の表示だけの候補。
+実エンジンの通常の操作で届いていないもの（模擬の応答の単体テストだけ）: 1・2 段目の組のうち鍵がない組（ベンチのつけ先）、本人のうらのカードの 1 段の特殊能力（アンノーンB など）、送ったあとの拒否（おもてにしたあとの確かめが受け付けない）とトラッシュ（たねポケモンでない本当のカード。どちらも 0.174.0 の P6・0.175.0 の U-R3a の構築盤面では確かめた）、R-2 が当てはまる場面（うらのバトル場のポケモン）、R-5 の present、レインボーエネルギー・特殊エネルギーの 2 枚目、`state_not_supported` の表示だけの候補。
 
 ## 本人のうらのバトル場のポケモンのにげる（P6・v0.174）
 
@@ -267,6 +267,29 @@ new_game からの通常の進行では確かめていません（seed の探索
 | C（たねでない） | check → 受理（決定待ち）→ おもてにしてトラッシュ（観戦者の観測で公開）→ バトル場に出すポケモンを選ぶ決定に答えて受理 |
 
 3 つの盤面で、本人の候補・inputs・check の答えが同じであること（本当のカードの費用・タイプ・段階によらない）と、相手・観戦者の応答に本当のカードがないことも確かめました。
+
+## 本人のうらのカードの 2〜3 段の特殊能力（U-R3a・v0.175）
+
+エンジン 0.175.0 の U-R3a（エンジンの `docs/legal-actions-u-r3a-v0.175.md`。R-3 の監査で提案された最初の補完）に追従しました。本人のうらのカード（マチスの秘策）の、本当のカードの印刷の特殊能力のうち、宣言が 2〜3 段の型（ロケット団のヒトカゲ［ほのおをもらう］、フシギバナ［エナジートランス］など）にも、完成する組があれば入力が付きます。新しい入力の形・項目はなく、おもての特殊能力（U7-5e）と同じ `options_by_choice`・`depends_on_stage`・`upstream_stages`・`after` です。GUI は既存の扱いをそのまま使い、作り直していません。
+
+- **入力契約**: 段は宣言の場所の並び（自分の場 → 選んだポケモンについているカード（→ 自分の場））。組は構造だけで、エンジンは受け付けるか（タイプ・同じポケモンなど）で組を絞りません（1 段目の `note`）。候補・選べるもの・組の参照はどれも `unverified`（`face_down_reveal_not_evaluated`）、`input_disclosure: confirmed`。うらのポケモンの選べるものはカード ID なし（`face_down`）。契約の表の `$power` の説明（「うらは 0 段か 1 段だけ」）を直しました。検証（`web/src/api/validate.ts`）はもともと段の数をうらかどうかで分けていなかったので変えていません
+- **入力**: 後の段は、今の上流の選び方の組（`options_by_choice`）だけを出し、別の経路の番号は選べません。上流を変えたら、それに依存する後のすべての段の選択と check の答えを捨てます（2 段目を変えても 3 段目を捨てる）。元の入力に戻しても、変える前に始めた check の遅れた答えは使いません（既存の `checkEpoch`）
+- **送る前の check**: `use_power` は `check_before_submit_kinds` にあり、送信のボタンと送信の入口が同じ条件（`web/src/state/checkGate.ts`）で守ります。check が確かめるのは段の数・番号・前の段との組・並びなどの形だけで、特殊能力を使えること・受理・完走を保証しません（画面は「形の検査」と表示）。完成する入力がない候補・入力非公開の候補は送れません（check が通らない）。カード定義や本人の `real` から入力を補いません
+- **送信の結果**（エンジンがおもてにしてから決める。画面は予告しない）: たねポケモンなら、おもてにしたあと確かめて受理（特殊能力がおこる）か拒否。拒否は送った本人にだけ診断を表示し、状態はうらのまま戻ります（おもてにしたことも相手・観戦者に公開されない）。たねポケモンでなければ、ついているカードといっしょにトラッシュして受理（特殊能力はおこらない）。受理の内訳を新しい結果の分類にはせず、既存の結果の表示（「受理: 特殊能力を使う」）と、観測（おもてにしたカード・移ったエネルギー／トラッシュのカード）で伝えます。公開のログ（`secret_plan_revealed` に続く `pokemon_power`・`secret_plan_discarded`）は client_api 形式 1 の応答にないので GUI は読みません。うらの数の変化だけで区別しません
+- **取っ手**: エンジンの契約では、受理で取っ手は失効し（`CANDIDATES_STALE`）、拒否では失効しません。GUI は送信のあと（結果によらず）観測と候補を取り直し、取っ手が同じなら選択を残します（既存の方針）。自動では送り直しません
+- **情報境界**: 候補・入力・本人が知る本当のカード（`power.card_id`）は本人の画面だけで、盤面のカードは受理のあとの観測で公開されるまで裏面のままです。相手・観戦者の画面に候補・入力・`real`・本人向けの診断は出ません。閲覧者を切り替えたあと、遅れた check・submit の答えと前の閲覧者の Canvas は戻りません
+
+### 実エンジンで確かめた範囲（U-R3a）
+
+new_game からの通常の進行では確かめていません（seed の探索はしていない）。**構築盤面**（`server/tests/r3a_boards.py`。エンジンのテスト `tests/test_legal_actions_u_r3a_v0_175.py` の `placed` の盤面を写したもの。初期の盤面の組み立てと固定例の表への追加は P6 の構築盤面と共用。エンジンの固定コミットの tests と、状態の書き出し・乱数の指紋が同じことを 1 回確かめた）を、テストの中だけで固定例の表に加えて使います（接続層のテスト、e2e はテスト専用の起動の入口 `server/tests/r3a_server.py`）。製品の接続層はこの盤面のコードを import せず、通常の作成の口に任意の状態を渡す機能はありません。
+
+| 盤面 | 入力（段の順） | 確かめた経路（接続層のテスト `server/tests/test_r3a.py`・e2e `web/e2e/u-r3a.spec.ts`） |
+|---|---|---|
+| 1（本当のカードはロケット団のヒトカゲ） | コラッタ → 炎エネルギー | check → 受理 → おもてにしたヒトカゲ（`PMCG4-012`）に炎エネルギーが移る（観測）。公開のログは `secret_plan_revealed` → `pokemon_power` → `move_energy`（テストの中だけでエンジンの `visible_log` で確かめた）。画像は観測の `card_id` で描く。古い取っ手の check は `CANDIDATES_STALE` |
+| 1 | エビワラー → 闘エネルギー | check は形だけ通る → 送ると拒否（`WRONG_ENERGY_TYPE`。診断は本人だけ）→ 相手・観戦者の観測・更新・ログは変わらない・本当のカードが出ない → うらのまま → 同じ取っ手の check はまだ通る |
+| 2（フシギバナ） | エビワラー → 闘エネルギー → エビワラー（3 段） | check → 受理 → うらのポケモンはいなくなり、トラッシュに `PMCG1-011`（観測）。エネルギーは動かない。公開のログは `secret_plan_revealed` → `secret_plan_discarded`（`pokemon_power`・`move_energy` なし） |
+
+2 つの盤面で、相手・観戦者の応答が本人の本当のカードによらないこと（能力の名前・カード ID が出ない）も確かめました。
 
 ## カード画像
 
@@ -364,7 +387,7 @@ npm run e2e         # 実エンジンへのブラウザの接続確認（Playwri
 
 - フロントの単体テストは模擬の応答を使います。実エンジンとの接続確認（`server/tests`・`web/e2e`）とは別です
 - カード画像の単体テストは、実際の renderer の変換（`src/cards/realRenderer.test.ts`。jsdom には Canvas 2D がないので描画はしない）と、模擬の描画で非同期の扱いを確かめる部品のテスト（`CardImages.test.tsx`・`AppCardImages.test.tsx`）に分けています。実際の描画は `e2e/card-images.spec.ts`（実 renderer・実エンジン。素材画像・カード定義の遅れと失敗はブラウザの通信の差し替えで作る）
-- e2e の接続層はテスト専用の設定で seed を固定して起動します（`web/playwright.config.ts` の `E2E_FIXED_SEED`。21）。ランダムな対戦を作り直して探すことはしません。`e2e/attacks.spec.ts`（プリセットのデッキでジャブ → 番の移り → きぜつ → サイド → 終局、ファイヤーのデッキ `ES2-005 4`・`PMCG1-098 56` 対 プリセットの 1 番目でドライアップ → 対象の決定 → 受理のあと停止、狭い画面）・`e2e/turn-basics.spec.ts`・`e2e/card-images.spec.ts`・`e2e/local-flow.spec.ts` の準備と番を終えるまでは、**通常の new_game からの画面の操作の列**です。`e2e/local-flow.spec.ts` の決定待ち・サドン・デスは**検証用の固定例**（記録した操作の列を接続層が再生した盤面）、停止は**検証用の固定例**のうち操作の列を使わないもの（接続層が固定のデッキと seed を `ClientHub.start` に渡して始め、準備で止まる。`server/kyuura_gui_server/scenarios.py` の `halt`）です（2026-11-08 に訂正: 以前は停止も「再生した盤面」と書いていた）。`e2e/u75.spec.ts` は U7-5 の固定例から始め、「固定例・new_game」の 5 つは準備から画面の操作の列、「ばける」の解除は再生した盤面からの操作です（固定例が自分の seed を持つので、e2e の固定の seed 21 は使わない）。`e2e/u75e.spec.ts` も同じく U7-5e の固定例から始めます（ロケット団のヒトカゲ・ダークユンゲラーは new_game から画面の操作の列、エナジートランスは U7 の候補だけの列を再生した盤面からの操作）。`e2e/u75fg.spec.ts` も U7-5f・g の固定例から始めます（カツラ・うらのカードの特殊能力は new_game から画面の操作の列、フラッシュは U7 の候補だけの列を再生した盤面からの操作）。`e2e/p6.spec.ts` だけは**構築盤面**（エンジンの P6 のテストの盤面を写したもの。new_game からではない）から始め、テスト専用の入口で接続層を起動したときだけ動きます（`KYUURA_E2E_SERVER_MODULE=tests.p6_server npx playwright test e2e/p6.spec.ts`。この環境変数がなければ skip）。ほかの e2e は構築盤面を使いません
+- e2e の接続層はテスト専用の設定で seed を固定して起動します（`web/playwright.config.ts` の `E2E_FIXED_SEED`。21）。ランダムな対戦を作り直して探すことはしません。`e2e/attacks.spec.ts`（プリセットのデッキでジャブ → 番の移り → きぜつ → サイド → 終局、ファイヤーのデッキ `ES2-005 4`・`PMCG1-098 56` 対 プリセットの 1 番目でドライアップ → 対象の決定 → 受理のあと停止、狭い画面）・`e2e/turn-basics.spec.ts`・`e2e/card-images.spec.ts`・`e2e/local-flow.spec.ts` の準備と番を終えるまでは、**通常の new_game からの画面の操作の列**です。`e2e/local-flow.spec.ts` の決定待ち・サドン・デスは**検証用の固定例**（記録した操作の列を接続層が再生した盤面）、停止は**検証用の固定例**のうち操作の列を使わないもの（接続層が固定のデッキと seed を `ClientHub.start` に渡して始め、準備で止まる。`server/kyuura_gui_server/scenarios.py` の `halt`）です（2026-11-08 に訂正: 以前は停止も「再生した盤面」と書いていた）。`e2e/u75.spec.ts` は U7-5 の固定例から始め、「固定例・new_game」の 5 つは準備から画面の操作の列、「ばける」の解除は再生した盤面からの操作です（固定例が自分の seed を持つので、e2e の固定の seed 21 は使わない）。`e2e/u75e.spec.ts` も同じく U7-5e の固定例から始めます（ロケット団のヒトカゲ・ダークユンゲラーは new_game から画面の操作の列、エナジートランスは U7 の候補だけの列を再生した盤面からの操作）。`e2e/u75fg.spec.ts` も U7-5f・g の固定例から始めます（カツラ・うらのカードの特殊能力は new_game から画面の操作の列、フラッシュは U7 の候補だけの列を再生した盤面からの操作）。`e2e/p6.spec.ts` だけは**構築盤面**（エンジンの P6 のテストの盤面を写したもの。new_game からではない）から始め、テスト専用の入口で接続層を起動したときだけ動きます（`KYUURA_E2E_SERVER_MODULE=tests.p6_server npx playwright test e2e/p6.spec.ts`。この環境変数がなければ skip）。`e2e/u-r3a.spec.ts` も**構築盤面**（エンジンの U-R3a のテストの盤面を写したもの）から始め、`KYUURA_E2E_SERVER_MODULE=tests.r3a_server` のときだけ動きます。ほかの e2e は構築盤面を使いません
 - エンジン側の全体テスト・状態の監査・lockstep・大規模対戦は実行しません
 - lint（ESLint など）の仕組みはこのリポジトリにありません。TypeScript の型検査（`strict`・`noUncheckedIndexedAccess`）と単体テストで確かめています
 
@@ -375,7 +398,7 @@ npm run e2e         # 実エンジンへのブラウザの接続確認（Playwri
 3. エンジンの文書（`docs/client-api-*.md`・`docs/legal-actions-*.md`）と `kyuura_engine/client_api.py`・`legal_actions.py` の差分を読む。契約の識別・形式の版（`kyuura-client-api`・1、`kyuura_legal_actions_format` 1、`kyuura_diagnostic_schema` 1）が変わったら、`web/src/api/types.ts`・`validate.ts` を直す（知らない版は画面が「不明な応答」として止まる）
 4. 区分の値（処理可能性・状況・候補の種類・拒否のコードなど）が変わったら `contract/kyuura-client-api-v1.json` を直す。`server/tests/test_contract.py` がエンジンの定数と照らす
 5. 検証用の固定例の互換性を確かめる: 古いエンジンの環境と新しいエンジンの環境で `server/tools/scenario_views.py` を実行し、各時点の全入口の観測（`views`）を比べる。同じなら固定例の JSON の `compatibility` に確かめた結果を追記する（記録を作ったエンジン `engine_commit` は書き換えない）。違うときだけ、新しい固定コミットを checkout したエンジンの作業ツリーで `server/tools/build_scenarios.py --engine <作業ツリー>` で作り直し、`views_sha256` を入れ直して差分を確かめる。U7-5 の固定例も同じく比べ、違うときだけ `server/tools/build_u7_5_scenarios.py`・`server/tools/build_u7_5e_scenarios.py`・`server/tools/build_u7_5fg_scenarios.py`（導入済みのエンジンだけで作る）で作り直す。e2e の seed（21）で同じ操作に届くかも `server/tests/test_turn_basics.py`・`server/tests/test_attacks.py` で確かめる（届かなければ seed を探し直し、`conftest.py` と `playwright.config.ts` をそろえる）
-   P6 の構築盤面（`server/tests/p6_boards.py`）は、新しい固定コミットのエンジンの tests（`tests/test_legal_actions_p6_face_down_retreat_v0_174.py` の `face_down_active`。導入したパッケージには入っていないので、エンジンの作業ツリーから読むだけ）と状態の書き出し・乱数の指紋が同じかを確かめる（docs/engine-contract.md 14.6）。違えば写し直す。製品のコードからエンジンの tests を読まない
+   P6 の構築盤面（`server/tests/p6_boards.py`）は、新しい固定コミットのエンジンの tests（`tests/test_legal_actions_p6_face_down_retreat_v0_174.py` の `face_down_active`。導入したパッケージには入っていないので、エンジンの作業ツリーから読むだけ）と状態の書き出し・乱数の指紋が同じかを確かめる（docs/engine-contract.md 14.6）。U-R3a の構築盤面（`server/tests/r3a_boards.py`）も、`tests/test_legal_actions_u_r3a_v0_175.py` の `placed` と同じく確かめる（15.6）。違えば写し直す。製品のコードからエンジンの tests を読まない
 6. `npm test`・`npm run typecheck`・`npm run e2e` を通す
 7. 新しい操作の種類（U7-5 など）が加わったら、[docs/engine-contract.md](docs/engine-contract.md) の「次の操作の種類への対応」に従う。画面を作るまでは `gui_operable_kinds` に入れない（候補は表示だけ）
 8. カード画像: 同梱データの形式（`kyuura_cards.json` の `format`）・記録の項目が変わっていないかを確かめる。`python -m kyuura_gui_server.card_definitions`（`server` で実行）で `omitted` が 0 であること、`server/tests/test_card_definitions.py` が通ることを確かめる。形式が変わったら `contract/kyuura-gui-card-definitions-v2.json` と写す項目（`card_definitions.py`・`web/src/cards/definitions.ts`）を直し、`schema_version` を上げる
