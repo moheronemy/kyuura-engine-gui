@@ -1,6 +1,6 @@
 {
-  "$comment": "GUI が前提にする kyuura-engine の client_api の契約の値（エンジンの版 0.176.0。導入する完全なコミットは engine.commit）。TypeScript の型・実行時検証（web/src/api）と、Python のテスト（server/tests/test_contract.py）が同じこの表を読み、エンジンの定数と照らす。エンジンを更新したら、ここを直してから両方のテストを通す（README「エンジンの更新」）。",
-  "engine": {"commit": "6f627007a2a7101be066ac6ba035e838a75e36e1", "version": "0.176.0"},
+  "$comment": "GUI が前提にする kyuura-engine の client_api の契約の値（エンジンの版 0.177.0。導入する完全なコミットは engine.commit）。TypeScript の型・実行時検証（web/src/api）と、Python のテスト（server/tests/test_contract.py）が同じこの表を読み、エンジンの定数と照らす。エンジンを更新したら、ここを直してから両方のテストを通す（README「エンジンの更新」）。0.177.0 は ClientHub.from_state の入口の確かめ（不変条件）だけで、要求・応答の形とこの表の値は 0.176.0 と同じ（docs/engine-contract.md 17 章）。",
+  "engine": {"commit": "01317a649e65461dfeffabfa0b4893840ae6d9ee", "version": "0.177.0"},
   "contract": "kyuura-client-api",
   "format": 1,
   "legal_actions_format": 1,

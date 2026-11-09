@@ -166,6 +166,17 @@
     "guarantee_text": "なし（play_trainer の候補がないので、0.176.0 で変わった保証文は応答に出ない）",
     "other": "なし"
    }
+  },
+  {
+   "engine_commit": "01317a649e65461dfeffabfa0b4893840ae6d9ee",
+   "engine_version": "0.177.0",
+   "checked": "2026-11-10",
+   "result": "同じ（確かめの追記だけ。記録は作り直していない。0.176.0 の記録・スナップショットを流用して識別を書きかえたものではない）",
+   "method": "server/tools/scenario_views.py の --full を 0.176.0（6f62700。既存の GUI の作業場所 kyuura-engine-gui-wt-pt5e の .venv を読むだけで使った）と 0.177.0（01317a6）の環境で実行し、応答の全体を項目ごとに比べた。固定例のすべての時点で、全入口（プレイヤー0・1・観戦者・ホスト）の view・candidates と作成の知らせはすべて同じ（views_sha256 も同じ。違いは比べた出力の外側の engine_version だけ）。再生する固定例は 0.177.0 の ClientHub.from_state（複製の不変条件の確かめ）を通った。再生は記録の操作の列を新しい版での対戦で再生した互換性の確かめで、旧記録の正式な再実行・復元ではない",
+   "candidates_difference": {
+    "from_state_check": "なし（再生した状態は公開の new_game・apply_command が各コマンドの終わりで不変条件を確かめた状態で、入口の確かめで拒否されない。new_game から始める固定例は ClientHub.start で from_state を使わない）",
+    "other": "なし"
+   }
   }
  ]
 }
