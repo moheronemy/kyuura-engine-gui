@@ -1,6 +1,6 @@
 {
-  "$comment": "GUI が前提にする kyuura-engine の client_api の契約の値（エンジンの版 0.175.0。導入する完全なコミットは engine.commit）。TypeScript の型・実行時検証（web/src/api）と、Python のテスト（server/tests/test_contract.py）が同じこの表を読み、エンジンの定数と照らす。エンジンを更新したら、ここを直してから両方のテストを通す（README「エンジンの更新」）。",
-  "engine": {"commit": "81e9e99f76c2a2071fbbc50f852d6c28a026d080", "version": "0.175.0"},
+  "$comment": "GUI が前提にする kyuura-engine の client_api の契約の値（エンジンの版 0.176.0。導入する完全なコミットは engine.commit）。TypeScript の型・実行時検証（web/src/api）と、Python のテスト（server/tests/test_contract.py）が同じこの表を読み、エンジンの定数と照らす。エンジンを更新したら、ここを直してから両方のテストを通す（README「エンジンの更新」）。",
+  "engine": {"commit": "6f627007a2a7101be066ac6ba035e838a75e36e1", "version": "0.176.0"},
   "contract": "kyuura-client-api",
   "format": 1,
   "legal_actions_format": 1,
@@ -19,7 +19,7 @@
   "turn_basic_kinds": ["play_basic", "attach_energy", "evolve", "retreat"],
   "main_kinds": ["end_turn", "play_basic", "attach_energy", "evolve", "retreat", "use_attack", "play_trainer", "use_power", "use_stadium", "remove_disguise", "discard_from_play", "reveal_face_down", "check_face_up_deck"],
   "attack_kinds": ["use_attack"],
-  "$u7_5_kinds": "U7-5a〜d（エンジンの docs/legal-actions-u7-5ab.md・u7-5c.md・u7-5d.md と実応答で確かめた）。board_kinds は場のポケモン 1 匹を指す 1 段の操作（role は stage_roles）、trainer_kinds は手札のトレーナー（PlayTrainer。どうぐ・手札から出すスタジアム・化石・人形を含む）、stadium_kinds は場のスタジアムの使用（UseStadium。手札から出すのは play_trainer で別の操作）",
+  "$u7_5_kinds": "U7-5a〜d（エンジンの docs/legal-actions-u7-5ab.md・u7-5c.md・u7-5d.md と実応答で確かめた）。board_kinds は場のポケモン 1 匹を指す 1 段の操作（role は stage_roles）、trainer_kinds は手札のトレーナー（PlayTrainer。どうぐ・手札から出すスタジアム・化石・人形を含む）、stadium_kinds は場のスタジアムの使用（UseStadium。手札から出すのは play_trainer で別の操作）。0.176.0（PT-5e。エンジンの docs/legal-actions-pt5e-audit.md と実応答で確かめた）: 山札から引いて試すトレーナー 5 つの型・6 枚の使うための条件も候補の作成で呼ぶ（おもての山札の並びの不変条件が成り立つ状態だけ）。条件を通るカードは may_stop_later、ゲーム上使えないカードは選べるものに出ない、未裁定・未対応は実行できない区分（stops_before_acceptance）。不変条件が成り立たない状態・effects.py の外の条件は unverified（use_condition_not_evaluated）のまま。新しい種類・段・処理可能性・理由の語彙はない。候補の guarantees の文も変わったが、GUI は表示するだけで判定に使わない",
   "board_kinds": ["remove_disguise", "discard_from_play", "reveal_face_down"],
   "trainer_kinds": ["play_trainer"],
   "stadium_kinds": ["use_stadium"],

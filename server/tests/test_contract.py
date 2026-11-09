@@ -23,7 +23,7 @@ EXPECTED = json.loads((ROOT / "contract" / "kyuura-client-api-v1.json").read_tex
 def test_engine_identity():
     """導入元は direct_url.json の vcs_info で確かめる（site-packages で git rev-parse をしない）。"""
     summary = verify_engine_source(EXPECTED["engine"]["commit"], EXPECTED["engine"]["version"])
-    assert summary["commit_id"] == EXPECTED["engine"]["commit"] and summary["version"] == kyuura_engine.__version__ == EXPECTED["engine"]["version"] == "0.175.0"
+    assert summary["commit_id"] == EXPECTED["engine"]["commit"] and summary["version"] == kyuura_engine.__version__ == EXPECTED["engine"]["version"] == "0.176.0"
     assert "site-packages" in Path(summary["module"]).parts and ".venv/src" not in Path(summary["module"]).as_posix()
     reqs = (ROOT / "server" / "requirements.txt").read_text(encoding="utf-8")
     assert f"kyuura-engine @ git+https://github.com/moheronemy/kyuura-engine@{EXPECTED['engine']['commit']}" in reqs
@@ -120,6 +120,11 @@ def test_u7_5_roles_match_engine():
     board = {kind: [role] for kind, (_check, role) in L._BOARD_CHECKS.items()}
     assert {k: EXPECTED["stage_roles"][k] for k in L.BOARD_KINDS} == board
     assert '"role": "trainer"' in inspect.getsource(L._trainer_candidate) and EXPECTED["stage_roles"][L.KIND_PLAY_TRAINER] == ["trainer"]
+    # 0.176.0（PT-5e）: 使うための条件を呼ぶかの判定に状態を渡す（おもての山札の並びの不変条件）。処理可能性・理由は既存の語彙だけ
+    trainer = inspect.getsource(L._trainer_candidate)
+    assert "_use_condition_evaluated(state.effects.trainer_effect(definition), state)" in trainer
+    assert "MAY_STOP_LATER" in trainer and "UNVERIFIED" in trainer and "_stop_processability(code)" in trainer
+    assert {L.MAY_STOP_LATER, L.UNVERIFIED} <= set(EXPECTED["processability"]) and {L.REASON_USE_CONDITION, L.REASON_STOPS} <= set(EXPECTED["reason_codes"])
     stadium = inspect.getsource(L._stadium_candidate)
     assert '"role": "energy"' in stadium and EXPECTED["stage_roles"][L.KIND_USE_STADIUM] == ["energy"]
     assert "disclosure=DISCLOSURE_NONE" in stadium and EXPECTED["stage_roles_or_empty"] == [L.KIND_USE_STADIUM]

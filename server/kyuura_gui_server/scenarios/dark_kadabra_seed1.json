@@ -165,6 +165,18 @@
     "added_face_down_staged_power_inputs": "なし（どの時点にも本人のうらのカードの 2〜3 段の特殊能力の入力は出ない）",
     "other": "residual の R-3 の note の文（エンジンの説明の直し。0.175.0 から 2〜3 段の型も unverified で示す旨）。分類の値（id・kind・field・situation・status・reason・subject）は同じ。GUI は note を文字列であることだけ確かめる"
    }
+  },
+  {
+   "engine_commit": "6f627007a2a7101be066ac6ba035e838a75e36e1",
+   "engine_version": "0.176.0",
+   "checked": "2026-11-10",
+   "result": "操作の列・到達点は同じ（確かめの追記だけ。記録は作り直していない。0.175.0 の記録・スナップショットを流用して識別を書き換えたものではない）",
+   "method": "server/tools/scenario_views.py の --full を 0.175.0（81e9e99。既存の GUI の作業場所 kyuura-engine-gui-wt-r3a の .venv を読むだけで使った）と 0.176.0（6f62700）の環境で実行し、応答の全体を項目ごとに比べた。固定例のすべての時点で、全入口（プレイヤー0・1・観戦者・ホスト）の view・candidates と作成の知らせはすべて同じ（views_sha256 も同じ。違いは比べた出力の外側の engine_version だけ）。再生する固定例は記録の操作の列を新しい版の対戦で再生した互換性の確かめで、旧記録の正式な再実行・復元ではない",
+   "candidates_difference": {
+    "pt5e_trainer_options": "なし（どの時点にも play_trainer の候補はなく、固定例のデッキに PT-5e の 6 枚はない）",
+    "guarantee_text": "なし（play_trainer の候補がないので、0.176.0 で変わった保証文は応答に出ない）",
+    "other": "なし"
+   }
   }
  ]
 }
