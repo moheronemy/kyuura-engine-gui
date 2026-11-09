@@ -7,7 +7,8 @@ import { cand, candidates, deferred, EMPTY_UPDATES, inputs, mockTransport, obser
 import { OWN_FACE_DOWN_ACTIVE, P6_RETREAT, P6_STAGES } from "../test/p6";
 import { ATTACH_STAGES, RETREAT_STAGES } from "../test/u73";
 import { submit as envelope } from "../test/u74";
-import { BLAINE_ATTACH, BLAINE_STAGES } from "../test/u75fg";
+import { RC_POWER, RC_STAGES } from "../test/r3a";
+import { BLAINE_ATTACH, BLAINE_STAGES, WITHHELD_FACE_DOWN } from "../test/u75fg";
 import type { SubmitGate } from "./submitGate";
 import { useEndpointSession } from "./useEndpointSession";
 
@@ -213,5 +214,84 @@ describe("送信の入口の check の門（retreat。P6 とおもて）", () =>
     expect(hook.result.current.notices[0]?.lines).toContain("この結果は送ったあなたにだけ表示しています（相手・観戦者には知らせません）。");
     await waitFor(() => expect(hook.result.current.loading).toBe(false));
     expect(submits()).toHaveLength(1);
+  });
+});
+
+// 0.175.0（U-R3a）: 本人のうらのカードの 2〜3 段の特殊能力も use_power（check_before_submit_kinds）。新しい門は作らず、同じ条件で送信の入口が止める
+describe("送信の入口の check の門（use_power。本人のうらのカードの 2〜3 段）", () => {
+  const NOT_EXECUTABLE = { ...INVALID, response: { valid: false, refusal: { code: "CANDIDATE_NOT_EXECUTABLE", message: "入力を返していない候補" } } };
+
+  function setupPower(override: (c: Call) => unknown = () => undefined) {
+    const transport = mockTransport((c) => {
+      const o = override(c);
+      if (o !== undefined) return o;
+      if (c.method === "GET") return EMPTY_UPDATES;
+      const type = c.body?.type;
+      if (type === "view") return view(0, observation(0, [player(0, { handCards: [] }), player(1, { handCards: null })]));
+      if (type === "candidates") return candidates("r1", [RC_POWER, { ...WITHHELD_FACE_DOWN, id: "c5" }]);
+      if (type === "inputs")
+        return c.body?.candidate === "c5"
+          ? inputs("use_power", [], { candidate: "c5", withheld: { code: "INPUT_BOUNDARY_UNCONFIRMED", message: "入力の境界を確かめていない" } })
+          : inputs("use_power", RC_STAGES, { candidate: "c4" });
+      if (type === "check") return c.body?.candidate === "c5" ? NOT_EXECUTABLE : VALID;
+      if (type === "submit") return envelope("accepted", { next: [{ kind: "turn_action", player: 0 }] });
+      throw new Error(`想定外 ${c.path} ${String(type)}`);
+    });
+    const client = endpointClient(transport, { route: "seat", token: "tok0" });
+    const hook = renderHook(() => useEndpointSession({ client, canAct: true, gate, operationPrefix: "t" }));
+    const submits = () => transport.calls.filter((c) => c.body?.type === "submit");
+    return { hook, submits };
+  }
+
+  async function selectPower(hook: ReturnType<typeof setupPower>["hook"], candidate = RC_POWER) {
+    await waitFor(() => expect(hook.result.current.legal).not.toBeNull());
+    await act(() => hook.result.current.select(candidate));
+    await waitFor(() => expect(hook.result.current.selection?.inputs).not.toBeNull());
+  }
+
+  it("check の前・別の経路の入力・別の入力への check では submit の要求を出さない", async () => {
+    const { hook, submits } = setupPower();
+    await selectPower(hook);
+    await act(() => hook.result.current.submit(["o1", "o3"]));
+    expect(submits()).toHaveLength(0);
+    expect(hook.result.current.notices[0]?.title).toBe("送信していません");
+    await act(() => hook.result.current.check(["o2", "o5"]));
+    await act(() => hook.result.current.submit(["o1", "o3"]));
+    expect(submits()).toHaveLength(0);
+    await act(() => hook.result.current.submit(["o2", "o5"]));
+    expect(submits().map((c) => c.body?.choices)).toEqual([["o2", "o5"]]);
+  });
+
+  it("上流を変えて元の入力に戻しても、変える前に始めた check の遅れた答えでは送らない", async () => {
+    const late = deferred<unknown>();
+    let checks = 0;
+    const { hook, submits } = setupPower((c) => {
+      if (c.body?.type !== "check") return undefined;
+      checks += 1;
+      return checks === 1 ? late.promise : undefined;
+    });
+    await selectPower(hook);
+    let pending: Promise<void> = Promise.resolve();
+    act(() => {
+      pending = hook.result.current.check(["o2", "o5"]); // 遅れる
+    });
+    act(() => hook.result.current.inputChanged()); // 1 段目をエビワラーに（2 段目も捨てる）
+    act(() => hook.result.current.inputChanged()); // コラッタ → 炎エネルギーに戻した
+    late.resolve(VALID);
+    await act(() => pending);
+    expect(hook.result.current.selection?.check).toBeNull();
+    await act(() => hook.result.current.submit(["o2", "o5"]));
+    expect(submits()).toHaveLength(0);
+    await act(() => hook.result.current.check(["o2", "o5"]));
+    await act(() => hook.result.current.submit(["o2", "o5"]));
+    expect(submits()).toHaveLength(1);
+  });
+
+  it("入力を返さない候補（R-3）は check が通らないので、送信の入口も要求を出さない", async () => {
+    const { hook, submits } = setupPower();
+    await selectPower(hook, { ...WITHHELD_FACE_DOWN, id: "c5" });
+    await act(() => hook.result.current.check([]));
+    await act(() => hook.result.current.submit([]));
+    expect(submits()).toHaveLength(0);
   });
 });

@@ -2,7 +2,7 @@
 // - 実応答の形（固定版のエンジン v0.172.0・e26df79。server/tests/test_u7_5fg.py と同じ固定例から得た値を、選べるものの数だけ減らした）:
 //   BLAINE_*（カツラの効果の番の attach_energy。3 段目 energy2 は path_stages [1, 2]・options_by_path。1 段目と同じカードは別の番号で、その組には出ない）、
 //   FACE_UP_*（check_face_up_deck の表示だけの候補。owner・position だけ）、SPY（本人のうらのマンキーの［スパイ］。入力なし・unverified）、
-//   WITHHELD_FACE_DOWN（本人のうらのロケット団のヒトカゲの［ほのおをもらう］。入力を返さない・R-3）、COVERAGE_*（MAIN・番でない主体・決定の回答者の coverage）
+//   WITHHELD_FACE_DOWN（本人のうらのロケット団のヒトカゲの［ほのおをもらう］。入力を返さない・R-3。0.175.0 からは組が完成しない場面だけ。2〜3 段の入力は test/r3a.ts）、COVERAGE_*（MAIN・番でない主体・決定の回答者の coverage）
 // - 実エンジンの通常の操作では届いていない形（エンジンの docs/legal-actions-u7-5fg.md 3 章の例から）: BLAINE_BENCH の「鍵がない組」（ベンチのつけ先には 2 枚目がない）
 import type { Candidate, InputStage } from "../api/types";
 import { cand, COVERAGE_V172_EXTRA, RESIDUAL_CLASSES_V172 } from "./fixtures";
