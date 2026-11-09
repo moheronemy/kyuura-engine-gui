@@ -20,8 +20,9 @@ const webPort = process.env.KYUURA_E2E_WEB_PORT ?? "5174";
 const python = process.platform === "win32" ? join("..", "server", ".venv", "Scripts", "python.exe") : join("..", "server", ".venv", "bin", "python");
 // 0.174.0（P6）: KYUURA_E2E_SERVER_MODULE=tests.p6_server のときだけ、テスト専用の入口（server/tests/p6_server.py。名前の決まった構築盤面を固定例の表に加える）で
 // 接続層を起動する（e2e/p6.spec.ts）。0.175.0（U-R3a）: tests.r3a_server（server/tests/r3a_server.py。e2e/u-r3a.spec.ts）。
+// 0.176.0（PT-5e）: tests.pt5e_server（server/tests/pt5e_server.py。e2e/pt5e.spec.ts）。
 // 既定は通常の入口。決まった名前のほかは受け付けない（任意のモジュールを起動しない）
-const TEST_SERVER_MODULES = ["tests.p6_server", "tests.r3a_server"] as const;
+const TEST_SERVER_MODULES = ["tests.p6_server", "tests.r3a_server", "tests.pt5e_server"] as const;
 const testServerModule = process.env.KYUURA_E2E_SERVER_MODULE;
 const testModule = TEST_SERVER_MODULES.find((m) => m === testServerModule);
 if (testServerModule !== undefined && testModule === undefined) throw new Error(`KYUURA_E2E_SERVER_MODULE は ${TEST_SERVER_MODULES.join("・")} だけ`);
