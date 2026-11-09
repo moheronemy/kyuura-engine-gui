@@ -13,9 +13,18 @@ const serverPort = process.env.KYUURA_E2E_SERVER_PORT ?? "8766";
 // デッキと seed を持つ（server/kyuura_gui_server/scenarios.py。この seed は使わない）
 // 0.171.0・74c8e1f でも同じ。U7-5e の e2e（u75e.spec.ts）も固定例から始める
 // 0.172.0・e26df79 でも同じ。U7-5f・g の e2e（u75fg.spec.ts）も固定例から始める
+// 0.174.0・f7bf450 の P6 の e2e（p6.spec.ts）は構築盤面から始める（テスト専用の入口。下の KYUURA_E2E_SERVER_MODULE）。この seed は使わない
 export const E2E_FIXED_SEED = "21";
 const webPort = process.env.KYUURA_E2E_WEB_PORT ?? "5174";
 const python = process.platform === "win32" ? join("..", "server", ".venv", "Scripts", "python.exe") : join("..", "server", ".venv", "bin", "python");
+// 0.174.0（P6）: KYUURA_E2E_SERVER_MODULE=tests.p6_server のときだけ、テスト専用の入口（server/tests/p6_server.py。名前の決まった構築盤面を固定例の表に加える）で
+// 接続層を起動する（e2e/p6.spec.ts）。既定は通常の入口。決まった名前のほかは受け付けない（任意のモジュールを起動しない）
+const testServerModule = process.env.KYUURA_E2E_SERVER_MODULE;
+if (testServerModule !== undefined && testServerModule !== "tests.p6_server") throw new Error("KYUURA_E2E_SERVER_MODULE は tests.p6_server だけ");
+const serverCommand =
+  testServerModule === "tests.p6_server"
+    ? `"${python}" -m tests.p6_server --port ${serverPort}`
+    : `"${python}" -m kyuura_gui_server --port ${serverPort} --test-fixed-seed ${E2E_FIXED_SEED}`;
 
 export default defineConfig({
   testDir: "./e2e",
@@ -30,7 +39,7 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: `"${python}" -m kyuura_gui_server --port ${serverPort} --test-fixed-seed ${E2E_FIXED_SEED}`,
+      command: serverCommand,
       cwd: join("..", "server"),
       url: `http://127.0.0.1:${serverPort}/api/health`,
       reuseExistingServer: false,
