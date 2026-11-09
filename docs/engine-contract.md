@@ -1,10 +1,11 @@
-# エンジンの契約と GUI の対応（kyuura-engine v0.174.0・P6。v0.172.0・U7-5f・g までは 13 章まで）
+# エンジンの契約と GUI の対応（kyuura-engine v0.176.0・PT-5e。v0.172.0・U7-5f・g までは 13 章まで）
 
 GUI が使うエンジンの公開の境界と、その確かめ方・更新の方法の記録です。推測でなく、固定コミットの文書・コードと実際の応答で確かめた内容だけを書きます。
 
 ## 0. 固定と導入
 
-- 版 0.175.0、導入する完全なコミット `81e9e99f76c2a2071fbbc50f852d6c28a026d080`（公開ブランチ `claude/u-r3a-face-down-multistage-power` の「版を 0.175.0 にする」。U-R3a を含む。Git の URL からの通常のインストール。15 章）。文書だけの後続のコミット（`43debdd` など）・検証用 AI の追従（`claude/vai-u-r3a-follow`）・エンジンの main へは自動で変えない。renderer の固定（`af88231`）は変えていない
+- 版 0.176.0、導入する完全なコミット `6f627007a2a7101be066ac6ba035e838a75e36e1`（公開ブランチ `claude/pt-5e-impl` の「版を 0.176.0 にする」。PT-5e を含む。Git の URL からの通常のインストール。16 章）。文書だけの後続のコミット・検証用 AI の追従（`claude/vai-0176-follow`）・エンジンの main へは自動で変えない。renderer の固定（`af88231`）は変えていない
+- 以前の固定: 0.175.0、`81e9e99f76c2a2071fbbc50f852d6c28a026d080`（公開ブランチ `claude/u-r3a-face-down-multistage-power` の「版を 0.175.0 にする」。U-R3a を含む。Git の URL からの通常のインストール。15 章）。文書だけの後続のコミット（`43debdd` など）・検証用 AI の追従（`claude/vai-u-r3a-follow`）・エンジンの main へは自動で変えない。renderer の固定（`af88231`）は変えていない
 - 以前の固定: 0.174.0、`f7bf450580bf0d02573b4d032271be6b8e12d699`（公開ブランチ `claude/p6-face-down-retreat` の「版を 0.174.0 にする」。P6 と 0.173.0 の CN-1 の修正を含む。Git の URL からの通常のインストール。14 章）。文書だけの後続のコミット・エンジンの main へは自動で変えない。renderer の固定（`af88231`）は変えていない
 - 以前の固定: 0.172.0、`e26df79cc6dec913c1d15b5d8203df066334d65d`（公開ブランチ `claude/u7-5fg-impl` の「版を 0.172.0 にする」。U7-5f・g を含む。Git の URL からの通常のインストール。`server/requirements.txt`）。文書だけが違う後続のコミット（`05a6749`。限定の検証と配布の記録）・エンジンの main へは自動で変えない。renderer の固定（`af88231`）は変えていない
 - `74c8e1f`（0.171.0）から `e26df79` までの `kyuura_engine/` の差分: `legal_actions.py`（U7-5f の表示だけの候補、U7-5g-3 の coverage の残り、U7-5g-1 の経路で引く段、U7-5g-2 の本人のうらのカードの特殊能力）と版の番号（`__init__.py`）だけ。`engine.py`・`resolution/`・`effects.py`・`client_api.py`・同梱のカードデータは変わっていない（カードデータの blob も同じ。導入物の改行は 8.2）。契約の識別・形式の版は同じで、応答は加える方向（13 章）。意図した意味の変更は、番のプレイヤーの MAIN の `not_covered_kinds` が空になることと、番でない主体・決定の回答者が R-4 で partial になること
@@ -18,7 +19,7 @@ GUI が使うエンジンの公開の境界と、その確かめ方・更新の�
 - 契約の確かめ（1〜5 章）は `d0c5cfa` で行った。`d0c5cfa` から `ffcc5ca` までの差分は配布の設定（`pyproject.toml`・`MANIFEST.in`）・文書・配布物の確かめの道具とテストだけで、`kyuura_engine/` の中身は変わっていない。API の契約は変わっていないものとして扱い、接続層のテスト・ブラウザの接続確認を `ffcc5ca` の通常のインストールで通した
 - 導入元は `direct_url.json` の `vcs_info.commit_id` で確かめる（`kyuura_gui_server/engine_source.py`）。site-packages で `git rev-parse` をしない（GUI 自身の HEAD を返しうる）
 
-## 1. 参照した資料（1〜5 章は固定コミット d0c5cfa で確かめ、b4e62d9・9506d63・0885d66・74c8e1f・e26df79 で変わっていないことを確かめた。U7-3 は 9 章、U7-4 は 10 章、U7-5 は 11 章、U7-5e は 12 章、U7-5f・g は 13 章、P6（0.174.0）は 14 章、U-R3a（0.175.0）は 15 章。14 章では 1〜13 章、15 章では 1〜14 章の確かめを、それぞれ f7bf450・81e9e99 でやり直していない（15 章で選んだテストの範囲は 15.8）
+## 1. 参照した資料（1〜5 章は固定コミット d0c5cfa で確かめ、b4e62d9・9506d63・0885d66・74c8e1f・e26df79 で変わっていないことを確かめた。U7-3 は 9 章、U7-4 は 10 章、U7-5 は 11 章、U7-5e は 12 章、U7-5f・g は 13 章、P6（0.174.0）は 14 章、U-R3a（0.175.0）は 15 章、PT-5e（0.176.0）は 16 章。14 章では 1〜13 章、15 章では 1〜14 章、16 章では 1〜15 章の確かめを、それぞれ f7bf450・81e9e99・6f62700 でやり直していない（15 章で選んだテストの範囲は 15.8、16 章は 16.8）
 
 - `docs/client-api-v0.164.md`（入口・要求と応答・更新・導入）
 - `docs/legal-actions-u7-1.md`（決定への回答・番を終える・取っ手・処理可能性・coverage）
@@ -273,7 +274,7 @@ renderer の `renderToCanvas` は、同じ Canvas では最後に始めた要求
 
 形はエンジンの文書の JSON の例と `legal_actions.py` から作った（`web/src/test/u75.ts` の区分）。同じ形を運べることを、実際の場面で画面が正しく動くことと同じには扱わない。
 
-- `unverified` のトレーナー（PT-5e の 5 つ）と、未登録のトレーナー（`not_implemented`）
+- `unverified` のトレーナー（0.170.0〜0.175.0 は PT-5e の 5 つ。0.176.0 からは、おもての山札の並びの不変条件が成り立たない状態と `effects.py` の外の条件だけ。16 章）と、未登録のトレーナー（`not_implemented`）
 - 本人のうらのカードをすてる FD1（`eligible: false`・`unresolved_ruling`）・`leave_lock` による拒否
 - うらのポケモンについているエネルギー（`holder` の `face_down`）・相手が出したスタジアムを番のプレイヤーが使う場面・タマムシシティジム・コインのあとの決定のあるスタジアム（セキチクシティジム・エネルギースタジアム・キョウの忍者ジム・ラジオとう）・知らない選ばせるものの宣言（`unconfirmed`）
 - ［ちえくらべ］（相手の `REACTION_POWER`）・MG1・リムーブ禁止ジムの追加の条件・サイキックコントロール・どうぐ・なにかの化石・番を終えるトレーナー・対象を選ぶトレーナー
@@ -665,3 +666,97 @@ GUI の実行時の検証（`web/src/api/validate.ts` の `costEvaluation`・`re
 - 既存の 0.174.0 の `.venv` からの入れ替えそのもの、preview、クリーンな環境での再構築
 - エンジンを更新するときは、U-R3a と P6 の構築盤面とエンジンの tests の盤面の一致を確かめ直す（README「エンジンの更新の手順」5）
 - 残る R-3（完成する組がない場面・宣言のない型・登録のない力・知らない場所の段）、R-2・R-4・R-5 の残り、P6 で記録した「受理のあと同じ番にもう一度 retreat の候補が出る」観察（14.10）は変わっていない（着手していない）
+
+## 16. PT-5e（山札から引いて試すトレーナーの使うための条件を候補で呼ぶ。0.176.0・6f62700 の文書・コードと実応答で確かめた）
+
+基点は GUI の `8f78ed3`（`feature/engine-u-r3a-facedown-powers`。P6・U-R3a の追従と送る前の check の修正を含む公開コミット。`origin/main`（`088822c`）には入っていない）。作業は専用の作業場所 `C:\dev\kyuura-engine-gui-wt-pt5e`（ブランチ `feature/engine-pt5e-trainers`）で行った。利用者の作業ツリー・エンジンの木は変えていない。
+
+### 16.1 固定と依存の更新（0.175.0 → 0.176.0）
+
+- `server/requirements.txt`・契約の表の `engine` を `6f62700`（0.176.0）にした。`npm run setup` で新しい作業場所の新しい `.venv` に入れ、`direct_url.json` のコミットの一致・非 editable・配布メタデータとパッケージの版 0.176.0・site-packages からの読み込みを確かめた（`engine_source` も終了コード 0）
+- `81e9e99` から `6f62700` までの `kyuura_engine/` の差分は `legal_actions.py`（`PLAYABLE_NOT_EVALUATED` を空にし、`PLAYABLE_FACE_UP_PREFIX_TRIALS` を加えた。`_use_condition_evaluated` が状態を受け取り、この 5 つの型はおもての山札の並びの不変条件（`faceup.prefix_problems`）が成り立つ状態だけで条件を呼ぶ。`GUARANTEE_TRAINER["preconditions"]` の文）と版の番号だけ。`client_api.py`・`engine.py`・`effects.py`・同梱のカードデータは変わっていない
+- 読んだ文書: `docs/legal-actions-pt5e-audit.md`（監査）、`docs/implementation-status.md` の v0.175 のあとの節、`docs/legal-actions-u7-5-design.json` の PT-5e の行、テスト `tests/test_legal_actions_pt5e_v0_176.py`（実装の確かめ。エンジンの木から読むだけ）
+- 契約の識別・形式の版は同じ。種類・段・処理可能性・理由・拒否のコードの語彙は増えていない（`test_contract.py` で照らす）
+
+### 16.2 対象（実際の登録で確かめた）
+
+| 型 | カード | 条件（エンジンの監査 1.1） |
+|---|---|---|
+| `BlainesHeightQuiz` | `GD5-016` カツラのクイズ その1 | 手札のポケモンがなければ QZ1（未裁定）。全部が図鑑番号・身長なしなら未対応。そのあと、おもての山札の確かめ |
+| `SetAsideGuessKindQuiz` | `GD5-017` カツラのクイズ その2 | このカードを除く手札がなければ FC1（未裁定）。そのあと、おもての山札の確かめ |
+| `BlainesQuiz` | `PMCG6-082` カツラのクイズ その3 | ワザを持つポケモンが手札になければ QZ1。そのあと、おもての山札の確かめ |
+| `SetAsideGuessKindQuiz` | `neo4-105` ポケモン性格判定 | 手札に進化カードがなければ Illegal。そのあと、おもての山札の確かめ |
+| `GuessOpponentPrizeKind` | `neo1-080` カードめくりゲーム | うらの相手のサイドがなければ FC1。そのあと、おもての山札の確かめ |
+| `SwapPleaseTrainer` | `PR1-027` とりかえっこプリーズ | 自分のほかの手札・相手の手札が 0 枚なら Illegal。そのあと、おもての山札の確かめ |
+
+接続層のテスト（`test_pt5e.py::test_registration_and_engine_constants`）が、導入したエンジンの登録から 5 つの型・6 枚を引いて確かめる（名前から推測しない）。
+
+### 16.3 変化と区別
+
+- 条件を通るカード: `may_stop_later`（理由 `preflight_not_evaluated`・`continuation_not_evaluated`。`eligible: true`）。候補にあること・check が通ること・送って受理されること・完走することは別。受理のあとは決定（置くカード・相手の答え・サイドの選択・交換するカード）に続き、結果は山札・サイドの秘密で正当に変わる
+- ゲーム上使えないカード（Illegal）: 選べるものに出ない（手札にはある）
+- 未裁定・未対応: 選べるものに `eligible: false`・`unresolved_ruling` または `not_implemented`（理由 `stops_before_acceptance`）。check・submit は送る前に `CANDIDATE_NOT_EXECUTABLE` で断る（エンジンへ渡さない。状態・相手と観戦者への更新は変わらない）
+- おもての山札の並びの不変条件が成り立たない状態（構築盤面の入口から入りうる）・`effects.py` の外の条件: 今までどおり `unverified`（`use_condition_not_evaluated`）。その状態での送信の結果がエンジンの経路で分かれること（`STATE_INTEGRITY` の failed など）はエンジン側の独立の課題で、GUI は任意の状態を受け付ける機能・独自の状態の検査を持たない（加えていない）
+- 保証文（`guarantees.preconditions`）が変わった。GUI は候補の一覧の「保証の範囲」に文字のまま表示するだけで、合法性・送れるかの条件に使わない（`PT5e.test.tsx` で文を変えても選べるものの可否が同じことを確かめた）
+
+### 16.4 GUI の扱い（製品のコードは変えていない）
+
+- 実行時検証（`validate.ts`）・入力の表示（`DecisionPanel.tsx`）・送る前の check の門（`checkGate.ts`）は既存のまま扱える。変えたのは依存・契約の表の `engine` と `$u7_5_kinds` の説明・版の確かめのテスト・契約のテスト（`_trainer_candidate` が状態を渡して条件を呼ぶかを決めること、処理可能性・理由が既存の語彙だけであること）
+- 表示: `may_stop_later` は「送れる（後で止まりうる）」と理由。受理・完走・使えることを予告しない。`not_implemented`・`unresolved_ruling` は選べず、「未実装」「未裁定」と「ゲーム上の禁止ではありません」。選べるものにないカードを手札・カード定義から補わない
+- 送信: 今の入力・今の取っ手への check が通ったときだけ（ボタンと送信の入口が同じ条件）。入力・候補を変えたら前の答えを使わない。エンジンの拒否の診断は送った本人だけ。自動で送り直さない（既存のテスト `checkGate.test.tsx`・`U75.test.tsx`・`AppU75.test.tsx` と今回の `PT5e.test.tsx`）
+
+### 16.5 代表応答
+
+エンジンの tests の `table` と同じ盤面（16.6）で client_api の candidates・inputs・check の実応答を取り（証跡の `probe/pt5e_responses.json`）、エンジンのテストの期待（`PASSING`・`STOPPED`・選べるものにない・`CANDIDATE_NOT_EXECUTABLE`）と同じことを確かめた。単体テストの写し（`web/src/test/pt5e.ts`）はこの応答をそのまま使う。
+
+| 盤面 | 手札（プレイヤー 0） | 候補 | 選べるもの |
+|---|---|---|---|
+| 1 | その2・性格判定・その1・ポリゴン（`ES1-033`。図鑑番号なし） | `may_stop_later` | `o1` その2 `may_stop_later`、`o2` その1 `not_implemented`（性格判定はない） |
+| 2 | その3・とりかえっこプリーズ・マサキ（相手の手札なし） | `may_stop_later` | `o1` その3 `unresolved_ruling`、`o2` マサキ `may_stop_later`（とりかえっこプリーズはない） |
+
+### 16.6 構築盤面（テスト専用）
+
+- new_game からの到達ではない。seed の探索はしていない。固定例のデッキに 6 枚はない。`server/tests/pt5e_boards.py` に、エンジンのテストの `table(card, hand=..., opponent_hand=..., flash=False)`（`tests/helpers.py` の `build_test_state`）の形を写した。手札の組み合わせは GUI の側で決めた（エンジンのテストの `ControlTest`・`SameAsDirectTest` の 1 枚ずつの例を 1 つの手札にまとめた）。おもての山札はなく、不変条件の崩れた状態は作らない
+- 固定例の表への追加（`p6_boards.install_boards`）と起動の入口（`p6_server.main`）を共用した（`server/tests/pt5e_server.py`）。`web/playwright.config.ts` のテスト専用の入口は決まった 3 つの名前（`tests.p6_server`・`tests.r3a_server`・`tests.pt5e_server`）だけ
+- 出典との一致: エンジンの `tests/` を `git archive 6f62700 tests` で作業ツリーの外に取り出し（エンジンの木は読むだけ）、PT-5e の 2 つの盤面（`64cc8d98…`・`55f8f08e…`）と、P6 の 3 つ（`e349918b…`・`4b8214f0…`・`53983e9f…`）・U-R3a の 2 つ（`b72443e4…`・`c826f242…`。14.6・15.6 の値と同じ）で、`state_to_dict(format_version=22)` と乱数の指紋がエンジンの tests の盤面と同じことを確かめた（7 つとも一致。定数も一致）
+- 閉じ込め: 製品のコード（`kyuura_gui_server`）はこれらのモジュールを import しない。作成の口が受け取るのは固定例の名前だけで、任意の状態を受け取る口は加えていない。製品のコードもテストも実行時にエンジンの tests を読まない
+
+### 16.7 依存の更新の影響（固定例の旧版と新版の比べ）
+
+- `server/tools/scenario_views.py --full` を、0.175.0（`81e9e99`。既存の作業場所 `kyuura-engine-gui-wt-r3a` の `.venv` を読むだけで使った）と 0.176.0（`6f62700`）の環境で、同じ GUI のコード（この作業場所）から 1 回ずつ実行し、応答の全体を項目ごとに比べた（15.7 と同じ手順）。14 の固定例の 15 の時点で、全入口の view・candidates と作成の知らせはすべて同じ（`views_sha256` も同じ）。違いは比べた出力の外側の `engine_version` だけ
+- 保証文だけの差・候補や入力の差は、どちらもない。どの時点にも `play_trainer` の候補がなく（固定例のデッキに 6 枚もない）、変わった保証文は応答に出ない。差を除外して同じにしたのではない
+- 各固定例の JSON の `compatibility` に 0.176.0 の確かめを追記した（`candidates_difference` に PT-5e の選べるもの・保証文・その他を分けて書いた）。記録を作ったエンジン・操作の列・`views_sha256` は書き換えていない。0.175.0 の記録・スナップショットを識別を書き換えて流用していない。再生する固定例の確かめは記録の操作の列を新しい対戦で再生した互換性の確かめで、旧記録の正式な再実行・復元ではない
+- カード定義: 0.175.0 と 0.176.0 の導入物のバイト列は同じ（`8ac177e8…`、CRLF 127,782 個。Windows での Git の取り出しによる改行）。正規化した JSON の sha256 は `b82354d6…`、件数 1,374 で同じ
+
+### 16.8 実行した検証（2026-11-10。限定）
+
+実行の前に対象・比べる基準・予算を記録した（証跡の `PLAN.md`）。開発中に新しいテストのファイルを手元で流したもの（記録の対象外）は別にしている。
+
+| 記録 | コミット | 対象 | 結果 |
+|---|---|---|---|
+| R1・R2 | `10a4879` | 型検査・ビルド | 終了コード 0 |
+| R3 | `10a4879` | vitest 6 ファイル（PT5e・U75・AppU75・checkGate・DecisionPanel・validate） | 64 件、失敗 0 |
+| R4 | `10a4879` | pytest 7 ファイル（test_contract・test_engine_source・test_bridge・test_card_definitions・test_scenarios・test_u7_5・test_pt5e） | 104 件、失敗 0 |
+| R5 | `10a4879` | `python -m kyuura_gui_server.engine_source` | 終了コード 0（`6f62700`・0.176.0・site-packages） |
+| R6 | `10a4879` | e2e PT-5e 1 件（構築盤面 1。`tests.pt5e_server`・8791/5191） | **失敗**: テストのコードの誤り（選べるものの行を探す `filter({ has })` に絶対の locator を渡した）。失敗のときの画面の記録では、その2 は「送れる（後で止まりうる）」、その1 は無効で「エンジンが未対応です（ゲーム上の禁止ではありません）」、性格判定はなく、画面は期待どおりだった |
+| — | `bbb6c07` | R6 の原因の修正（テストのコードだけ） | — |
+| R6b | `bbb6c07` | e2e PT-5e 1 件（失敗した対象だけ） | 成功 |
+| R7 | `bbb6c07` | 既存のトレーナーの e2e 1 件（`u75.spec.ts:104` ピッピ人形。通常の入口・8792/5192） | 成功 |
+
+- 全件にしなかった理由: 新しい語彙がなく、製品のコードを変えていない。`unverified` のトレーナーの既存の表示は模擬の応答の単体テスト（`U75.test.tsx`）で確かめた（不変条件の崩れた状態は製品の API へ入れない）
+- 専用ポートは実行の前後とも閉じていた。e2e の接続層と Vite は Playwright の webServer が起動・終了した（`reuseExistingServer: false`）。実行のあと、この作業場所を含むコマンド行のプロセスは 0。ほかのプロセスを終了させる処理は使っていない
+- 実行していないもの: 全体の e2e・vitest と pytest の全件・preview・エンジンの全体テスト・検証用 AI の実対戦・大量対戦・lockstep・状態の監査・クリーンな環境での全工程の再実行・seed の探索・新しい new_game の固定例
+
+### 16.9 証跡
+
+- 保存先: `C:\dev\kyuura-engine-verification-gui-pt5e`（既存の記録とは別）。`verifier/runs/2026-11-10-pt5e/` に計画・setup・固定例の比べ・盤面の出典の照合・代表応答・各実行（コマンド・コミット・作業ツリーの状態・標準出力・標準エラー・終了コード・時刻・JUnit）、`public/runs/2026-11-10-pt5e/summary.md` に確かめた非機密の集計だけ。`manifest.json`・`sha256.json`・`MANIFEST.md` を置いた
+- 本人向けの情報（本人の候補・入力・手札）、比べた応答の全体、詳細の trace は verifier の側だけに置き、public には置かない
+
+### 16.10 未確認・次へ残すこと
+
+- new_game の通常の進行で 6 枚に届くこと（構築盤面だけで確かめた。seed の探索はしていない）
+- 実エンジンで通した状況は、その2（通る・受理）・その1（未対応）・その3（未裁定）・性格判定ととりかえっこプリーズ（Illegal で出ない）だけ。カードめくりゲーム・おもての山札がある場面（FU3）・受理のあとの決定の続き・エンジンの `rejected`（受け付ける前の先読みでの拒否）は実エンジンの画面で通していない
+- おもての山札の並びの不変条件が崩れた状態（エンジンの独立の課題。GUI は扱わない）
+- 既存の 0.175.0 の `.venv` からの入れ替えそのもの、preview、クリーンな環境での再構築
+- エンジンを更新するときは、PT-5e・U-R3a・P6 の構築盤面とエンジンの tests の盤面の一致を確かめ直す（README「エンジンの更新の手順」5）
+- 残る R-3・R-2・R-4・R-5、P6 で記録した「受理のあと同じ番にもう一度 retreat の候補が出る」観察（14.10）は変わっていない（着手していない）
