@@ -16,10 +16,11 @@ test("構築盤面 1: その2は may_stop_later で選べ、性格判定は出�
   await expect(stage(page, 1)).not.toContainText("neo4-105");
   const quiz2 = stage(page, 1).getByRole("radio", { name: /GD5-017/ });
   const quiz1 = stage(page, 1).getByRole("radio", { name: /GD5-016/ });
+  const row = (name: RegExp) => stage(page, 1).locator("li").filter({ has: page.getByRole("radio", { name }) }); // has は li からの相対の locator
   await expect(quiz2).toBeEnabled();
-  await expect(stage(page, 1).locator("li").filter({ has: quiz2 })).toContainText("送れる（後で止まりうる）");
+  await expect(row(/GD5-017/)).toContainText("送れる（後で止まりうる）");
   await expect(quiz1).toBeDisabled();
-  await expect(stage(page, 1).locator("li").filter({ has: quiz1 })).toContainText("エンジンが未対応です（ゲーム上の禁止ではありません）");
+  await expect(row(/GD5-016/)).toContainText("エンジンが未対応です（ゲーム上の禁止ではありません）");
   await quiz2.check();
   await expect(panel(page).getByRole("button", { name: "送信" })).toBeDisabled(); // check の前は送れない
   await panel(page).getByRole("button", { name: "入力を検査" }).click();
