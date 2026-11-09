@@ -39,7 +39,7 @@ export const DECLARATION_ADDONS = expected.declaration_addons as readonly string
 export const ENERGY_TYPES = expected.energy_types as readonly string[];
 export const ATTACK_OPTION_KEYS = new Set<string>(expected.attack_option_keys);
 export const ADDON_OPTION_KEYS = new Set<string>(expected.addon_option_keys);
-/** 今の入力・今の取っ手への check が通ってから送信する種類（GUI の決まり。check は受理の保証ではない）。 */
+/** 今の入力・今の取っ手への check が通ってから送信する種類（GUI の決まり。check は受理の保証ではない）。0.174.0 から retreat も種類で含む。 */
 export const CHECK_BEFORE_SUBMIT_KINDS = new Set<string>(expected.check_before_submit_kinds);
 // U7-5a〜d: 場のポケモン 1 匹を指す操作・手札のトレーナー・場のスタジアム。段の role・選べるもの・holder・候補の stadium の項目は契約の表のとおりで、ほかは操作を止める（validate.ts）
 export const BOARD_KINDS = new Set<string>(expected.board_kinds);
@@ -86,3 +86,8 @@ export const RESIDUAL_CLASS_KEYS = new Set<string>(expected.residual_class_keys)
 export const RESIDUAL_STATUSES = expected.residual_statuses as readonly string[];
 export const RESIDUAL_SCOPES = expected.residual_scopes as readonly string[];
 export const RESIDUAL_PRESENT_KEYS = new Set<string>(expected.residual_present_keys);
+// 0.174.0（P6）: にげる（retreat）。段の role の並び・トラッシュの段の選べるものの項目・費用を評価していないことの印（cost_evaluation）は契約の表のとおり。
+// おもての段は total_units とすべての units を持ち、本人のうらのバトル場のポケモンの段は total_units・units を省いて cost_evaluation を持つ（validate.ts）
+export const RETREAT_STAGE_ROLES = expected.retreat_stage_roles as readonly string[];
+export const RETREAT_DISCARD_OPTION_KEYS = new Set<string>(expected.retreat_discard_option_keys);
+export const RETREAT_COST_EVALUATION = expected.retreat_cost_evaluation as { readonly status: string; readonly reason: string; readonly omitted: readonly string[] };

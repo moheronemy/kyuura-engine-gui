@@ -39,6 +39,9 @@ import {
   RESIDUAL_PRESENT_KEYS,
   RESIDUAL_SCOPES,
   RESIDUAL_STATUSES,
+  RETREAT_COST_EVALUATION,
+  RETREAT_DISCARD_OPTION_KEYS,
+  RETREAT_STAGE_ROLES,
   STADIUM_ENERGY_OPTION_KEYS,
   STADIUM_KEYS,
   STADIUM_KINDS,
@@ -527,10 +530,74 @@ function addonOption(o: InputOption, where: string): void {
 }
 
 /**
+ * 0.174.0（P6）: 費用を評価していない印。項目・値・型は契約の表（retreat_cost_evaluation）と同じものだけ。知らない値・項目は止める
+ * （新しい status・reason・省いた項目の名前を、古い画面の意味で読まない）。
+ */
+function costEvaluation(value: unknown, where: string): void {
+  const o = obj(value, where);
+  const keys = Object.keys(o);
+  if (keys.length !== 3 || !keys.every((k) => k === "status" || k === "reason" || k === "omitted")) fail(`${where}: 知らない項目`);
+  if (o.status !== RETREAT_COST_EVALUATION.status) fail(`${where}.status: 知らない値`);
+  if (o.reason !== RETREAT_COST_EVALUATION.reason) fail(`${where}.reason: 知らない値`);
+  const omitted = arr(o.omitted, `${where}.omitted`);
+  const expected = RETREAT_COST_EVALUATION.omitted;
+  if (omitted.length !== expected.length || omitted.some((name, i) => name !== expected[i])) fail(`${where}.omitted: 知らない値`);
+}
+
+/**
+ * にげる（retreat）。段の role は [new_active, discard]（入力のない候補は段なし）。1 段目は控え 1 匹（場のポケモンの形）、2 段目はトラッシュするカード
+ * （0〜枚数・重なりなし・選んだ順）。2 段目の費用の表し方は次のどちらか 1 つだけ（エンジンの docs/legal-actions-p6-face-down-retreat.md 2.2 節）:
+ * - おもてのバトル場のポケモン: total_units とすべての選べるものの units（cost_evaluation なし）
+ * - 本人のうらのバトル場のポケモン（P6）: cost_evaluation（total_units・units を省く）
+ * 両方ある・両方ない（費用 0 と見なさない）・一部の選べるものだけ units・cost_evaluation があるのに units がある、は止める。
+ */
+function retreatStages(stages: InputStage[]): void {
+  if (stages.length === 0) return; // 宣言の確かめが止める候補（化石・人形のバトル場など）は選べるものを示さない（送れない候補）
+  const roles = stages.map((s) => (s.input === "choose_option" ? s.role : undefined));
+  if (roles.length !== RETREAT_STAGE_ROLES.length || roles.some((r, i) => r !== RETREAT_STAGE_ROLES[i])) fail("stages: retreat の段の並び");
+  const [first, second] = stages as OptionStage[];
+  if (!first || !second) return fail("stages: retreat の段の並び");
+  for (const s of [first, second]) {
+    if (s.depends_on_stage !== undefined || s.options_by_choice !== undefined || s.upstream_stages !== undefined || s.path_stages !== undefined || s.options_from_stage !== undefined) {
+      fail(`stages[${s.stage}]: retreat の段に依存の形`);
+    }
+    if (!s.options) fail(`stages[${s.stage}].options`);
+  }
+  if (first.count.min !== 1 || first.count.max !== 1 || first.meaning !== "pokemon") fail("stages[1]: retreat の控えの段");
+  if (first.total_units !== undefined || first.cost_evaluation !== undefined) fail("stages[1]: retreat の控えの段に費用の項目");
+  (first.options ?? []).forEach((op, j) => {
+    for (const key of Object.keys(op)) if (!BOARD_OPTION_KEYS.has(key)) fail(`stages[1].options[${j}].${key}: 知らない控えの項目`);
+  });
+  const options = second.options ?? [];
+  const w = `stages[${second.stage}]`;
+  if (second.meaning !== "card" || second.distinct !== true || second.order !== "significant" || second.count.min !== 0 || second.count.max !== options.length) {
+    fail(`${w}: retreat のトラッシュの段`);
+  }
+  options.forEach((op, j) => {
+    for (const key of Object.keys(op)) if (!RETREAT_DISCARD_OPTION_KEYS.has(key)) fail(`${w}.options[${j}].${key}: 知らないトラッシュの項目`);
+    int(op.card, `${w}.options[${j}].card`);
+    str(op.card_id, `${w}.options[${j}].card_id`);
+  });
+  const withUnits = options.filter((op) => "units" in op).length;
+  const hasTotal = second.total_units !== undefined;
+  const hasCost = second.cost_evaluation !== undefined;
+  if (hasTotal && hasCost) fail(`${w}: total_units と cost_evaluation が併存`);
+  if (!hasTotal && !hasCost) fail(`${w}: 費用の段に total_units も cost_evaluation もない（費用 0 と見なさない）`);
+  if (hasTotal && withUnits !== options.length) fail(`${w}.total_units: units のない選べるもの`);
+  if (hasCost && withUnits !== 0) fail(`${w}.cost_evaluation: 省いたはずの units がある`);
+}
+
+/**
  * 段の role で形が決まる種類（U7-4 の use_attack）: role の並びが契約の表と同じで、段ごとの選べるものの形を確かめる。
  * ほかの種類の段に、その種類の role が来たら止める（role だけで古い画面へ通さない）。
  */
 function kindStages(kind: string, stages: InputStage[]): void {
+  if (kind === "retreat") return retreatStages(stages);
+  // にげるの外: 個数・費用の評価の項目は来ない（来たら、知らない制約として止める）
+  for (const s of stages) {
+    if (s.input !== "choose_option") continue;
+    if (s.total_units !== undefined || s.cost_evaluation !== undefined || (s.options ?? []).some((op) => "units" in op)) fail(`stages[${s.stage}]: ${kind} の段に費用・個数の項目`);
+  }
   const expectedRoles = STAGE_ROLES[kind];
   // U7-3 の種類も同じ名前で使う role（にげるの discard・エネルギーをつけるの energy）は除く
   const special = new Set(Object.values(STAGE_ROLES).flat().filter((r) => !STAGE_ROLES_SHARED.has(r)));
@@ -708,13 +775,13 @@ function stage(value: unknown, i: number): InputStage {
         });
       }
     }
-    if ("total_units" in o) {
-      count(o.total_units, `${w}.total_units`);
-      // 個数で数える段は、すべての選べるものに units がある
-      if (!("options" in o) || (o.options as Obj[]).some((op) => !("units" in op))) fail(`${w}.total_units: units のない選べるもの`);
-    }
+    // にげるの費用の段（total_units・units・cost_evaluation の組み合わせ）は、種類ごとの確かめ（retreatStages）で決める。ここでは値の形だけ
+    if ("total_units" in o) count(o.total_units, `${w}.total_units`);
+    if ("cost_evaluation" in o) costEvaluation(o.cost_evaluation, `${w}.cost_evaluation`);
   } else {
-    if ("depends_on_stage" in o || "options_by_choice" in o || "total_units" in o || "path_stages" in o || "options_by_path" in o) fail(`${w}: 値の段に選べるものの項目`);
+    if ("depends_on_stage" in o || "options_by_choice" in o || "total_units" in o || "cost_evaluation" in o || "path_stages" in o || "options_by_path" in o) {
+      fail(`${w}: 値の段に選べるものの項目`);
+    }
     const r = obj(o.range, `${w}.range`);
     const min = int(r.min, `${w}.range.min`);
     if (int(r.max, `${w}.range.max`) < min) fail(`${w}.range`);

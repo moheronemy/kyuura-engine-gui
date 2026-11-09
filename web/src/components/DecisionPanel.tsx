@@ -37,6 +37,12 @@ import { useId, useMemo, useState } from "react";
 // - attach_energy は 1 枚・2 枚とも、今の取っ手・今の候補・今の入力への check が通ってから送る（GUI の方針。エンジンは check なしの submit も受け付ける）。
 //   3 段目の 2 枚目を選ぶ・変える・外すのも入力の変更で、前の check の答えを使わない
 // - 本人のうらのカードの特殊能力: 本人が知る本当のカード（power.card_id）を、公開の盤面の情報と分けて文字で示す（盤面は裏面のまま）
+// 0.174.0（P6。本人のうらのバトル場のポケモンのにげる）:
+// - トラッシュの段に cost_evaluation（not_evaluated）があるとき、費用とカードごとのエネルギーの個数は「評価していない」と表示する。total_units がないことを
+//   費用 0 と読まない。本人の real・公開カード定義から費用・タイプ・個数を計算しない。選んだカードの枚数は表示するが、足りる・足りないとは書かない
+// - 選べるのはエンジンが返した控えとエネルギーカードだけ（count の範囲・重なりなし・選んだ順のまま送る）。対象・費用の可否を GUI で推測しない
+// - retreat は種類として check_before_submit_kinds（今の主体・取っ手・候補・入力への check が通ってから送る）。P6 の check は参照・数・重なり・段の並びの
+//   形の検査で、費用・受理を保証しない。結果（受理・拒否・そのあとの決定）は予告せず、送信の応答と観測で表示する
 import { ATTACK_KINDS, DISPLAY_ONLY_KINDS, EXECUTABLE_PROCESSABILITY, PATH_STAGE_KINDS, POWER_KINDS, STADIUM_KINDS, TRAINER_KINDS } from "../api/contract";
 import type { Candidate, Choice, FieldSlot, Holder, InputOption, InputStage, Observation, OptionStage, PairOption, PlayerIndex, StadiumRef } from "../api/types";
 import { CardBack, CardFace, usePowerText } from "../cards/CardImages";
@@ -253,6 +259,30 @@ function PowerInfo({ candidate, names }: { candidate: Candidate; names: Names })
         ) : null}
       </p>
       <p className="small attack-text">{text ?? "説明なし（公開カード定義に合う説明がない）"}</p>
+    </div>
+  );
+}
+
+/** 0.174.0（P6）: にげるのトラッシュの段が費用を評価していない（cost_evaluation）か。 */
+export function costNotEvaluated(stages: InputStage[]): boolean {
+  return stages.some((s) => s.input === "choose_option" && s.cost_evaluation !== undefined);
+}
+
+/** 0.174.0（P6）: 本人のうらのバトル場のポケモンのにげるの説明（結果を予告しない。本当のカード・費用を書かない）。 */
+function FaceDownRetreatInfo() {
+  return (
+    <div className="callout info small face-down-retreat" role="note" aria-label="うらのバトル場のポケモンのにげる">
+      <p>
+        バトル場のあなたのポケモンは裏向きです（盤面ではうらのまま）。このにげるの費用（必要なエネルギーの個数）とカードごとのエネルギーの個数は、エンジンが評価していません。
+        GUI も計算しません（0 個という意味ではありません）。
+      </p>
+      <p>
+        送ると、エンジンがこのポケモンをおもてにしてから決めます。結果は送信の応答と観測で表示します（ここでは予告しません）。受け付けられなかったときは状態がもどり、
+        おもてにしたことも相手・観戦者には知らされません（結果はあなたにだけ表示します）。
+      </p>
+      <p>
+        「入力を検査」（check）が確かめるのは、選んだ控え・カードが候補にあるか、枚数、重なり、段の順序などの形です。費用が足りるか・受理されるかは保証しません。
+      </p>
     </div>
   );
 }
@@ -514,10 +544,10 @@ export function DecisionPanel({ selection, actor = null, observation, names, bus
   // 今の入力への check の答え（入力が変わったら前の答えは使わない。取っ手が変われば選択ごと作り直される）
   const check = currentCheck(selection, choices);
   const staleCheck = (selection.check !== null && check === null) || (discarded && selection.check === null);
-  // 個数で数える段がある操作（にげる）は、今の入力が check を通ってから送る（個数の表示だけで合法と決めない）
+  // にげる（おもて・本人のうらのバトル場のポケモンとも。種類で決め、total_units の有無では決めない）は、今の入力が check を通ってから送る（個数の表示だけで合法と決めない）
   // ワザ・U7-5 の操作・attach_energy（1 枚・2 枚とも。check_before_submit_kinds）も同じ（GUI の方針。check を通っても受理・完走の保証ではない）
   // 送信の入口（useEndpointSession の submit）も同じ関数（state/checkGate.ts）で確かめる
-  const needsCheck = needsCheckBeforeSubmit(candidate, stages);
+  const needsCheck = needsCheckBeforeSubmit(candidate);
   const executable = EXECUTABLE_PROCESSABILITY.has(candidate.processability);
   const canSend = !withheld && satisfied && !busy && !blocked && executable && (!needsCheck || check?.valid === true);
   const hasPathStage = stages.some((s) => s.input === "choose_option" && s.path_stages !== undefined && PATH_STAGE_KINDS[candidate.kind] !== undefined);
@@ -543,6 +573,7 @@ export function DecisionPanel({ selection, actor = null, observation, names, bus
 
       {candidate.stadium ? <StadiumInfo stadium={candidate.stadium} actor={actor} names={names} /> : null}
       {POWER_KINDS.has(candidate.kind) ? <PowerInfo candidate={candidate} names={names} /> : null}
+      {candidate.kind === "retreat" && costNotEvaluated(stages) ? <FaceDownRetreatInfo /> : null}
       {!withheld && stages.length === 0 ? <p>この操作に入力はありません。</p> : null}
       {kindNote(candidate.kind, stages.length === 0, hasPathStage) ? <p className="small">{kindNote(candidate.kind, stages.length === 0, hasPathStage)}</p> : null}
       {ATTACK_KINDS.has(candidate.kind) ? (
@@ -595,7 +626,9 @@ export function DecisionPanel({ selection, actor = null, observation, names, bus
         <p role="status" className={`check-result ${check.valid ? "ok" : "warn"}`}>
           入力の検査（今の入力）:{" "}
           {check.valid
-            ? "エンジンの検査を通りました（受理・完走の保証ではありません。結果は送信の応答で決まります）"
+            ? costNotEvaluated(stages)
+              ? "エンジンの形の検査を通りました（参照・枚数・重なり・段の順序だけ。費用が足りるか・受理されるかは保証しません。結果は送信の応答で決まります）"
+              : "エンジンの検査を通りました（受理・完走の保証ではありません。結果は送信の応答で決まります）"
             : `通りません ${check.refusal?.code ?? ""}${check.refusal ? `（${REFUSAL_TEXT[check.refusal.code] ?? check.refusal.message}）` : ""}`}
         </p>
       ) : null}
@@ -661,13 +694,15 @@ function OptionStageInput({
   const attackStage = ATTACK_KINDS.has(kind) && stage.role === "attack";
   const declaration = ATTACK_KINDS.has(kind) && stage.role === "declaration_options";
   const inUnits = stage.total_units && units !== null ? units >= stage.total_units.min && units <= stage.total_units.max : null;
+  // 0.174.0（P6）: 費用・個数を評価していない段（total_units・units がない）。枚数だけを数え、個数・足りるかは表示しない
+  const notEvaluated = stage.cost_evaluation !== undefined;
   return (
     <fieldset className="stage">
       <legend>
         段 {stage.stage}
         {stage.role ? `: ${roleLabel(kind, stage.role)}` : ""}
         {stage.decision_kind ? ` （決定 ${stage.decision_kind}）` : ""}・選ぶ数 {stage.count.min}〜{stage.count.max}
-        {stage.total_units ? " 枚" : ""}
+        {stage.total_units || notEvaluated ? " 枚" : ""}
       </legend>
       {stage.note ? <p className="small">{stage.note}</p> : null}
       {stage.decision_kind && DECISION_TEXT[stage.decision_kind] ? <p className="small">{DECISION_TEXT[stage.decision_kind]}</p> : null}
@@ -685,6 +720,18 @@ function OptionStageInput({
           </p>
           <p className="small muted">
             個数はカードの枚数ではありません（1 枚で 2 個を出すカードがあります）。個数が範囲内でも、余る個数・読み方で変わる数などはエンジンの検査が決めます。
+          </p>
+        </div>
+      ) : null}
+      {notEvaluated ? (
+        <div className="units not-evaluated" role="status" aria-label="エネルギーの個数">
+          <p className="small">
+            必要なエネルギーの個数（費用）: <strong>評価していません</strong> ／ カードごとのエネルギーの個数: <strong>評価していません</strong>
+            <br />
+            選んでいるカード: <strong>{picked.length}</strong> 枚（カードの枚数です。エネルギーの個数ではなく、費用が足りるという意味でもありません）
+          </p>
+          <p className="small muted">
+            エンジンの cost_evaluation: <code>{stage.cost_evaluation?.status}</code>（{stage.cost_evaluation?.reason}）。足りるかどうかは、送ったあとエンジンが決めます。
           </p>
         </div>
       ) : null}
@@ -745,6 +792,7 @@ function OptionStageInput({
                   <code className="muted small">{option.id}</code>
                   {typeof option.card === "number" ? <code className="muted small">#{option.card}</code> : null}
                   {option.units !== undefined ? <span className="small">{option.units} 個</span> : null}
+                  {notEvaluated ? <span className="small muted">個数: 評価していない</span> : null}
                   {option.special ? <span className="small">特殊エネルギー</span> : null}
                   {checked && !single ? <span className="order-no">{picked.indexOf(option.id) + 1}番目</span> : null}
                   {attackStage ? <AttackDetails option={option} observation={observation} /> : null}

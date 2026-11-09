@@ -334,6 +334,13 @@ export interface PairOption {
   reasons?: string[];
 }
 
+/** 0.174.0（P6）: 段の費用の評価の状態（今は not_evaluated だけ）。omitted は、この段で省いた項目の名前。 */
+export interface CostEvaluation {
+  status: "not_evaluated";
+  reason: string;
+  omitted: string[];
+}
+
 export interface Count {
   min: number;
   max: number;
@@ -362,8 +369,13 @@ export interface OptionStage {
   /** U7-5g-1: 前の段の選び方の組で引く段（attach_energy の 3 段目）。鍵は path_stages の段の選ぶものの番号を / でつないだもの。 */
   path_stages?: number[];
   options_by_path?: Record<string, PairOption[]>;
-  /** U7-3（にげる）: トラッシュするカードの units の合計の範囲（count は枚数）。 */
+  /** U7-3（にげる）: トラッシュするカードの units の合計の範囲（count は枚数）。おもてのバトル場のポケモンのにげるの段だけ。 */
   total_units?: Count;
+  /**
+   * 0.174.0（P6。本人のうらのバトル場のポケモンのにげるのトラッシュの段だけ）: 費用・個数を評価していない印。このとき total_units と選べるものの units はない。
+   * GUI は費用・個数を計算しない（0 と見なさない・本人の real・公開カード定義から求めない）。値は契約の表の retreat_cost_evaluation と同じものだけを受ける。
+   */
+  cost_evaluation?: CostEvaluation;
   /** U7-3（ベンチに出す）: 今のベンチの数と上限（公開の値）。 */
   bench?: { count: number; limit: number };
   /** U7-3（にげる）: こんらん（受理のあとにコイン）。 */
