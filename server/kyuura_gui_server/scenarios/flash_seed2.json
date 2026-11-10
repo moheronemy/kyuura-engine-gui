@@ -233,6 +233,18 @@
     "from_state_check": "なし（再生した状態は公開の new_game・apply_command が各コマンドの終わりで不変条件を確かめた状態で、入口の確かめで拒否されない。new_game から始める固定例は ClientHub.start で from_state を使わない）",
     "other": "なし"
    }
+  },
+  {
+   "engine_commit": "8f5329d6fb9eeeb783f3d6f57128069ffc0d98a0",
+   "engine_version": "0.178.0",
+   "checked": "2026-11-10",
+   "result": "同じ（確かめの追記だけ。記録は作り直していない。0.177.0 の記録・スナップショットを流用して識別を書きかえたものではない）",
+   "method": "server/tools/scenario_views.py の --full を 0.177.0（01317a6。既存の GUI の作業場所 kyuura-engine-gui-wt-0177 の .venv を読むだけで使った）と 0.178.0（8f5329d）の環境で実行し、応答の全体を項目ごとに比べた。固定例のすべての時点で、全入口（プレイヤー0・1・観戦者・ホスト）の view と作成の知らせはすべて同じ（views_sha256 も同じ）。candidates の違いは energy_trans の時点の use_power の候補 1 つの guarantees.preconditions の文だけ（0.177.0 の文に 1 文が加わった。処理可能性・理由・入力の公開・段は同じ）で、ほかは比べた出力の外側の engine_version だけ。再生は記録の操作の列を新しい版での対戦で再生した互換性の確かめで、旧記録の正式な再実行・復元ではない",
+   "candidates_difference": {
+    "use_power_guarantee_text": "なし（use_power の候補がないか、候補の保証文が 0.178.0 で変わらない種類で、candidates は版の文字列のほかは同じ）",
+    "up5t_c1": "なし（相手のバトル場がうらで、［くさいかふん］・［えんかくさいみん］を使える時点はない）",
+    "other": "なし"
+   }
   }
  ]
 }

@@ -27,7 +27,7 @@ def test_route_returns_whole_public_table_with_schema(bridge):
     body = response.json()
     assert (body["gui_server"], body["ok"], body["kind"]) == (1, True, "card_definitions")
     assert (body["schema"], body["schema_version"]) == (CONTRACT["schema"], CONTRACT["schema_version"])
-    assert body["source"]["format"] == CONTRACT["source"]["format"] and body["source"]["engine_version"] == "0.177.0"
+    assert body["source"]["format"] == CONTRACT["source"]["format"] and body["source"]["engine_version"] == "0.178.0"
     assert len(body["source"]["sha256"]) == 64
     # 対戦で使うカードに絞らない: 同梱データの全件（形の合わない記録はない）
     assert body["omitted"] == 0 and body["card_count"] == len(body["cards"]) == len(packaged_cards()) == 1374
