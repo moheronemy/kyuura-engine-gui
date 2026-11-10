@@ -195,7 +195,8 @@ export function waitingByLabel(by: 0 | 1 | "players" | "host"): string {
 /** 処理可能性の理由（reasons）。表示だけ（知らない理由はコードのまま）。 */
 export const REASON_LABELS: Record<string, string> = {
   reactions_not_evaluated: "受理のあとの反応・決定・停止を評価していない",
-  face_down_reveal_not_evaluated: "うらのカードの本当のカードでは確かめていない（エンジンがおもてにしてから確かめる）",
+  // 0.178.0（UP-5t-C1）から、候補の確かめが相手のうらのカードの本当のカードを使った場合にも付く。おもてになるか・どうなるかを予告しない文にした（表示だけ）
+  face_down_reveal_not_evaluated: "うらのカードの本当のカードでは確かめていない（使えるか・どうなるかは送信のあとエンジンが決める）",
   stops_before_acceptance: "エンジンが受け付ける前に止める（未裁定・未対応。ゲーム上の禁止ではない）",
   checkup_not_evaluated: "番の終わりの処理を評価していない",
   state_not_supported: "この版が扱えない状態",
