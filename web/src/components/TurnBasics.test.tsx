@@ -115,20 +115,26 @@ describe("ベンチに出す", () => {
 
 describe("エネルギーをつける（2 段・options_by_choice）", () => {
   it("1 段目を選ぶまで 2 段目は選べず、選んだら組だけを組ごとの区分で示す", async () => {
-    const { onSubmit, user } = setup("attach_energy", ATTACH_STAGES);
+    const { onSubmit, user, rerenderWithCheck } = setup("attach_energy", ATTACH_STAGES);
     expect(within(stage(2)).queryAllByRole("radio")).toHaveLength(0);
     expect(within(stage(2)).getByText(/段 1 を選ぶと/)).toBeInTheDocument();
     await user.click(within(stage(1)).getByRole("radio", { name: /基本闘エネルギー/ }));
     expect(within(stage(2)).getAllByRole("radio")).toHaveLength(2);
     await user.click(within(stage(2)).getByRole("radio", { name: /ニドラン♂.*ベンチ1/ }));
+    expect(send()).toBeDisabled(); // 2 段の 1 枚でも、check の前は送れない（GUI の方針。エンジンは check なしの submit も受け付ける）
+    await user.click(send());
+    expect(onSubmit).not.toHaveBeenCalled();
+    rerenderWithCheck({ choices: choicesKey(["o1", "o4"]), response: { valid: true, refusal: null } });
     await user.click(send());
     expect(onSubmit).toHaveBeenCalledWith(["o1", "o4"]); // 段の順（エネルギー → つける先）
   });
 
   it("1 段目を変えると 2 段目の選択を捨て、組ごとの eligible・processability に従う（未裁定を禁止と書かない）", async () => {
-    const { user } = setup("attach_energy", ATTACH_STAGES);
+    const { user, rerenderWithCheck } = setup("attach_energy", ATTACH_STAGES);
     await user.click(within(stage(1)).getByRole("radio", { name: /基本闘エネルギー/ }));
     await user.click(within(stage(2)).getByRole("radio", { name: /ニドラン♂/ }));
+    expect(send()).toBeDisabled(); // check の前
+    rerenderWithCheck({ choices: choicesKey(["o1", "o4"]), response: { valid: true, refusal: null } });
     expect(send()).toBeEnabled();
     await user.click(within(stage(1)).getByRole("radio", { name: /無色2個エネルギー/ }));
     expect(within(stage(2)).getAllByRole("radio").every((r) => !(r as HTMLInputElement).checked)).toBe(true);
@@ -253,18 +259,18 @@ describe("候補と coverage（U7-3）", () => {
     expect(unsupported).toHaveTextContent("ワザを使う");
     expect(unsupported).not.toHaveTextContent("にげる");
     expect(unsupported).toHaveTextContent("ゲーム上の禁止ではありません");
-    expect(screen.getByText(/部分実装です/)).toBeInTheDocument();
+    expect(screen.getByText(/^一部です/)).toBeInTheDocument();
   });
 
   it("候補の番号・並びでなく kind で表示し、GUI が入力の画面を持たない種類は選べない", async () => {
     const onSelect = vi.fn();
     const list = [
-      cand("check_face_up_deck", "may_stop_later", { id: "c1" }), // 将来の種類（この GUI に入力の画面がない。U7-5f）
+      cand("future_kind", "may_stop_later", { id: "c1" }), // 将来の種類（この GUI に入力の画面がない。U7-5f の check_face_up_deck は表示だけの種類になった）
       cand("retreat", "supported", { id: "c9", reasons: ["reactions_not_evaluated"] }),
     ];
     render(<CandidatesPanel legal={legal(list)} selectedId={null} disabled={false} onSelect={onSelect} />);
     const items = screen.getAllByRole("listitem").filter((li) => li.closest(".candidate-list"));
-    const attack = items.find((li) => li.textContent?.includes("表向きの山札のカードを確かめる"))!;
+    const attack = items.find((li) => li.textContent?.includes("future_kind"))!;
     expect(within(attack).queryByRole("button", { name: "この操作を選ぶ" })).toBeNull();
     expect(attack).toHaveTextContent("入力の画面を持っていません");
     const retreat = items.find((li) => li.textContent?.includes("にげる"))!;

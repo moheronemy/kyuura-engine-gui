@@ -28,8 +28,8 @@ test("プリセットのデッキ: エネルギー → ジャブ（check → 送
   const area = viewer(page);
   // coverage: ワザは評価した種類（エネルギーがないので今は候補に出ない）。未対応の操作に入らない。番は partial のまま
   await expect(area.getByLabel("評価して候補に出さなかった種類")).toContainText("ワザを使う");
-  await expect(area.getByLabel("未対応の操作")).not.toContainText("ワザを使う");
-  await expect(area.getByLabel("未対応の操作")).toContainText("表向きの山札のカードを確かめる"); // U7-5 でトレーナーは評価する種類になった
+  await expect(area.getByLabel("未対応の操作")).toHaveCount(0); // v0.172（U7-5f）: 番の MAIN の not_covered_kinds は空（check_face_up_deck は表示だけの種類）
+  await expect(area.getByLabel("評価した種類")).toContainText("ワザを使う");
   await attachToActive(page);
 
   // ワザの選択: エンジンが返した名前・必要なエネルギー・印刷のダメージの表示（予測ではない）・出どころ

@@ -4,12 +4,15 @@
 //   部品ごと捨てられ、フロントエンドの状態に残らない（キャッシュで主体を混ぜない）
 // - 遅れて届いた応答: 部品が外れたあと・新しい取得が始まったあとの応答は反映しない（世代の番号で比べる）
 // - 受理のあとは古い候補・入力を捨てて取り直す。refetch_required の拒否でも取り直す
+// - 送る前の check（GUI の方針。state/checkGate.ts）: 画面のボタンだけでなく submit の入口でも、今の選択（取っ手・候補）・今の入力への check が
+//   通っていることを確かめ、通っていなければ送信の要求を出さない（自動で check・submit をしない）
 // - submit は自動で再送しない。結果の分からない通信失敗は「結果不明」と表示し、今の観測を取り直す
 // - 更新の番号はエンジンの number（受理でだけ進む）を使う。状態のハッシュは使わない
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ClientApiError, GuiServerError, NetworkError, type EndpointClient, type Handle } from "../api/transport";
 import { ProtocolError } from "../api/validate";
 import type { Candidate, CheckResponse, Choice, InputsResponse, LegalActions, Observation, SubmitResponse, ViewResponse } from "../api/types";
+import { checkGatePassed, choicesKey } from "./checkGate";
 import { summarizeSubmit } from "./outcome";
 import type { SubmitGate } from "./submitGate";
 import { summarizeUpdate, type LogEntry } from "./logSummary";
@@ -34,10 +37,7 @@ export interface Selection {
   check: CheckResult | null;
 }
 
-/** check の結果と比べる入力の鍵（並びを変えない）。 */
-export function choicesKey(choices: Choice[]): string {
-  return JSON.stringify(choices);
-}
+export { choicesKey } from "./checkGate";
 
 export interface SessionState {
   view: ViewResponse | null;
@@ -56,6 +56,8 @@ export interface EndpointSession extends SessionState {
   select(candidate: Candidate): Promise<void>;
   clearSelection(): void;
   check(choices: Choice[]): Promise<void>;
+  /** 入力が変わった: 前の check の答えを捨て、まだ届いていない check の答えも置かない（U7-5g: 上流を変えた古い 3 段目への答えを使わない）。 */
+  inputChanged(): void;
   submit(choices: Choice[]): Promise<void>;
   dismissNotice(id: number): void;
 }
@@ -94,6 +96,7 @@ export function useEndpointSession({ client, canAct, gate, onMutated, refreshSig
   const lastObservation = useRef<Observation | null>(null);
   const noticeId = useRef(0);
   const opCounter = useRef(0);
+  const checkEpoch = useRef(0); // 入力が変わるたびに進める。前の番号で始めた check の答えは置かない
 
   const current = (gen: number) => alive.current && generation.current === gen;
 
@@ -198,6 +201,7 @@ export function useEndpointSession({ client, canAct, gate, onMutated, refreshSig
       if (!legal) return;
       const handle = { game: legal.game, revision: legal.revision, candidate: candidate.id };
       const gen = generation.current;
+      checkEpoch.current += 1; // 候補・取っ手が変わる: 前の選択で始めた check の答えを置かない
       setState((s) => ({ ...s, selection: { candidate, handle, inputs: null, check: null } }));
       try {
         const inputs = await client.inputs(handle);
@@ -221,9 +225,10 @@ export function useEndpointSession({ client, canAct, gate, onMutated, refreshSig
       const sel = state.selection;
       if (!sel) return;
       const gen = generation.current;
+      const epoch = checkEpoch.current;
       try {
         const answer = await client.check(sel.handle, choices);
-        if (!current(gen)) return;
+        if (!current(gen) || epoch !== checkEpoch.current) return; // 閲覧者の切り替え・入力の変更のあとに届いた答えは使わない
         if (answer.refetch_required) {
           notify("warn", "候補が古くなりました。取り直します。");
           await refetchCandidates();
@@ -244,6 +249,11 @@ export function useEndpointSession({ client, canAct, gate, onMutated, refreshSig
     async (choices: Choice[]) => {
       const sel = state.selection;
       if (!sel) return;
+      if (!checkGatePassed(sel, choices)) {
+        // 送信の入口の門（ボタンの無効化と同じ条件）: 今の入力への check が通っていない。要求を出さない（自動で check しない）
+        notify("warn", "送信していません", ["この操作は、送る前に今の入力の検査（check）が通っている必要があります（GUI の決まり）。「入力を検査」を押してから送ってください。"]);
+        return;
+      }
       const actor = state.legal?.actor ?? null;
       const gen = generation.current;
       opCounter.current += 1;
@@ -285,8 +295,15 @@ export function useEndpointSession({ client, canAct, gate, onMutated, refreshSig
     [client, state.selection, state.legal, gate, notify, refresh, onMutated, operationPrefix, handleError],
   );
 
-  const clearSelection = useCallback(() => setState((s) => ({ ...s, selection: null })), []);
+  const clearSelection = useCallback(() => {
+    checkEpoch.current += 1;
+    setState((s) => ({ ...s, selection: null }));
+  }, []);
+  const inputChanged = useCallback(() => {
+    checkEpoch.current += 1;
+    setState((s) => (s.selection?.check ? { ...s, selection: { ...s.selection, check: null } } : s));
+  }, []);
   const dismissNotice = useCallback((id: number) => setState((s) => ({ ...s, notices: s.notices.filter((n) => n.id !== id) })), []);
 
-  return { ...state, refresh, select, clearSelection, check, submit, dismissNotice };
+  return { ...state, refresh, select, clearSelection, check, inputChanged, submit, dismissNotice };
 }

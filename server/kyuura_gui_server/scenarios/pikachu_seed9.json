@@ -43,6 +43,86 @@
     "added_power_candidates": "なし（どの時点にも use_power の候補は出ない）",
     "other": "coverage.implemented_kinds に use_power が加わった（種類の追加）。ほかの項目の違いはない"
    }
+  },
+  {
+   "engine_commit": "e26df79cc6dec913c1d15b5d8203df066334d65d",
+   "engine_version": "0.172.0",
+   "checked": "2026-11-08",
+   "result": "操作の列・到達点は同じ（来歴の追記だけ。記録し直していない）",
+   "method": "server/tools/scenario_views.py の --full を 0.171.0（74c8e1f）と 0.172.0（e26df79）の環境で実行し、応答の全体を項目ごとに比べた。各時点の全入口（プレイヤー0・1・観戦者・ホスト）の view と作成の知らせは同じ（views_sha256 も同じ）",
+   "candidates_difference": {
+    "added_u7_5fg_candidates": "なし（どの時点にも check_face_up_deck の候補・attach_energy の 3 段目・本人のうらのカードの特殊能力の候補は出ない）",
+    "other": "coverage に display_only_kinds・completeness_basis・partial_residual・residual（classes は R-2〜R-5 の固定の分類）・unverified_paths が加わり、implemented_kinds に check_face_up_deck が加わった（U7-5f・g の項目の追加）。どの時点・入口も completeness・not_covered_kinds は変わらず、display_only_kinds・partial_residual・residual.present・unverified_paths は空。候補の並び・中身の違いはない"
+   }
+  },
+  {
+   "engine_commit": "f7bf450580bf0d02573b4d032271be6b8e12d699",
+   "engine_version": "0.174.0",
+   "checked": "2026-11-09",
+   "result": "操作の列・到達点は同じ（来歴の追記だけ。記録は作り直していない。0.172.0 の記録・スナップショットを流用して識別を書き換えたものではない）",
+   "method": "server/tools/scenario_views.py の --full を 0.172.0（e26df79。既存の GUI の作業場所 kyuura-engine-gui-wt-u75fg の .venv）と 0.174.0（f7bf450）の環境で実行し、応答の全体を項目ごとに比べた。固定例の名前ごとの時点で、全入口（プレイヤー0・1・観戦者・ホスト）の view と candidates、作成の知らせがすべて同じ（views_sha256 も同じ）。再生する固定例は記録の操作の列を新しい対戦で再生した互換性の確かめで、旧記録の正式な再実行・復元ではない",
+   "candidates_difference": {
+    "added_p6_inputs": "なし（どの時点にも本人のうらのバトル場のポケモンのにげるの候補は出ない。cost_evaluation の段もない）",
+    "other": "なし（CN-1 の修正（ReplayCollector・ViewHost の failure）は ClientHub.start・from_state の固定例の応答に現れない）"
+   }
+  },
+  {
+   "engine_commit": "81e9e99f76c2a2071fbbc50f852d6c28a026d080",
+   "engine_version": "0.175.0",
+   "checked": "2026-11-09",
+   "result": "操作の列・到達点は同じ（来歴の追記だけ。記録は作り直していない。0.174.0 の記録・スナップショットを流用して識別を書き換えたものではない）",
+   "method": "server/tools/scenario_views.py の --full を 0.174.0（f7bf450。既存の GUI の作業場所 kyuura-engine-gui-wt-p6 の .venv を読むだけで使った）と 0.175.0（81e9e99）の環境で実行し、応答の全体を項目ごとに比べた。固定例の名前ごとの時点で、全入口（プレイヤー0・1・観戦者・ホスト）の view と作成の知らせはすべて同じ（views_sha256 も同じ）。candidates の違いは coverage.residual.classes の R-3 の note の文だけ（下）。再生する固定例は記録の操作の列を新しい対戦で再生した互換性の確かめで、旧記録の正式な再実行・復元ではない",
+   "candidates_difference": {
+    "added_face_down_staged_power_inputs": "なし（どの時点にも本人のうらのカードの 2〜3 段の特殊能力の入力は出ない）",
+    "other": "residual の R-3 の note の文（エンジンの説明の直し。0.175.0 から 2〜3 段の型も unverified で示す旨）。分類の値（id・kind・field・situation・status・reason・subject）は同じ。GUI は note を文字列であることだけ確かめる"
+   }
+  },
+  {
+   "engine_commit": "6f627007a2a7101be066ac6ba035e838a75e36e1",
+   "engine_version": "0.176.0",
+   "checked": "2026-11-10",
+   "result": "操作の列・到達点は同じ（確かめの追記だけ。記録は作り直していない。0.175.0 の記録・スナップショットを流用して識別を書き換えたものではない）",
+   "method": "server/tools/scenario_views.py の --full を 0.175.0（81e9e99。既存の GUI の作業場所 kyuura-engine-gui-wt-r3a の .venv を読むだけで使った）と 0.176.0（6f62700）の環境で実行し、応答の全体を項目ごとに比べた。固定例のすべての時点で、全入口（プレイヤー0・1・観戦者・ホスト）の view・candidates と作成の知らせはすべて同じ（views_sha256 も同じ。違いは比べた出力の外側の engine_version だけ）。再生する固定例は記録の操作の列を新しい版の対戦で再生した互換性の確かめで、旧記録の正式な再実行・復元ではない",
+   "candidates_difference": {
+    "pt5e_trainer_options": "なし（どの時点にも play_trainer の候補はなく、固定例のデッキに PT-5e の 6 枚はない）",
+    "guarantee_text": "なし（play_trainer の候補がないので、0.176.0 で変わった保証文は応答に出ない）",
+    "other": "なし"
+   }
+  },
+  {
+   "engine_commit": "01317a649e65461dfeffabfa0b4893840ae6d9ee",
+   "engine_version": "0.177.0",
+   "checked": "2026-11-10",
+   "result": "同じ（確かめの追記だけ。記録は作り直していない。0.176.0 の記録・スナップショットを流用して識別を書きかえたものではない）",
+   "method": "server/tools/scenario_views.py の --full を 0.176.0（6f62700。既存の GUI の作業場所 kyuura-engine-gui-wt-pt5e の .venv を読むだけで使った）と 0.177.0（01317a6）の環境で実行し、応答の全体を項目ごとに比べた。固定例のすべての時点で、全入口（プレイヤー0・1・観戦者・ホスト）の view・candidates と作成の知らせはすべて同じ（views_sha256 も同じ。違いは比べた出力の外側の engine_version だけ）。再生する固定例は 0.177.0 の ClientHub.from_state（複製の不変条件の確かめ）を通った。再生は記録の操作の列を新しい版での対戦で再生した互換性の確かめで、旧記録の正式な再実行・復元ではない",
+   "candidates_difference": {
+    "from_state_check": "なし（再生した状態は公開の new_game・apply_command が各コマンドの終わりで不変条件を確かめた状態で、入口の確かめで拒否されない。new_game から始める固定例は ClientHub.start で from_state を使わない）",
+    "other": "なし"
+   }
+  },
+  {
+   "engine_commit": "8f5329d6fb9eeeb783f3d6f57128069ffc0d98a0",
+   "engine_version": "0.178.0",
+   "checked": "2026-11-10",
+   "result": "同じ（確かめの追記だけ。記録は作り直していない。0.177.0 の記録・スナップショットを流用して識別を書きかえたものではない）",
+   "method": "server/tools/scenario_views.py の --full を 0.177.0（01317a6。既存の GUI の作業場所 kyuura-engine-gui-wt-0177 の .venv を読むだけで使った）と 0.178.0（8f5329d）の環境で実行し、応答の全体を項目ごとに比べた。固定例のすべての時点で、全入口（プレイヤー0・1・観戦者・ホスト）の view と作成の知らせはすべて同じ（views_sha256 も同じ）。candidates の違いは energy_trans の時点の use_power の候補 1 つの guarantees.preconditions の文だけ（0.177.0 の文に 1 文が加わった。処理可能性・理由・入力の公開・段は同じ）で、ほかは比べた出力の外側の engine_version だけ。再生は記録の操作の列を新しい版での対戦で再生した互換性の確かめで、旧記録の正式な再実行・復元ではない",
+   "candidates_difference": {
+    "use_power_guarantee_text": "なし（use_power の候補がないか、候補の保証文が 0.178.0 で変わらない種類で、candidates は版の文字列のほかは同じ）",
+    "up5t_c1": "なし（相手のバトル場がうらで、［くさいかふん］・［えんかくさいみん］を使える時点はない）",
+    "other": "なし"
+   }
+  },
+  {
+   "engine_commit": "4b6e3fea9212c50622dcfea7142dcc76fd14b09d",
+   "engine_version": "0.179.0",
+   "checked": "2026-11-10",
+   "result": "同じ（確かめの追記だけ。記録は作り直していない。0.178.0 の記録・スナップショットを流用して識別を書きかえたものではない）",
+   "method": "server/tools/scenario_views.py の --full を 0.178.0（8f5329d。既存の GUI の作業場所 kyuura-engine-gui-wt-0178 の .venv を読むだけで使った。direct_url のコミットを先に確かめた）と 0.179.0（4b6e3fe）の環境で実行し、応答の全体を項目ごとに比べた。固定例のすべての時点で、全入口（プレイヤー0・1・観戦者・ホスト）の view・candidates と作成の知らせはすべて同じ（views_sha256 も同じ。違いは比べた出力の外側の engine_version だけ）。再生は記録の操作の列を新しい版での対戦で再生した互換性の確かめで、旧記録の正式な再実行・復元ではない",
+   "candidates_difference": {
+    "play_trainer_guarantee_text": "なし（どの時点にも play_trainer の候補がないので、0.179.0 で 1 文が加わった play_trainer の保証文はどこにも出ない）",
+    "pt5t_c1": "なし（相手のバトル場がうらで、ねむれ!ねむれ!・トロピカルウインドを使える時点はない）",
+    "other": "なし"
+   }
   }
  ],
  "views_sha256": {

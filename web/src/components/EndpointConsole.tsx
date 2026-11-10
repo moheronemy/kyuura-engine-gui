@@ -82,6 +82,7 @@ export function EndpointConsole({ client, kind, viewer, gate, names, refreshSign
               onCheck={(choices) => void session.check(choices)}
               onSubmit={(choices) => void session.submit(choices)}
               onCancel={session.clearSelection}
+              onInputChange={session.inputChanged}
             />
           ) : null}
           {!canAct ? <p className="callout info small">観戦者は観測と公開の更新だけを受け取ります（候補・送信はありません）。</p> : null}

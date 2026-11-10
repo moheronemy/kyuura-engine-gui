@@ -51,7 +51,8 @@ export async function expectPainted(canvas: Locator) {
 export async function createScenario(page: Page, label: string) {
   await page.goto("/");
   await page.getByRole("radio", { name: "検証用の固定例から始める" }).check();
-  await page.getByRole("radio", { name: new RegExp(label) }).check();
+  // 名前の先頭で選ぶ（ほかの固定例の説明に同じカード名があっても混ざらない）
+  await page.getByRole("radio", { name: new RegExp(`^${label}`) }).check(); // 固定例の名前は正規表現の記号を含まない
   await page.getByRole("button", { name: /対戦を作成/ }).click();
   await expect(viewer(page).getByRole("region", { name: "対戦の状態" })).toBeVisible();
 }
@@ -102,12 +103,20 @@ export async function setupToFirstTurn(page: Page, opts: { decks?: [string | nul
   await expect(viewer(page).getByRole("region", { name: "対戦の状態" })).toContainText("プレイヤー0の番");
 }
 
-/** エネルギーをつける: 1 段目の最初 → バトル場。 */
+/** 送る前の check（GUI の決まり）: 送信は無効 → 入力を検査 → 通ったら送る。 */
+export async function checkAndSubmit(page: Page, outcome: RegExp) {
+  await expect(panel(page).getByRole("button", { name: "送信" })).toBeDisabled();
+  await panel(page).getByRole("button", { name: "入力を検査" }).click();
+  await expect(panel(page).locator(".check-result")).toContainText("エンジンの検査を通りました");
+  await submitAndExpect(viewer(page), outcome);
+}
+
+/** エネルギーをつける: 1 段目の最初 → バトル場（送る前に check。GUI の決まり）。 */
 export async function attachToActive(page: Page) {
   await choose(viewer(page), "エネルギーをつける");
   await stage(page, 1).getByRole("radio").first().check();
   await stage(page, 2).getByRole("radio", { name: /バトル場/ }).check();
-  await submitAndExpect(viewer(page), /受理/);
+  await checkAndSubmit(page, /受理/);
 }
 
 export async function endTurn(page: Page, seat: string) {

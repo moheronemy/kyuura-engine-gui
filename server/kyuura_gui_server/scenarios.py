@@ -20,6 +20,9 @@ U7-5 の固定例（``tools/build_u7_5_scenarios.py``。導入済みのエンジ
 
 U7-5e の固定例（``tools/build_u7_5e_scenarios.py``）: new_game から始める 2 つ（ロケット団のヒトカゲ・ダークユンゲラー）と、U7 の候補だけで送った
 合法な列を再生する 1 つ（エナジートランス。2 進化までの手数を減らすため。GUI の対象外の操作は含まない）
+
+U7-5f・g の固定例（``tools/build_u7_5fg_scenarios.py``。固定版 0.172.0）: new_game から始める 2 つ（カツラ・うらのカードの特殊能力）と、U7 の候補だけで
+送った合法な列を再生する 1 つ（フラッシュ。後攻が自分の山札の並べ替えに答える決定の直前。おもての山札の確かめと coverage の R-4）
 """
 
 from __future__ import annotations
@@ -85,6 +88,13 @@ SCENARIOS: dict[str, dict[str, str]] = {
                      "description": "ケーシィ・ダークユンゲラーのデッキで、準備から画面で進める。特殊能力［ぶっしつこうかん］（入力なし。受理のあとに手札のカードを選ぶ決定。自分の番ごとに 1 回）。"},
     "energy_trans": {"label": "エナジートランス（固定例・再生）", "file": "energy_trans_seed1.json", "point": "energy_trans",
                      "description": "プレイヤー 0 の番 5。フシギバナに進化した直後（準備・ベンチ・進化・エネルギーの合法な列を再生した）。特殊能力［エナジートランス］（3 段: 元 → エネルギー → 先）。"},
+    # U7-5f・g（tools/build_u7_5fg_scenarios.py。new_game から始める 2 つと、U7 の候補だけの列を再生する 1 つ）
+    "blaine": {"label": "カツラ（固定例・new_game）", "file": "blaine_seed1.json", "point": "start",
+               "description": "カツラのガーディ・カツラのデッキ同士で、準備から画面で進める。カツラを使ったあと、エネルギーをつける操作の任意の 3 段目（2 枚目のエネルギー）。"},
+    "face_down_power": {"label": "うらのカードの特殊能力（固定例・new_game）", "file": "face_down_power_seed8.json", "point": "start",
+                        "description": "マンキー・ロケット団のヒトカゲ・マチスの秘策のデッキで、準備から画面で進める。マチスの秘策でうらにしたカードの特殊能力（本人の画面だけ）。"},
+    "flash": {"label": "フラッシュ（固定例・再生）", "file": "flash_seed2.json", "point": "flash_decision",
+              "description": "プレイヤー 1 の番 2。フラッシュを使い、プレイヤー 0 が並べ替えに答えたあと、プレイヤー 1 が自分の山札の並べ替えに答える決定の直前（合法な列を再生した）。おもての山札のカードの確かめ（表示だけ）。"},
 }
 
 

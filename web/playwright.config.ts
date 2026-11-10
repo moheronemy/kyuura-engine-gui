@@ -12,9 +12,26 @@ const serverPort = process.env.KYUURA_E2E_SERVER_PORT ?? "8766";
 // 0.170.0・0885d66 でも同じ（プリセットの番 1 に play_trainer の候補が加わる）。U7-5 の e2e（u75.spec.ts）は検証用の固定例から始め、固定例が自分の
 // デッキと seed を持つ（server/kyuura_gui_server/scenarios.py。この seed は使わない）
 // 0.171.0・74c8e1f でも同じ。U7-5e の e2e（u75e.spec.ts）も固定例から始める
+// 0.172.0・e26df79 でも同じ。U7-5f・g の e2e（u75fg.spec.ts）も固定例から始める
+// 0.174.0・f7bf450 の P6 の e2e（p6.spec.ts）は構築盤面から始める（テスト専用の入口。下の KYUURA_E2E_SERVER_MODULE）。この seed は使わない
+// 0.175.0・81e9e99 の U-R3a の e2e（u-r3a.spec.ts）も構築盤面から始める（テスト専用の入口 tests.r3a_server）。この seed は使わない
 export const E2E_FIXED_SEED = "21";
 const webPort = process.env.KYUURA_E2E_WEB_PORT ?? "5174";
 const python = process.platform === "win32" ? join("..", "server", ".venv", "Scripts", "python.exe") : join("..", "server", ".venv", "bin", "python");
+// 0.174.0（P6）: KYUURA_E2E_SERVER_MODULE=tests.p6_server のときだけ、テスト専用の入口（server/tests/p6_server.py。名前の決まった構築盤面を固定例の表に加える）で
+// 接続層を起動する（e2e/p6.spec.ts）。0.175.0（U-R3a）: tests.r3a_server（server/tests/r3a_server.py。e2e/u-r3a.spec.ts）。
+// 0.176.0（PT-5e）: tests.pt5e_server（server/tests/pt5e_server.py。e2e/pt5e.spec.ts）。
+// 0.178.0（UP-5t-C1）: tests.up5t_server（server/tests/up5t_server.py。e2e/up5t-c1.spec.ts）。
+// 0.179.0（PT-5t-C1）: tests.pt5t_server（server/tests/pt5t_server.py。e2e/pt5t-c1.spec.ts）。
+// 既定は通常の入口。決まった名前のほかは受け付けない（任意のモジュールを起動しない）
+const TEST_SERVER_MODULES = ["tests.p6_server", "tests.r3a_server", "tests.pt5e_server", "tests.up5t_server", "tests.pt5t_server"] as const;
+const testServerModule = process.env.KYUURA_E2E_SERVER_MODULE;
+const testModule = TEST_SERVER_MODULES.find((m) => m === testServerModule);
+if (testServerModule !== undefined && testModule === undefined) throw new Error(`KYUURA_E2E_SERVER_MODULE は ${TEST_SERVER_MODULES.join("・")} だけ`);
+const serverCommand =
+  testModule !== undefined
+    ? `"${python}" -m ${testModule} --port ${serverPort}`
+    : `"${python}" -m kyuura_gui_server --port ${serverPort} --test-fixed-seed ${E2E_FIXED_SEED}`;
 
 export default defineConfig({
   testDir: "./e2e",
@@ -29,7 +46,7 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: `"${python}" -m kyuura_gui_server --port ${serverPort} --test-fixed-seed ${E2E_FIXED_SEED}`,
+      command: serverCommand,
       cwd: join("..", "server"),
       url: `http://127.0.0.1:${serverPort}/api/health`,
       reuseExistingServer: false,

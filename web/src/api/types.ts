@@ -166,6 +166,35 @@ export interface Coverage {
   withheld_input_candidates: string[];
   completeness: string;
   completeness_scope: string;
+  /** U7-5f: 表示だけの種類（評価した種類のうち、送ればエンジンに渡す前に断るもの。check_face_up_deck）。 */
+  display_only_kinds: string[];
+  /** U7-5g-3: complete の意味の説明（エンジンの文）。complete でも全部の操作の受理・完走ではない。 */
+  completeness_basis: string;
+  /** U7-5g-3: scope_kinds の種類にある、示さない経路（residual の not_offered）の分類 id（completeness を partial にする理由）。 */
+  partial_residual: string[];
+  /** U7-5g-3: 残りの分類（classes は API 全体で同じ値）と、この応答に当てはまる残り（present）。 */
+  residual: { classes: ResidualClass[]; present: ResidualPresent[] };
+  /** U7-5g-3: unverified の候補・選べるもの・組の理由ごとの候補（送るまで受理が分からない経路。completeness とは別の軸）。 */
+  unverified_paths: { reason: string; candidates: string[] }[];
+}
+
+/** U7-5g-3: 残りの分類（R-2〜R-5。R-1 は欠番）。 */
+export interface ResidualClass {
+  id: string;
+  kind: string | null;
+  field: string;
+  situation: string;
+  status: string;
+  reason: string;
+  subject: string;
+  note: string;
+}
+
+/** U7-5g-3: この応答に当てはまる残り。public は公開の状態から、actor は本人の候補から（本人の応答にだけ。candidate はその候補の id）。 */
+export interface ResidualPresent {
+  id: string;
+  scope: "public" | "actor";
+  candidate?: string;
 }
 
 export interface Candidate {
@@ -179,7 +208,7 @@ export interface Candidate {
   choices_format?: string;
   /** U7-5d（use_stadium）: 場のスタジアム（公開）。owner は出したプレイヤーで、使うのは番のプレイヤー（持ち主でなくても使える）。 */
   stadium?: StadiumRef;
-  /** U7-5e（use_power）: 特殊能力を使う本人の場のポケモン（本人のうらのカードの特殊能力は候補にならない）。 */
+  /** U7-5e（use_power）: 特殊能力を使う本人の場のポケモン。v0.172: 本人のうらのカードは face_down（カード ID なし）。 */
   pokemon?: PowerPokemon;
   /** U7-5e（use_power）: 特殊能力の位置・名前と、印刷したカード（「ばける」・写した特殊能力では場のポケモンのカードと違うことがある）。 */
   power?: PowerRef;
@@ -191,7 +220,10 @@ export interface PowerPokemon {
   card: number;
   zone: "active" | "bench";
   bench_index?: number;
-  card_id: string;
+  /** おもてのポケモンだけ（本人のうらのカードにはない）。 */
+  card_id?: string;
+  /** v0.172（U7-5g-2）: 本人のうらのカード（盤面は裏のまま）。 */
+  face_down?: true;
 }
 
 /** U7-5e: 特殊能力（index は印刷したカードの特殊能力の位置。入力の値ではない）。 */
@@ -199,7 +231,10 @@ export interface PowerRef {
   index: number;
   name_ja: string;
   card: number;
+  /** 印刷したカード。face_down のときは本人が知る本当のカード（本人の候補にだけ出る。公開の盤面の情報ではない）。 */
   card_id: string;
+  /** v0.172（U7-5g-2）: 本人のうらのカードの特殊能力（エンジンがおもてにしてから決める。unverified）。 */
+  face_down?: true;
 }
 
 /** U7-5d: 候補の場のスタジアム。 */
@@ -285,6 +320,9 @@ export interface InputOption {
   holder?: Holder;
   /** U7-5e（依存する段）: 直前の段の選ぶものの番号（この選ぶものはその選び方のあとだけに選べる）。 */
   after?: string;
+  /** U7-5f（check_face_up_deck）: 山札の持ち主と、上からの位置（0 がいちばん上）。カード ID・名前は来ない。 */
+  owner?: PlayerIndex;
+  position?: number;
   [key: string]: unknown;
 }
 
@@ -294,6 +332,13 @@ export interface PairOption {
   eligible: boolean;
   processability: string;
   reasons?: string[];
+}
+
+/** 0.174.0（P6）: 段の費用の評価の状態（今は not_evaluated だけ）。omitted は、この段で省いた項目の名前。 */
+export interface CostEvaluation {
+  status: "not_evaluated";
+  reason: string;
+  omitted: string[];
 }
 
 export interface Count {
@@ -321,8 +366,16 @@ export interface OptionStage {
   options_by_choice?: Record<string, PairOption[]>;
   /** U7-5e: 前のすべての段の番号（2 段目以降。depends_on_stage は直前の段）。 */
   upstream_stages?: number[];
-  /** U7-3（にげる）: トラッシュするカードの units の合計の範囲（count は枚数）。 */
+  /** U7-5g-1: 前の段の選び方の組で引く段（attach_energy の 3 段目）。鍵は path_stages の段の選ぶものの番号を / でつないだもの。 */
+  path_stages?: number[];
+  options_by_path?: Record<string, PairOption[]>;
+  /** U7-3（にげる）: トラッシュするカードの units の合計の範囲（count は枚数）。おもてのバトル場のポケモンのにげるの段だけ。 */
   total_units?: Count;
+  /**
+   * 0.174.0（P6。本人のうらのバトル場のポケモンのにげるのトラッシュの段だけ）: 費用・個数を評価していない印。このとき total_units と選べるものの units はない。
+   * GUI は費用・個数を計算しない（0 と見なさない・本人の real・公開カード定義から求めない）。値は契約の表の retreat_cost_evaluation と同じものだけを受ける。
+   */
+  cost_evaluation?: CostEvaluation;
   /** U7-3（ベンチに出す）: 今のベンチの数と上限（公開の値）。 */
   bench?: { count: number; limit: number };
   /** U7-3（にげる）: こんらん（受理のあとにコイン）。 */
