@@ -137,7 +137,7 @@ describe("U-R3a（画面全体）", () => {
     const panel = await openPower(user, "ほのおをもらう", [1, 0]); // コラッタ → 炎エネルギー
     expect(panel.textContent).not.toMatch(/受理されます|トラッシュされます|使えます/);
     await user.click(within(panel).getByRole("button", { name: "入力を検査" }));
-    expect(await within(panel).findByText(/特殊能力を使えること・受理・完走の保証ではありません/)).toBeInTheDocument();
+    expect(await within(panel).findByText(/特殊能力を使えるか・受理されるか・処理が完了するかは保証しません。送信のあとエンジンが判定します/)).toBeInTheDocument(); // おもてになることを予告しない（21 章）
     expect(mock.calls.some((call) => call.cardId === RC)).toBe(false);
     await user.click(within(panel).getByRole("button", { name: "送信" }));
     expect(await within(viewerArea()).findByText(/受理: 特殊能力を使う/)).toBeInTheDocument();

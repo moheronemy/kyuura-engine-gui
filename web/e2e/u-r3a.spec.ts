@@ -23,7 +23,8 @@ async function checkShape(page: Page) {
   await expect(panel(page).getByRole("button", { name: "送信" })).toBeDisabled(); // check の前は送れない
   await panel(page).getByRole("button", { name: "入力を検査" }).click();
   await expect(panel(page).locator(".check-result")).toContainText("エンジンの形の検査を通りました");
-  await expect(panel(page).locator(".check-result")).toContainText("特殊能力を使えること・受理・完走の保証ではありません");
+  await expect(panel(page).locator(".check-result")).toContainText("特殊能力を使えるか・受理されるか・処理が完了するかは保証しません。送信のあとエンジンが判定します");
+  await expect(panel(page).locator(".check-result")).not.toContainText("おもて"); // おもてになることを予告しない（docs/engine-contract.md 21 章）
 }
 
 test("構築盤面 1: コラッタ → 炎エネルギーで送る → 受理。おもてにしたヒトカゲに炎エネルギーが移り、観測のカードで画像を描く", async ({ page }) => {
