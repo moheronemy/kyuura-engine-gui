@@ -273,6 +273,12 @@ function isFaceDownPower(candidate: Candidate): boolean {
   return POWER_KINDS.has(candidate.kind) && (candidate.power?.face_down === true || candidate.pokemon?.face_down === true);
 }
 
+/** v0.180（F-1）: 本人のうらのバトル場のポケモンのワザの候補か（エンジンが返したワザの選べるものの face_down。カード名・ID・保証文では決めない）。
+ * この候補の check は形（ワザの番号が 1 つで、ほかを選ばないこと）だけで、エンジンは宣言を受け付ける前の確かめ（必要なエネルギーなど）を呼ばない。表示の文だけに使い、送れるかは決めない。 */
+function isFaceDownAttack(candidate: Candidate, stages: InputStage[]): boolean {
+  return ATTACK_KINDS.has(candidate.kind) && stages.some((s) => s.input === "choose_option" && (s.options ?? []).some((o) => o.face_down === true));
+}
+
 /** 0.174.0（P6）: にげるのトラッシュの段が費用を評価していない（cost_evaluation）か。 */
 export function costNotEvaluated(stages: InputStage[]): boolean {
   return stages.some((s) => s.input === "choose_option" && s.cost_evaluation !== undefined);
@@ -359,7 +365,8 @@ function AttackDetails({ option, observation }: { option: InputOption; observati
       </span>
       <span className="small attack-text">{option.text_ja ?? "説明なし"}</span>
       {option.face_down ? (
-        <span className="small">あなたのうらのバトル場のポケモン（本人だけが知るカード）のワザです。エンジンがおもてにしてから確かめます。</span>
+        // v0.180（F-1）: 候補の作成と入力の検査では、エンジンは必要なエネルギー・ワザを使えるかを確かめていない。おもてになるか・受理のあとを予告しない
+        <span className="small">あなたのうらのバトル場のポケモン（本人だけが知るカード）のワザです。必要なエネルギーが足りるか・ワザを使えるかは、エンジンが送信のあとに決めます（候補と入力の検査では確かめていません）。</span>
       ) : (
         <span className="small">
           出どころ: {labelOf(ROUTE_LABELS, option.route)} <code className="muted">route: {option.route}</code>
@@ -640,7 +647,9 @@ export function DecisionPanel({ selection, actor = null, observation, names, bus
               ? "エンジンの形の検査を通りました（参照・枚数・重なり・段の順序だけ。費用が足りるか・受理されるかは保証しません。結果は送信の応答で決まります）"
               : isFaceDownPower(candidate)
                 ? "エンジンの形の検査を通りました（段の数・番号・前の段との組だけ。特殊能力を使えること・受理・完走の保証ではありません。エンジンが送信のあとカードをおもてにしてから決めます）"
-                : "エンジンの検査を通りました（受理・完走の保証ではありません。結果は送信の応答で決まります）"
+                : isFaceDownAttack(candidate, stages)
+                  ? "エンジンの形の検査を通りました（ワザの番号が 1 つで、ほかを選ばないことだけ。必要なエネルギーが足りるか・ワザを使えるか・受理・完走の保証ではありません。結果は送信の応答で決まります）"
+                  : "エンジンの検査を通りました（受理・完走の保証ではありません。結果は送信の応答で決まります）"
             : `通りません ${check.refusal?.code ?? ""}${check.refusal ? `（${REFUSAL_TEXT[check.refusal.code] ?? check.refusal.message}）` : ""}`}
         </p>
       ) : null}

@@ -127,7 +127,10 @@ def test_u7_5_roles_match_engine():
     assert {L.MAY_STOP_LATER, L.UNVERIFIED} <= set(EXPECTED["processability"]) and {L.REASON_USE_CONDITION, L.REASON_STOPS} <= set(EXPECTED["reason_codes"])
     stadium = inspect.getsource(L._stadium_candidate)
     assert '"role": "energy"' in stadium and EXPECTED["stage_roles"][L.KIND_USE_STADIUM] == ["energy"]
-    assert "disclosure=DISCLOSURE_NONE" in stadium and EXPECTED["stage_roles_or_empty"] == [L.KIND_USE_STADIUM]
+    assert "disclosure=DISCLOSURE_NONE" in stadium and EXPECTED["stage_roles_or_empty"] == [L.KIND_USE_STADIUM, L.KIND_USE_ATTACK]
+    # 0.180.0 の追従で確かめた: うらのバトル場の本当のカードに印刷のワザがないと、ワザの候補は段のない not_implemented（U7-4 からの形）
+    face_down_attack = inspect.getsource(L._face_down_attack_candidate)
+    assert "REASON_NO_PRINTED_ATTACK" in face_down_attack and '_Candidate("", KIND_USE_ATTACK, public, [], disclosure=DISCLOSURE_CONFIRMED)' in face_down_attack
     assert set(EXPECTED["stage_roles"]) == {L.KIND_USE_ATTACK, *L.BOARD_KINDS, L.KIND_PLAY_TRAINER, L.KIND_USE_STADIUM}
     # retreat の discard・attach_energy の energy は U7-3 の段と同じ名前（GUI はほかの種類の段の role を止めるとき、この 2 つを除く）
     assert '"role": "discard"' in inspect.getsource(L._retreat_candidate) and '("energy", "target")' in inspect.getsource(L._attach_candidate)
