@@ -51,12 +51,13 @@ SOURCE = {
 }
 
 
-def _initial(real: str, *, hand_extra: tuple[str, ...] = (FIGHTING,), bench: tuple[tuple[str, list[str]], ...] = ()) -> GameState:
+def _initial(real: str | None, *, hand_extra: tuple[str, ...] = (FIGHTING,), bench: tuple[tuple[str, list[str]], ...] = ()) -> GameState:
     """プレイヤー 0 の番 3 の MAIN。0: バトル場は闘エネルギー 2 枚のエビワラー・ベンチは ``bench``・手札はマチスの秘策・``real``・``hand_extra``・山札は炎エネルギー 10 枚。
     1: バトル場は闘エネルギー 1 枚のエビワラー・山札は炎エネルギー 10 枚。サイドは各 6 枚（炎エネルギー）。
 
     カード・場のポケモンの番号の振り方は ``build_test_state`` と同じ順（バトル場 → ベンチ → 手札 → 山札 → サイド）。P6 は既定（ベンチなし・手札に闘エネルギー）、
-    U-R3a（``tests/r3a_boards.py``）はベンチに炎・水エネルギーのコラッタ・手札に追加なし。"""
+    U-R3a（``tests/r3a_boards.py``）はベンチに炎・水エネルギーのコラッタ・手札に追加なし。F-1 のおもての対照（``tests/f1_boards.py``）は ``real`` なし（None）・手札に追加なし
+    （手札はマチスの秘策だけ。エンジンのテストの ``test_secret_plan_v0_67.board()``）。"""
     pool = load_card_pool()
     cards: dict[int, CardInstance] = {}
     next_pokemon_id = [1]
@@ -77,7 +78,7 @@ def _initial(real: str, *, hand_extra: tuple[str, ...] = (FIGHTING,), bench: tup
         return result
 
     specs = [
-        {"active": (HITMONCHAN, [FIGHTING, FIGHTING]), "bench": list(bench), "hand": [SECRET_PLAN, real, *hand_extra]},
+        {"active": (HITMONCHAN, [FIGHTING, FIGHTING]), "bench": list(bench), "hand": [SECRET_PLAN, *(() if real is None else (real,)), *hand_extra]},
         {"active": (HITMONCHAN, [FIGHTING]), "bench": [], "hand": []},
     ]
     players = []
