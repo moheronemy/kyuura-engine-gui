@@ -72,7 +72,8 @@ const send = () => screen.getByRole("button", { name: "送信" });
 /** GUI 独自の check の文（`.check-result`）。特殊能力の常設の説明・エンジンの保証文は含めない。 */
 const checkText = () => document.querySelector(".check-result")?.textContent ?? null;
 const stage = (n: number) => screen.getAllByRole("group")[n - 1]!;
-const up5tObs = (views: typeof UP5T_VIEWS_FACE_DOWN) => V.viewResponse(views[1]).observation as ReturnType<typeof ownObservation>;
+/** UP-5t-C1 の実応答の使う人（プレイヤー 1）の観測（うら・おもての 2 つの応答で型が違うので、検証を通してから使う）。 */
+const up5tObs = (raw: unknown) => V.viewResponse(raw as never).observation as ReturnType<typeof ownObservation>;
 
 async function rcValid() {
   const s = setup(RC_POWER, RC_STAGES, 0, ownObservation());
@@ -112,7 +113,7 @@ describe("本人のうらのカードの特殊能力: check が valid のとき�
 
 describe("対照: 同じ条件でない特殊能力の check の文は変えない", () => {
   it("相手のうらのカードを読むため unverified の候補（UP-5t-C1 の実応答）: 使うポケモンはおもてなので汎用の文。本人のカードがおもてになるとは書かない", async () => {
-    const { rerenderWithCheck } = setup(UP5T_FACE_DOWN_POWER, [], 1, up5tObs(UP5T_VIEWS_FACE_DOWN));
+    const { rerenderWithCheck } = setup(UP5T_FACE_DOWN_POWER, [], 1, up5tObs(UP5T_VIEWS_FACE_DOWN[1]));
     expect(UP5T_FACE_DOWN_POWER.processability).toBe("unverified"); // unverified でも本人のうらと同じ状況として扱わない
     rerenderWithCheck({ choices: choicesKey([]), response: VALID });
     expect(checkText()).toBe(GENERIC_TEXT);
@@ -121,7 +122,7 @@ describe("対照: 同じ条件でない特殊能力の check の文は変えな�
   });
 
   it("おもての対照（UP-5t-C1 の実応答・may_stop_later）: 汎用の文のまま", async () => {
-    const { rerenderWithCheck } = setup(UP5T_FACE_UP_POWER, [], 1, up5tObs(UP5T_VIEWS_FACE_UP));
+    const { rerenderWithCheck } = setup(UP5T_FACE_UP_POWER, [], 1, up5tObs(UP5T_VIEWS_FACE_UP[1]));
     rerenderWithCheck({ choices: choicesKey([]), response: VALID });
     expect(checkText()).toBe(GENERIC_TEXT);
   });
