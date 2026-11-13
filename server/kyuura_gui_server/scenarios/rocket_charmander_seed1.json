@@ -212,6 +212,17 @@
     "pt5t_c1": "なし（相手のバトル場がうらで、ねむれ!ねむれ!・トロピカルウインドを使える時点はない）",
     "other": "なし"
    }
+  },
+  {
+   "engine_commit": "27ba35d7d325aabe4a8804c57e095e00fc3b81c6",
+   "engine_version": "0.180.0",
+   "checked": "2026-11-13",
+   "result": "同じ（確かめの追記だけ。記録は作り直していない。0.179.0 の記録・スナップショットを流用して識別を書きかえたものではない）",
+   "method": "server/tools/scenario_views.py の --full を 0.179.0（4b6e3fe。既存の GUI の作業場所 kyuura-engine-gui-wt-0179 の .venv を読むだけで使った。direct_url のコミットを先に確かめた）と 0.180.0（27ba35d）の環境で実行し、応答の全体を項目ごとに比べ、版・識別／guarantees／候補・選べるもの・順序／処理可能性・理由／入力／view・通知に分けた。固定例のすべての時点で、全入口（プレイヤー0・1・観戦者・ホスト）の view・candidates と作成の知らせはすべて同じ（views_sha256 も同じ。違いは比べた出力の外側の engine_version だけ）。再生は記録の操作の列を新しい版での対戦で再生した互換性の確かめで、旧記録の正式な再実行・復元ではない",
+   "candidates_difference": {
+    "face_down_attack_guarantee_text": "未出現（各時点・各入口の候補の行を数え、use_attack の候補は 0 行。0.180.0 で変わったうらのバトル場のワザの候補の保証文はどこにも出ない）",
+    "other": "なし"
+   }
   }
  ]
 }
