@@ -47,3 +47,40 @@ describe("validate", () => {
     expect(() => V.updatesResponse({ gui_server: 2, ok: true, kind: "updates", latest: 0, gap: false, updates: [] })).toThrow(V.ProtocolError);
   });
 });
+
+// 0.183.0 の log の応答（実応答は test/traderLog.ts。負の場合は実応答を写して値を変えた人工の応答）
+import { logResponse } from "./validate";
+import { SUDDEN_DEATH_SPECTATOR_PAGES, TRADER_LOG_S3 } from "../test/traderLog";
+
+describe("log の応答の実行時検証", () => {
+  const real = () => JSON.parse(JSON.stringify(TRADER_LOG_S3[1][0])) as Record<string, any>;
+  it("実応答（先頭からと、前のページの next から）を受ける", () => {
+    expect(logResponse(real(), null).entries).toHaveLength(5);
+    const pages = SUDDEN_DEATH_SPECTATOR_PAGES;
+    expect(logResponse(JSON.parse(JSON.stringify(pages[1])), pages[0].next).entries[0]!.log_index).toBe(256);
+    expect(logResponse(JSON.parse(JSON.stringify(pages[0])), null).entries[0]!.event.hidden).toEqual({ seed: null });
+  });
+  it.each([
+    ["知らない項目", (r: any) => (r.match_id = "m")],
+    ["位置の欠け", (r: any) => r.entries.splice(2, 1)],
+    ["位置が真偽", (r: any) => (r.entries[0].segment = true)],
+    ["complete と next・end の不一致", (r: any) => (r.complete = false)],
+    ["next が最後の出来事の次でない", (r: any) => (r.next = { segment: 0, index: 9 })],
+    ["end が next より前", (r: any) => (r.end = { segment: 0, index: 1 })],
+    ["hidden の値が文字列", (r: any) => (r.entries[0].event.hidden = { card: "x" })],
+    ["hidden の値が負", (r: any) => (r.entries[0].event.hidden = { cards: -1 })],
+    ["見せたカードの card_id が文字列でない", (r: any) => (r.entries[1].event.card_id = 30)],
+    ["見せたカードの player がない", (r: any) => delete r.entries[1].event.player],
+    ["出来事の項目が多い", (r: any) => (r.entries[0].extra = 1)],
+  ])("人工: %s は不明な応答", (_name, change) => {
+    const r = real();
+    change(r);
+    expect(() => logResponse(r, null)).toThrow(/応答の形が契約と合わない/);
+  });
+  it("人工: 257 件・送った from と合わない最初の位置は不明な応答", () => {
+    const page = JSON.parse(JSON.stringify(SUDDEN_DEATH_SPECTATOR_PAGES[0])) as Record<string, any>;
+    page.entries.push({ ...page.entries[255], log_index: 256 });
+    expect(() => logResponse(page, null)).toThrow();
+    expect(() => logResponse(JSON.parse(JSON.stringify(SUDDEN_DEATH_SPECTATOR_PAGES[1])), null)).toThrow();
+  });
+});
