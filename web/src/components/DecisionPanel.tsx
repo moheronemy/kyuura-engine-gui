@@ -176,6 +176,32 @@ function zonePlace(option: InputOption): string | null {
   return null;
 }
 
+/**
+ * 場のポケモンについているカード（エネルギーなど）の選べるものの付属先（表示だけ。送るのは id）。
+ * 公開の参照だけで対応づける: 選べるものの `card`（カードの番号）と、今の観測の両プレイヤーのバトル場・ベンチの `energy` の `card`。
+ * ちょうど 1 か所で見つかり、その card_id が選べるものと同じで、持ち主が観測で決まるときだけ「相手のバトル場：エビワラー」などを返す。
+ * 見つからない（手札・トラッシュのカード）・2 か所以上・card_id が違う・観測がないときは null（今の表示のまま。推測しない）。
+ * うらのポケモンは「裏向きのポケモン」と書き、本人のうらでも real・カード定義を読まない（カード名・ID で個体を対応づけない）。
+ */
+export function attachedTo(option: InputOption, observation: Observation | null): string | null {
+  if (!observation || typeof option.card !== "number" || typeof option.card_id !== "string") return null;
+  if (option.holder || option.zone || typeof option.pokemon === "number" || option.face_down) return null;
+  const found: { player: PlayerIndex; place: string; slot: FieldSlot; cardId: unknown }[] = [];
+  for (const p of observation.players) {
+    const slots: [string, FieldSlot | null][] = [["バトル場", p.active], ...p.bench.map((b, i): [string, FieldSlot | null] => [`ベンチ${i + 1}`, b])];
+    for (const [place, slot] of slots) {
+      const energy = slot && Array.isArray(slot.energy) ? (slot.energy as { card?: unknown; card_id?: unknown }[]) : [];
+      for (const e of energy) if (e.card === option.card) found.push({ player: p.player, place, slot: slot as FieldSlot, cardId: e.card_id });
+    }
+  }
+  if (found.length !== 1) return null;
+  const [hit] = found as [(typeof found)[number]];
+  if (hit.cardId !== option.card_id) return null;
+  const side = observation.viewer == null ? `${playerLabel(hit.player)}の` : hit.player === observation.viewer ? "自分の" : "相手の";
+  const face = "face_down" in hit.slot && hit.slot.face_down ? "裏向きのポケモン" : typeof hit.slot.name_ja === "string" ? hit.slot.name_ja : null;
+  return face === null ? null : `${side}${hit.place}：${face}`;
+}
+
 /** 選択肢の表示名（表示だけ。送るのは id）。 */
 export function optionLabel(option: InputOption, stage: OptionStage, observation: Observation | null, names: Names): string {
   const place = zonePlace(option);
@@ -189,7 +215,8 @@ export function optionLabel(option: InputOption, stage: OptionStage, observation
   if (typeof option.card_id === "string") {
     const name = names(option.card_id);
     const side = place ? sideOf(observation, option) : "";
-    return `${name ?? "（カード名表にない）"} ${option.card_id}${place ? `（${side}${place}）` : ""}`;
+    const attached = place ? null : attachedTo(option, observation);
+    return `${name ?? "（カード名表にない）"} ${option.card_id}${place ? `（${side}${place}）` : ""}${attached ? ` — ${attached}` : ""}`;
   }
   const v = option.value;
   if (stage.meaning === "pokemon" && typeof v === "number") return pokemonPlace(observation, v) ?? `ポケモン番号 ${v}`;
