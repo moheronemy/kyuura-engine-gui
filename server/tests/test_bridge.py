@@ -23,7 +23,7 @@ EXPECTED_VERSION = _json.loads((_Path(__file__).resolve().parents[2] / "contract
 def test_pinned_engine_is_used(bridge):
     health = bridge.client.get("/api/health").json()
     assert (health["engine_version"], health["client_contract"], health["client_format"], health["local_only"]) == (EXPECTED_VERSION, "kyuura-client-api", 1, True)
-    assert kyuura_engine.__version__ == EXPECTED_VERSION == "0.180.0"
+    assert kyuura_engine.__version__ == EXPECTED_VERSION == "0.181.0"
 
 
 def test_full_local_flow_until_game_over(bridge):
