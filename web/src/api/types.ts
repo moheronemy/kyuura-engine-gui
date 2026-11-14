@@ -463,6 +463,32 @@ export interface UpdateItem {
   observation: Observation | null;
 }
 
+/** 0.183.0: ログの位置（その区間のログの番号 index の出来事の前）。 */
+export interface LogPosition {
+  segment: number;
+  index: number;
+}
+
+/** 0.183.0: 可視ログの出来事 1 つ（閲覧用記録の出来事と同じ形。event はその閲覧者の写しで、見えない項目は hidden に名前だけ）。 */
+export interface LogItem {
+  segment: number;
+  log_index: number;
+  event: { kind: string; [key: string]: unknown };
+}
+
+/** 0.183.0: 読み取りの要求 log の応答（最大 256 件。続きは next から。complete は next が end と同じこと）。 */
+export interface LogResponse {
+  contract: "kyuura-client-api";
+  format: 1;
+  type: "log";
+  ok: true;
+  entries: LogItem[];
+  next: LogPosition;
+  end: LogPosition;
+  complete: boolean;
+  baseline_end: LogPosition;
+}
+
 export interface UpdatesResponse {
   gui_server: 1;
   ok: true;

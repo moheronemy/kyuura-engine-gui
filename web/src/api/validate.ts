@@ -23,6 +23,7 @@ import {
   INPUT_DISCLOSURE,
   INPUT_KINDS,
   LEGAL_ACTIONS_FORMAT,
+  LOG,
   NEXT_KINDS,
   OUTCOMES,
   PAIR_KEYS,
@@ -66,6 +67,9 @@ import type {
   InputStage,
   InputsResponse,
   LegalActions,
+  LogItem,
+  LogPosition,
+  LogResponse,
   MatchInfo,
   Observation,
   OptionStage,
@@ -906,6 +910,76 @@ export function submitResponse(value: unknown): SubmitResponse {
     if (d.message != null) str(d.message, "result.message");
   }
   return o as unknown as SubmitResponse;
+}
+
+// ---------------------------------------------------------------- 0.183.0 の読み取りの要求 log
+
+function logPosition(value: unknown, where: string): LogPosition {
+  const o = obj(value, where);
+  const keys = Object.keys(o);
+  if (keys.length !== LOG.position_keys.length || !LOG.position_keys.every((k) => keys.includes(k))) fail(`${where} の項目`);
+  for (const k of LOG.position_keys) {
+    const n = int(o[k], `${where}.${k}`);
+    if (n < 0 || n >= LOG.position_limit) fail(`${where}.${k} の範囲`);
+  }
+  return { segment: o.segment as number, index: o.index as number };
+}
+
+const before = (a: LogPosition, b: LogPosition) => a.segment < b.segment || (a.segment === b.segment && a.index < b.index);
+const samePosition = (a: LogPosition, b: LogPosition) => a.segment === b.segment && a.index === b.index;
+/** here が位置 prev に続く位置か（同じ位置か、後ろの区間の 0 番。エンジンの位置の正規化）。 */
+const follows = (prev: LogPosition, here: LogPosition) => samePosition(prev, here) || (here.segment > prev.segment && here.index === 0);
+
+/** 見せたカードの出来事（card_id を持ちうる）の、表示に使う項目の形。 */
+function identifiedEvent(event: Record<string, unknown>, where: string): void {
+  playerOrNull(event.player, `${where}.player`);
+  if (event.player === null) fail(`${where}.player`);
+  if (event.card !== undefined && event.card !== null) int(event.card, `${where}.card`);
+  if (event.card_id !== undefined) str(event.card_id, `${where}.card_id`);
+}
+
+function logItem(value: unknown, where: string): LogItem {
+  const o = obj(value, where);
+  const keys = Object.keys(o);
+  if (keys.length !== LOG.entry_keys.length || !LOG.entry_keys.every((k) => keys.includes(k))) fail(`${where} の項目`);
+  const position = logPosition({ segment: o.segment, index: o.log_index }, where);
+  const event = obj(o.event, `${where}.event`);
+  str(event.kind, `${where}.event.kind`);
+  if ("hidden" in event) {
+    // 見えない項目の名前と、並びなら枚数だけ（値は null か 0 以上の整数）。接続層もマスクの構造として確かめてから返す
+    const hidden = obj(event.hidden, `${where}.event.hidden`);
+    for (const [name, v] of Object.entries(hidden)) {
+      if (v !== null && (int(v, `${where}.event.hidden.${name}`) < 0)) fail(`${where}.event.hidden.${name}`);
+    }
+  }
+  if (LOG.identified_events.includes(event.kind as string)) identifiedEvent(event, `${where}.event`);
+  return { segment: position.segment, log_index: position.index, event: event as LogItem["event"] };
+}
+
+/** log の応答。from は送った位置（省いたなら null。エンジンは (0, 0) から読む）。位置の連続・next・complete を確かめる。 */
+export function logResponse(value: unknown, from: LogPosition | null): LogResponse {
+  const o = envelope(value, "log");
+  if (o.ok !== true) fail("log.ok");
+  const keys = Object.keys(o);
+  if (keys.length !== LOG.response_keys.length || !LOG.response_keys.every((k) => keys.includes(k))) fail("log の項目");
+  const entries = arr(o.entries, "log.entries");
+  if (entries.length > LOG.max_entries) fail("log.entries の件数");
+  const items = entries.map((e, i) => logItem(e, `log.entries[${i}]`));
+  const next = logPosition(o.next, "log.next");
+  const end = logPosition(o.end, "log.end");
+  const baseline = logPosition(o.baseline_end, "log.baseline_end");
+  const complete = bool(o.complete, "log.complete");
+  let cursor = from ?? { segment: 0, index: 0 };
+  items.forEach((item, i) => {
+    const here = { segment: item.segment, index: item.log_index };
+    if (!follows(cursor, here)) fail(`log.entries[${i}] の位置`);
+    cursor = { segment: here.segment, index: here.index + 1 };
+  });
+  if (!follows(cursor, next)) fail("log.next の位置");
+  if (complete !== samePosition(next, end)) fail("log.complete");
+  if (!complete && items.length < LOG.max_entries) fail("log.complete（256 件未満で続きがある）");
+  if (before(end, next) || before(end, baseline)) fail("log.end");
+  return { contract: CONTRACT as "kyuura-client-api", format: 1, type: "log", ok: true, entries: items, next, end, complete, baseline_end: baseline };
 }
 
 // ---------------------------------------------------------------- 接続層の封筒

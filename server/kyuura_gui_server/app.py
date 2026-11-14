@@ -10,12 +10,17 @@
 - ``POST /api/local-match``                    ローカル対戦を作る（古い対戦は捨てる）
 - ``DELETE /api/local-match``                  対戦を捨てる
 - ``POST /api/seat/{token}``                   プレイヤー・観戦者の入口へ client_api の要求をそのまま渡す
+                                               （0.183.0 の読み取りの要求 log も同じ口。応答は契約の形と hidden のマスクを確かめてから返す）
 - ``GET  /api/seat/{token}/updates?after=n``   その閲覧者の保持中の公開の更新
 - ``POST /api/host/{token}``                   ホストの入口（別の口。プレイヤーの識別子では使えない）
 - ``GET  /api/host/{token}/updates?after=n``
 
 接続層の誤りは ``{"gui_server": 1, "ok": false, "error": {"code", "message"}}``（決まった文。例外の文・traceback を返さない）。
 エンジンの応答（client_api の封筒）はそのまま返す。
+
+0.183.0 の ``log``（docs/engine-contract.md 25 章）: 接続層は log を貯めない・作らない・書きかえない。応答を ``log_contract.log_response_problems`` で
+確かめ（合わなければ ``GUI_LOG_RESPONSE_INVALID``）、``safety.masked_hidden`` で出来事の ``hidden`` をマスクの構造として確かめてから、その辞書だけを
+禁じた名前の検査から外す（ほかは今までどおり ``GUI_RESPONSE_WITHHELD``）。
 """
 
 from __future__ import annotations
@@ -34,7 +39,8 @@ from kyuura_engine.client_api import CONTRACT, FORMAT, ClientHub
 
 from . import GUI_SERVER_FORMAT, card_definitions, decks, scenarios
 from .local_match import SEAT_HOST, LocalMatch, MatchClosed, MatchRegistry
-from .safety import forbidden_paths
+from .log_contract import log_response_problems
+from .safety import forbidden_paths, masked_hidden
 
 log = logging.getLogger("kyuura_gui_server")
 MAX_BODY = 32 * 1024
@@ -50,6 +56,7 @@ ERRORS = {
     "GUI_SEAT_UNKNOWN": (404, "ローカルの入口が見つからない（対戦が新しい対戦で置き換えられたか、捨てられた）"),
     "GUI_USE_UPDATES_ROUTE": (400, "更新は updates の口で取る（接続層が閲覧者ごとに保持している）"),
     "GUI_RESPONSE_WITHHELD": (500, "応答に返してはいけない項目があったため、返さなかった"),
+    "GUI_LOG_RESPONSE_INVALID": (500, "ログの応答が契約の形と合わないため、返さなかった"),
     "GUI_HOST_FORBIDDEN": (403, "許可していない接続元"),
     "GUI_INTERNAL_ERROR": (500, "接続層で処理できなかった"),
 }
@@ -115,8 +122,8 @@ def create_app(registry: MatchRegistry | None = None, *, fixed_seed: int | None 
     def registry_of(request: Request) -> MatchRegistry:
         return request.app.state.registry
 
-    def checked(value: dict, *, sender: bool) -> JSONResponse:
-        found = forbidden_paths(value, sender=sender)
+    def checked(value: dict, *, sender: bool, masks: frozenset[int] = frozenset()) -> JSONResponse:
+        found = forbidden_paths(value, sender=sender, masks=masks)
         if found:
             log.error("ブラウザ向けの応答に禁じた項目: %s", found)
             return gui_error("GUI_RESPONSE_WITHHELD")
@@ -217,7 +224,21 @@ def create_app(registry: MatchRegistry | None = None, *, fixed_seed: int | None 
             answer = await run_in_threadpool(match.handle, seat, body)
         except MatchClosed:
             return gui_error("GUI_SEAT_UNKNOWN")
+        if isinstance(body, dict) and body.get("type") == "log":
+            return checked_log(answer, body)
         return checked(answer, sender=True)
+
+    def checked_log(answer: dict, body: dict) -> JSONResponse:
+        """0.183.0 の log の応答: 契約の形を確かめ、出来事の hidden をマスクの構造として確かめた辞書だけを禁じた名前の検査から外す。"""
+        problems = log_response_problems(answer, body)
+        hidden_problems, masks = masked_hidden(answer)
+        if problems:
+            log.error("ログの応答が契約と合わない: %s", problems[:5])
+            return gui_error("GUI_LOG_RESPONSE_INVALID")
+        if hidden_problems:
+            log.error("ログの応答のマスクの構造が正しくない: %s", hidden_problems[:5])
+            return gui_error("GUI_RESPONSE_WITHHELD")
+        return checked(answer, sender=False, masks=masks)
 
     def updates(request: Request, token: str, after: int, *, host: bool):
         resolved = registry_of(request).resolve(token)
