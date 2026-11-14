@@ -234,6 +234,18 @@
     "keep_designated_energy_removal": "未出現（各時点・各入口の候補と view に、エネルギー・リムーブ・超エネルギーリムーブのカードは出ない。0.181.0 で変わった、答えで指定しておもてにした［KEEP］の通常の拒否の経路は、固定例では確かめていない）",
     "other": "なし"
    }
+  },
+  {
+   "engine_commit": "05290415377738143c5ec2fa7f5cf092e9e0e5ae",
+   "engine_version": "0.183.0",
+   "checked": "2026-11-14",
+   "result": "同じ（確かめの追記だけ。記録は作り直していない。0.181.0 の記録・スナップショットを流用して識別を書きかえたものではない）",
+   "method": "server/tools/scenario_views.py の --full と、閲覧者（0・1・観戦者）ごとの可視ログ（エンジンの公開の関数 visible_segment_logs・visible_log を固定例の状態に当てた写し。証跡の compare/logs.py）を、0.181.0（a2b29e9。既存の GUI の作業場所 kyuura-engine-gui-wt-0181 の .venv を読むだけで使った。direct_url のコミットを先に確かめた）と 0.183.0（05290415）の環境で実行し、項目ごとに比べ、版・識別／ログ／観測・通知／候補・選べるもの・順序／処理可能性・理由／入力／guarantees に分けた。固定例のすべての時点で、全入口の view・candidates と作成の知らせ、3 閲覧者の可視ログはすべて同じ（views_sha256 も同じ。違いは比べた出力の外側の engine_version だけ）。0.183.0 の要求 log（4 つの入口。complete まで）は状態からの写しと同じで、baseline_end は末尾と同じ（固定例は再生してから包む）。再生は記録の操作の列を新しい版での対戦で再生した互換性の確かめで、旧記録の正式な再実行・復元ではない",
+   "log_difference": {
+    "trader_card_id": "未出現（固定例のログに return_to_deck・reveal_from_deck は 0 件。0.182.0 で加わった card_id は固定例では確かめていない）",
+    "game_created_hidden_seed": "game_created の hidden は {\"seed\": null}（名前だけ・値なし）で、両版で同じ",
+    "other": "なし"
+   }
   }
  ]
 }
