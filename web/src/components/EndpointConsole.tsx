@@ -1,13 +1,17 @@
 // 1 つの入口の画面（閲覧者の画面とローカルホストの画面で共通）。
 // 呼び出し側が (対戦, 入口) ごとに key を変えて作り直すので、切り替え前の閲覧者の状態はここに残らない。
+// 0.183.0: 閲覧者の画面（ホストでない）は、view を取り直すたびにエンジンの公開のログ（log）を保持した位置から読み、見せたカードの欄に出す
+// （state/visibleLog.ts・components/RevealedCards.tsx）。ログの取得は候補・入力・check・送信と関わらない
 import { useMemo } from "react";
 import type { EndpointClient } from "../api/transport";
 import type { PlayerIndex } from "../api/types";
 import type { SubmitGate } from "../state/submitGate";
 import { useEndpointSession } from "../state/useEndpointSession";
+import { useVisibleLog } from "../state/visibleLog";
 import { Board } from "./Board";
 import { DecisionPanel } from "./DecisionPanel";
 import { CandidatesPanel, LogPanel, NoticesPanel, StatusPanel } from "./Panels";
+import { RevealedCardsPanel } from "./RevealedCards";
 
 interface Props {
   client: EndpointClient;
@@ -25,6 +29,7 @@ export function EndpointConsole({ client, kind, viewer, gate, names, refreshSign
   const canAct = kind !== "spectator";
   const session = useEndpointSession({ client, canAct, gate, onMutated, refreshSignal, operationPrefix });
   const blocked = Boolean(session.protocolError || session.unavailable);
+  const visibleLog = useVisibleLog(client, session.view, kind !== "host");
   const observation = session.view?.observation ?? null;
   const selectionKey = useMemo(
     () => (session.selection ? `${session.selection.handle.revision}:${session.selection.handle.candidate}:${session.selection.inputs ? "i" : "-"}` : ""),
@@ -86,6 +91,7 @@ export function EndpointConsole({ client, kind, viewer, gate, names, refreshSign
             />
           ) : null}
           {!canAct ? <p className="callout info small">観戦者は観測と公開の更新だけを受け取ります（候補・送信はありません）。</p> : null}
+          {kind !== "host" ? <RevealedCardsPanel log={visibleLog} names={names} /> : null}
           <LogPanel log={session.log} />
         </div>
       </div>
