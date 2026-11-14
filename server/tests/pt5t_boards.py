@@ -59,10 +59,11 @@ SOURCE = {
 }
 
 
-def _initial(hand0, hand1, *, bench1=(), turn_number=5) -> GameState:
+def _initial(hand0, hand1, *, bench1=(), turn_number=5, active1=None) -> GameState:
     """エンジンのテストの ``board(hand=hand0, opponent_hand=hand1, opponent_bench=bench1, turn_number=turn_number)``。
     0: バトル場は闘エネルギー 2 枚のエビワラー・手札はマチスの秘策と ``hand0``。1: バトル場は闘エネルギー 1 枚のエビワラー・ベンチ ``bench1``・手札 ``hand1``。
-    山札は炎エネルギー 10 枚、サイドは各 6 枚（炎エネルギー）。番号の振り方は ``build_test_state`` と同じ順（進化の重なり → バトル場 → エネルギー → ベンチ → 手札 → 山札 → サイド）。"""
+    山札は炎エネルギー 10 枚、サイドは各 6 枚（炎エネルギー）。番号の振り方は ``build_test_state`` と同じ順（進化の重なり → バトル場 → エネルギー → ベンチ → 手札 → 山札 → サイド）。
+    ``active1`` は 1 のバトル場（省略で闘エネルギー 1 枚のエビワラー。エンジンのテストの ``board(opponent=...)``。0.181.0 の KEEP の構築盤面 ``tests/keep_boards.py`` が使う）。"""
     pool = load_card_pool()
     cards: dict[int, CardInstance] = {}
     next_pokemon_id = [1]
@@ -89,7 +90,7 @@ def _initial(hand0, hand1, *, bench1=(), turn_number=5) -> GameState:
 
     specs = [
         {"active": {"card": HITMONCHAN, "energy": [FIGHTING, FIGHTING]}, "bench": [], "hand": [SECRET_PLAN, *hand0]},
-        {"active": {"card": HITMONCHAN, "energy": [FIGHTING]}, "bench": list(bench1), "hand": list(hand1)},
+        {"active": active1 or {"card": HITMONCHAN, "energy": [FIGHTING]}, "bench": list(bench1), "hand": list(hand1)},
     ]
     players = []
     for owner, spec in enumerate(specs):

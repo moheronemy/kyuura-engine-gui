@@ -24,8 +24,9 @@ const python = process.platform === "win32" ? join("..", "server", ".venv", "Scr
 // 0.178.0（UP-5t-C1）: tests.up5t_server（server/tests/up5t_server.py。e2e/up5t-c1.spec.ts）。
 // 0.179.0（PT-5t-C1）: tests.pt5t_server（server/tests/pt5t_server.py。e2e/pt5t-c1.spec.ts）。
 // 0.180.0（F-1）: tests.f1_server（server/tests/f1_server.py。P6 の構築盤面の再利用と F-1 の 2 盤面。e2e/f1.spec.ts）。
+// 0.181.0（E12 の KEEP の修正）: tests.keep_server（server/tests/keep_server.py。e2e/keep.spec.ts）。
 // 既定は通常の入口。決まった名前のほかは受け付けない（任意のモジュールを起動しない）
-const TEST_SERVER_MODULES = ["tests.p6_server", "tests.r3a_server", "tests.pt5e_server", "tests.up5t_server", "tests.pt5t_server", "tests.f1_server"] as const;
+const TEST_SERVER_MODULES = ["tests.p6_server", "tests.r3a_server", "tests.pt5e_server", "tests.up5t_server", "tests.pt5t_server", "tests.f1_server", "tests.keep_server"] as const;
 const testServerModule = process.env.KYUURA_E2E_SERVER_MODULE;
 const testModule = TEST_SERVER_MODULES.find((m) => m === testServerModule);
 if (testServerModule !== undefined && testModule === undefined) throw new Error(`KYUURA_E2E_SERVER_MODULE は ${TEST_SERVER_MODULES.join("・")} だけ`);
