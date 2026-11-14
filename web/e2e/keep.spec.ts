@@ -5,6 +5,7 @@
 //   KYUURA_E2E_SERVER_MODULE=tests.keep_server npx playwright test e2e/keep.spec.ts
 // 1 件で、check valid → KP1 の拒否（本人だけ・通常の拒否・自動で再送しない）→ 選び直し → 再 check → 受理と、相手のうらの本当のカードを本人・観戦者の画面に補わないことを確かめる。
 // 選べるもの（ラジオの名前は「… o2 #25」）の o2 は相手のうらのベンチのエネルギー、o1 は相手のバトル場のエネルギー（同じ盤面の実応答で確かめた。web/src/test/keep.ts）。結果は応答と観測で確かめる。
+// 付属先の表示（「— 相手のベンチ1：裏向きのポケモン」「— 相手のバトル場：エビワラー」。公開の参照だけ）で選び、送る値が o2・o1 のままであることも確かめる。
 import { expect, test } from "@playwright/test";
 import { candidate, choose, createScenario, opponent, panel, results, selectSeat, stage, viewer } from "./helpers";
 
@@ -31,7 +32,9 @@ test("エネルギー・リムーブ: 相手のうらのエネルギーは check
   // 決定: 相手のうらのベンチのエネルギーを選ぶ → check valid → 送信は KP1 の拒否
   await choose(viewer(page), "決定に答える");
   const send = panel(page).getByRole("button", { name: "送信" });
-  await stage(page, 1).getByRole("radio", { name: /o2 ?#\d+$/ }).check();
+  const faceDown = stage(page, 1).getByRole("radio", { name: /— 相手のベンチ1：裏向きのポケモン/ }); // 付属先の表示で選ぶ（同名のエネルギー 2 枚）
+  await expect(stage(page, 1).getByRole("radio", { name: /— 相手のバトル場：エビワラー/ })).toHaveCount(1);
+  await faceDown.check();
   await panel(page).getByRole("button", { name: "入力を検査" }).click();
   await expect(panel(page).locator(".check-result")).toContainText("エンジンの検査を通りました（受理・完走の保証ではありません");
   await send.click();
@@ -45,6 +48,7 @@ test("エネルギー・リムーブ: 相手のうらのエネルギーは check
   expect(await viewer(page).textContent()).not.toMatch(SECRET);
   await page.waitForTimeout(500);
   expect(submits).toHaveLength(2); // トレーナー 1 回と答え 1 回。自動で再送しない
+  expect(JSON.parse(submits[1]!).choices).toEqual(["o2"]); // 送る値は選べるものの id のまま（表示で入力を変えない）
   for (const seat of ["プレイヤー1", "観戦者"]) {
     await selectSeat(page, seat);
     const html = await viewer(page).innerHTML();
@@ -56,13 +60,14 @@ test("エネルギー・リムーブ: 相手のうらのエネルギーは check
   await selectSeat(page, "プレイヤー0");
   await choose(viewer(page), "決定に答える");
   await expect(panel(page).locator(".check-result")).toHaveCount(0); // 前の check の答えを置かない
-  await stage(page, 1).getByRole("radio", { name: /o1 ?#\d+$/ }).check();
+  await stage(page, 1).getByRole("radio", { name: /— 相手のバトル場：エビワラー/ }).check();
   await panel(page).getByRole("button", { name: "入力を検査" }).click();
   await expect(panel(page).locator(".check-result")).toContainText("エンジンの検査を通りました");
   await send.click();
   await expect(viewer(page).locator(".console")).toHaveAttribute("aria-busy", "false");
   await expect(results(viewer(page))).toContainText(/^受理: 決定に答える/);
   expect(submits).toHaveLength(3);
+  expect(JSON.parse(submits[2]!).choices).toEqual(["o1"]);
   await expect(opponent(page).getByLabel("ベンチ1: 裏向きのポケモン")).toBeVisible(); // 選ばなかったうらはうらのまま
   expect(await viewer(page).textContent()).not.toMatch(SECRET);
 });

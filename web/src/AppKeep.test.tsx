@@ -107,6 +107,10 @@ const submits = (t: ReturnType<typeof mockTransport>) => t.calls.filter((c) => c
 const checks = (t: ReturnType<typeof mockTransport>) => t.calls.filter((c) => c.body?.type === "check");
 const sendButton = (panel: HTMLElement) => within(panel).getByRole("button", { name: "送信" });
 const radio = (panel: HTMLElement, id: string) => within(panel).getByRole("radio", { name: new RegExp(`${id}#\\d+$`) }); // ラベルは「カード ID・選べるものの id・#カードの番号」が続く
+// 付属先の表示（DecisionPanel の attachedTo。公開の参照だけ）で選ぶ。送る値は選べるものの id のまま（下の checks・submits の choices で確かめる）
+const FACE_DOWN_HOLDER = "相手のベンチ1：裏向きのポケモン";
+const FACE_UP_HOLDER = "相手のバトル場：エビワラー";
+const byHolder = (panel: HTMLElement, holder: string) => within(panel).getByRole("radio", { name: new RegExp(`— ${holder}`) });
 
 async function openAnswer(user: ReturnType<typeof userEvent.setup>) {
   await waitFor(() => expect(item(ANSWER)).toBeTruthy());
@@ -149,11 +153,11 @@ describe("0.181.0 の KP1（実応答の表示の区分）", () => {
 });
 
 describe("0.181.0 の KP1（画面全体）", () => {
-  it("check valid → KP1 の拒否（本人だけ・自動で再送しない）→ 同じ決定で選び直し → その入力の check → 受理", async () => {
+  it("check valid → KP1 の拒否（本人だけ・自動で再送しない）→ 同じ決定で選び直し → その入力の check → 受理（選べるものは付属先の表示で選ぶ）", async () => {
     const transport = server();
     const { user } = await start(transport);
     let panel = await openAnswer(user);
-    await user.click(radio(panel, KEEP_FACE_DOWN_OPTION));
+    await user.click(byHolder(panel, FACE_DOWN_HOLDER));
     expect(checks(transport)).toHaveLength(0); // check を自動で呼ばない
     await checkAndWait(user, panel);
     expect(within(panel).getByText(/エンジンの検査を通りました/)).toHaveTextContent("受理・完走の保証ではありません"); // 既存の文（受理の保証として書かない）
@@ -169,7 +173,7 @@ describe("0.181.0 の KP1（画面全体）", () => {
     // 拒否のあとも同じ決定に答えられる（取り直した候補は新しい取っ手なので、前の選択・check は使わない）
     panel = await openAnswer(user);
     expect(within(panel).queryByText(/エンジンの検査を通りました/)).toBeNull(); // 前の取っ手・入力の check の答えを置かない
-    await user.click(radio(panel, KEEP_FACE_UP_OPTION));
+    await user.click(byHolder(panel, FACE_UP_HOLDER));
     await checkAndWait(user, panel); // 選び直した入力への check
     expect(checks(transport).map((c) => c.body?.choices)).toEqual([[KEEP_FACE_DOWN_OPTION], [KEEP_FACE_UP_OPTION]]);
     await user.click(sendButton(panel));
