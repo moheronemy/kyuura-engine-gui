@@ -4,7 +4,7 @@
 // テスト専用の入口（server/tests/keep_server.py）で接続層を起動するときだけ動く:
 //   KYUURA_E2E_SERVER_MODULE=tests.keep_server npx playwright test e2e/keep.spec.ts
 // 1 件で、check valid → KP1 の拒否（本人だけ・通常の拒否・自動で再送しない）→ 選び直し → 再 check → 受理と、相手のうらの本当のカードを本人・観戦者の画面に補わないことを確かめる。
-// 選べるものの o2 は相手のうらのベンチのエネルギー、o1 は相手のバトル場のエネルギー（同じ盤面の実応答で確かめた。web/src/test/keep.ts）。結果は応答と観測で確かめる。
+// 選べるもの（ラジオの名前は「… o2 #25」）の o2 は相手のうらのベンチのエネルギー、o1 は相手のバトル場のエネルギー（同じ盤面の実応答で確かめた。web/src/test/keep.ts）。結果は応答と観測で確かめる。
 import { expect, test } from "@playwright/test";
 import { candidate, choose, createScenario, opponent, panel, results, selectSeat, stage, viewer } from "./helpers";
 
@@ -31,7 +31,7 @@ test("エネルギー・リムーブ: 相手のうらのエネルギーは check
   // 決定: 相手のうらのベンチのエネルギーを選ぶ → check valid → 送信は KP1 の拒否
   await choose(viewer(page), "決定に答える");
   const send = panel(page).getByRole("button", { name: "送信" });
-  await stage(page, 1).getByRole("radio", { name: /o2#\d+$/ }).check();
+  await stage(page, 1).getByRole("radio", { name: /o2 ?#\d+$/ }).check();
   await panel(page).getByRole("button", { name: "入力を検査" }).click();
   await expect(panel(page).locator(".check-result")).toContainText("エンジンの検査を通りました（受理・完走の保証ではありません");
   await send.click();
@@ -56,7 +56,7 @@ test("エネルギー・リムーブ: 相手のうらのエネルギーは check
   await selectSeat(page, "プレイヤー0");
   await choose(viewer(page), "決定に答える");
   await expect(panel(page).locator(".check-result")).toHaveCount(0); // 前の check の答えを置かない
-  await stage(page, 1).getByRole("radio", { name: /o1#\d+$/ }).check();
+  await stage(page, 1).getByRole("radio", { name: /o1 ?#\d+$/ }).check();
   await panel(page).getByRole("button", { name: "入力を検査" }).click();
   await expect(panel(page).locator(".check-result")).toContainText("エンジンの検査を通りました");
   await send.click();
