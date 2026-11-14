@@ -94,9 +94,11 @@ async function start(transport: ReturnType<typeof mockTransport>) {
 }
 
 function candidateItem(label: string) {
-  return within(viewerArea())
+  const item = within(viewerArea())
     .getAllByRole("listitem")
-    .find((li) => li.closest(".candidate-list") && li.querySelector(".candidate-head")?.textContent?.includes(label))!;
+    .find((li) => li.closest(".candidate-list") && li.querySelector(".candidate-head")?.textContent?.includes(label));
+  if (!item) throw new Error(`候補 ${label} がまだない`); // waitFor が待てるように投げる
+  return item;
 }
 
 async function answer(user: ReturnType<typeof userEvent.setup>, label: string, option: string) {
