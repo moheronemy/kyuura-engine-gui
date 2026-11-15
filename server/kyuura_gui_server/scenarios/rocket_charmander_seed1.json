@@ -257,6 +257,17 @@
     "reveal_identify_17_call_sites": "未出現（固定例のログに return_to_deck・reveal_from_deck は 0 件。0.184.0 で 17 の呼ぶ箇所に加わった card_id は固定例では確かめていない）",
     "other": "なし"
    }
+  },
+  {
+   "engine_commit": "fa98012f7534fe89667730ffa3e997342bde22a6",
+   "engine_version": "0.185.0",
+   "checked": "2026-11-15",
+   "result": "同じ（確かめの追記だけ。記録は作り直していない。0.184.0 の記録・スナップショットを流用して識別を書きかえたものではない）",
+   "method": "server/tools/scenario_views.py の --full と、閲覧者（0・1・観戦者）ごとの可視ログ（エンジンの公開の関数 visible_segment_logs・visible_log を固定例の状態に当てた写し。証跡の compare/logs.py）を、0.184.0（a9add68。既存の GUI の作業場所 kyuura-engine-gui-wt-0184 の .venv を読むだけで使った。direct_url のコミットを先に確かめた）と 0.185.0（fa98012）の環境で実行し、項目ごとに比べ、版・識別／ログ／観測・通知／候補・選べるもの・順序／処理可能性・理由／入力／guarantees に分けた。固定例のすべての時点で、全入口の view・candidates と作成の知らせ、3 閲覧者の可視ログはすべて同じ（views_sha256 も同じ。違いは比べた出力の外側の engine_version だけ）。0.185.0 の要求 log（4 つの入口）は状態からの写しと同じ。再生は記録の操作の列を新しい版での対戦で再生した互換性の確かめで、旧記録の正式な再実行・復元ではない",
+   "log_difference": {
+    "fossil_slot_reveal": "未出現（固定例のログに reveal_from_deck・reveal_deck_top・retrieve_trainer は 0 件。0.185.0 で化石の発掘の山札の側に加わった card_id と、スロットゲームの束の card_ids は固定例では確かめていない）",
+    "other": "なし"
+   }
   }
  ]
 }
