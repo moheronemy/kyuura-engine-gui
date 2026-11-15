@@ -34,13 +34,13 @@ scripts/   setup・dev・test の補助（Node）
 
 ## エンジンの固定
 
-- **版**: kyuura-engine 0.184.0（`kyuura_engine.__version__`・配布メタデータの版）。API の契約（`kyuura-client-api`・形式 1）とあわせて、画面が前提にする機能の範囲を表す
-- **完全なコミット**: `a9add68b1e56a574e9bc1672951d48cad2b3b814`（公開ブランチ `claude/reveal-identify-v0184` の「版を 0.184.0 にする」。配布物の検査と Git の URL からの通常のインストールを確かめたコミット。U7-3（番の基本の操作）・U7-4（ワザの宣言）・U7-5a〜d（場の 3 操作・手札のトレーナー・場のスタジアム）・U7-5e（特殊能力と 2〜3 段の宣言の入力）・U7-5f・g（おもての山札の確かめの表示・coverage の残り・カツラの 2 枚目・本人のうらのカードの特殊能力）・0.173.0 の CN-1 の正式な修正（`ReplayCollector`・`ViewHost` の `failure`）・0.174.0 の P6（本人のうらのバトル場のポケモンのにげるの入力）・0.175.0 の U-R3a（本人のうらのカードの、宣言が 2〜3 段の特殊能力の入力）・0.176.0 の PT-5e（山札から引いて試すトレーナー 6 枚の使うための条件を候補の作成で呼ぶ）・0.177.0 の構築した状態の入口の確かめ（`ClientHub.from_state`・`ActionHost.from_state` が不変条件の崩れた状態を拒否する）・0.178.0 の UP-5t-C1（特殊能力の候補の確かめが相手のうらのカードの本当のカードを使ったら、その結果を使わず `unverified`）・0.179.0 の PT-5t-C1（同じ扱いをトレーナーの候補の選べるものごとに広げた）・0.180.0 の F-1（本人のうらのバトル場のポケモンのワザの候補だけに、実装に合う保証の文を付けた。保証の文と実装の対応の修正で、ゲームの処理は変わらない）・0.181.0 の E12 の修正（答えで指定しておもてにした相手のうらのカードが［KEEP］を持つとき、エネルギー・リムーブ・超エネルギーリムーブを内部の例外でなく既存の KP1 の通常の拒否にする）・0.182.0 のポケモン交換おじさんの見せる 2 枚の識別（`return_to_deck`・`reveal_from_deck` に `card_id`）・0.183.0 の読み取りの要求 `log`（閲覧者ごとに受理の時点で固定した可視ログ）・0.184.0 の見せる 17 の呼ぶ箇所（トレーナー 8・特殊能力 3・ワザの要素 6）の `card_id` を含む。エンジンの main にはまだ入っていない。文書だけの後続のコミット（`eecef47`。以前の固定 0.183.0 は `05290415`）・検証用 AI のブランチには固定しない。文書だけの後続のコミット・エンジンの main には自動で追従しない）。導入する中身を一意に決める。版の番号だけでは中身を決められない（過去に同じ版の番号で中身の違う配布物があった）ので、固定にはコミットを使う
+- **版**: kyuura-engine 0.185.0（`kyuura_engine.__version__`・配布メタデータの版）。API の契約（`kyuura-client-api`・形式 1）とあわせて、画面が前提にする機能の範囲を表す
+- **完全なコミット**: `fa98012f7534fe89667730ffa3e997342bde22a6`（公開ブランチ `claude/fossil-slot-reveal-v0185` の「版を 0.185.0 にする」。配布物の検査と Git の URL からの通常のインストールを確かめたコミット。U7-3（番の基本の操作）・U7-4（ワザの宣言）・U7-5a〜d（場の 3 操作・手札のトレーナー・場のスタジアム）・U7-5e（特殊能力と 2〜3 段の宣言の入力）・U7-5f・g（おもての山札の確かめの表示・coverage の残り・カツラの 2 枚目・本人のうらのカードの特殊能力）・0.173.0 の CN-1 の正式な修正（`ReplayCollector`・`ViewHost` の `failure`）・0.174.0 の P6（本人のうらのバトル場のポケモンのにげるの入力）・0.175.0 の U-R3a（本人のうらのカードの、宣言が 2〜3 段の特殊能力の入力）・0.176.0 の PT-5e（山札から引いて試すトレーナー 6 枚の使うための条件を候補の作成で呼ぶ）・0.177.0 の構築した状態の入口の確かめ（`ClientHub.from_state`・`ActionHost.from_state` が不変条件の崩れた状態を拒否する）・0.178.0 の UP-5t-C1（特殊能力の候補の確かめが相手のうらのカードの本当のカードを使ったら、その結果を使わず `unverified`）・0.179.0 の PT-5t-C1（同じ扱いをトレーナーの候補の選べるものごとに広げた）・0.180.0 の F-1（本人のうらのバトル場のポケモンのワザの候補だけに、実装に合う保証の文を付けた。保証の文と実装の対応の修正で、ゲームの処理は変わらない）・0.181.0 の E12 の修正（答えで指定しておもてにした相手のうらのカードが［KEEP］を持つとき、エネルギー・リムーブ・超エネルギーリムーブを内部の例外でなく既存の KP1 の通常の拒否にする）・0.182.0 のポケモン交換おじさんの見せる 2 枚の識別（`return_to_deck`・`reveal_from_deck` に `card_id`）・0.183.0 の読み取りの要求 `log`（閲覧者ごとに受理の時点で固定した可視ログ）・0.184.0 の見せる 17 の呼ぶ箇所（トレーナー 8・特殊能力 3・ワザの要素 6）の `card_id`・0.185.0 の化石の発掘の山札の側の `card_id` とスロットゲームの束（`reveal_deck_top`）の `card_ids` を含む。エンジンの main にはまだ入っていない。文書だけの後続のコミット（`ad4514a`。以前の固定 0.184.0 は `a9add68`）・検証用 AI のブランチには固定しない。文書だけの後続のコミット・エンジンの main には自動で追従しない）。導入する中身を一意に決める。版の番号だけでは中身を決められない（過去に同じ版の番号で中身の違う配布物があった）ので、固定にはコミットを使う
 - 依存の定義: [`server/requirements.txt`](server/requirements.txt)（Git の URL からの通常のインストール）
   ```
-  kyuura-engine @ git+https://github.com/moheronemy/kyuura-engine@a9add68b1e56a574e9bc1672951d48cad2b3b814
+  kyuura-engine @ git+https://github.com/moheronemy/kyuura-engine@fa98012f7534fe89667730ffa3e997342bde22a6
   ```
-- 導入元の確かめ: 接続層のテスト（`server/tests/test_contract.py`）と `python -m kyuura_gui_server.engine_source` が、配布メタデータの `direct_url.json`（`vcs_info.vcs` が git・`vcs_info.commit_id` が上のコミット・編集可能でない）と版 0.184.0（配布メタデータとパッケージの両方）、読み込んだ `kyuura_engine` が site-packages の導入物であることを確かめる。確認できなければ失敗する
+- 導入元の確かめ: 接続層のテスト（`server/tests/test_contract.py`）と `python -m kyuura_gui_server.engine_source` が、配布メタデータの `direct_url.json`（`vcs_info.vcs` が git・`vcs_info.commit_id` が上のコミット・編集可能でない）と版 0.185.0（配布メタデータとパッケージの両方）、読み込んだ `kyuura_engine` が site-packages の導入物であることを確かめる。確認できなければ失敗する
 - 固定先は自動で変えない（エンジンの main の先頭・文書だけが違う後続のコミット・別のマージコミットへ追従しない）。変えるときは「エンジンの更新の手順」に従う
 
 ### 通常の利用と開発用の編集可能インストール
@@ -50,7 +50,7 @@ scripts/   setup・dev・test の補助（Node）
 
 ### 既存の環境からの更新
 
-0.183.0（`05290415`）・0.181.0（`a2b29e9`）・0.180.0（`27ba35d`）・0.179.0（`4b6e3fe`）・0.178.0（`8f5329d`）・0.177.0（`01317a6`）・0.176.0（`6f62700`）・0.175.0（`81e9e99`）・0.174.0（`f7bf450`）・0.172.0（`e26df79`）・0.171.0（`74c8e1f`）・0.170.0（`0885d66`）・0.166.0（`9506d63`）・0.165.0（`b4e62d9`）・0.164.0（`ffcc5ca`）の通常インストールで作った `server/.venv` は、`npm run setup` をそのまま実行し直すと 0.184.0（`a9add68`）に入れ替わる（Git の URL のコミットが変わるため。0.184.0 の導入は新しい作業場所の新しい `.venv` で確かめた。既存の 0.183.0 の `.venv` からの入れ替えそのものは確かめていない。0.179.0 の追従のときにこの文の入れ替わり先を 0.178.0 のままにしていたのを、0.180.0 の追従で直した）。最後に下の `engine_source` で確かめる。renderer（`af88231`）は変わらないので、web の依存はそのまま（`npm run setup` が `npm install` を実行し直すだけ）。起動は今までどおり `npm run dev`。
+0.184.0（`a9add68`）・0.183.0（`05290415`）・0.181.0（`a2b29e9`）・0.180.0（`27ba35d`）・0.179.0（`4b6e3fe`）・0.178.0（`8f5329d`）・0.177.0（`01317a6`）・0.176.0（`6f62700`）・0.175.0（`81e9e99`）・0.174.0（`f7bf450`）・0.172.0（`e26df79`）・0.171.0（`74c8e1f`）・0.170.0（`0885d66`）・0.166.0（`9506d63`）・0.165.0（`b4e62d9`）・0.164.0（`ffcc5ca`）の通常インストールで作った `server/.venv` は、`npm run setup` をそのまま実行し直すと 0.185.0（`fa98012`）に入れ替わる（Git の URL のコミットが変わるため。0.185.0 の導入は新しい作業場所の新しい `.venv` で確かめた。既存の 0.184.0 の `.venv` からの入れ替えそのものは確かめていない。git の `core.autocrlf` が true の環境では、導入物のファイルが CRLF になることがある（内容と実装の識別は同じ。docs/engine-contract.md 27.5）。0.179.0 の追従のときにこの文の入れ替わり先を 0.178.0 のままにしていたのを、0.180.0 の追従で直した）。最後に下の `engine_source` で確かめる。renderer（`af88231`）は変わらないので、web の依存はそのまま（`npm run setup` が `npm install` を実行し直すだけ）。起動は今までどおり `npm run dev`。
 
 ### 古い仮想環境からの切り替え
 
@@ -64,12 +64,12 @@ scripts/   setup・dev・test の補助（Node）
 ```sh
 # Windows は server\.venv\Scripts\python
 cd server && .venv/bin/python -m kyuura_gui_server.engine_source
-# → {"install": "git", "commit_id": "a9add68b1e56a574e9bc1672951d48cad2b3b814", "version": "0.184.0", "module": ".../site-packages/kyuura_engine/__init__.py"}
+# → {"install": "git", "commit_id": "fa98012f7534fe89667730ffa3e997342bde22a6", "version": "0.185.0", "module": ".../site-packages/kyuura_engine/__init__.py"}
 ```
 
 ## カード画像の renderer の固定
 
-- **kyuura-card-renderer** の完全なコミット: `af882310059c7f33bc371d31b859b09f5428f6d1`（エンジンを 0.165.0・0.166.0・0.170.0・0.171.0・0.172.0・0.174.0・0.175.0・0.176.0・0.177.0・0.178.0・0.179.0・0.180.0・0.181.0・0.183.0・0.184.0 に更新したときも変えていない。同じ Canvas では最後に始めた要求だけが描く、非同期の描画の修正を含む）。renderer の main の先頭へは自動で追従しない
+- **kyuura-card-renderer** の完全なコミット: `af882310059c7f33bc371d31b859b09f5428f6d1`（エンジンを 0.165.0・0.166.0・0.170.0・0.171.0・0.172.0・0.174.0・0.175.0・0.176.0・0.177.0・0.178.0・0.179.0・0.180.0・0.181.0・0.183.0・0.184.0・0.185.0 に更新したときも変えていない。同じ Canvas では最後に始めた要求だけが描く、非同期の描画の修正を含む）。renderer の main の先頭へは自動で追従しない
 - 依存の定義: `web/package.json` の `"kyuura-card-renderer": "github:moheronemy/kyuura-card-renderer#af882310059c7f33bc371d31b859b09f5428f6d1"`。`web/package-lock.json` も同じコミット。導入のときに renderer の `prepare`（`npm run build:lib`。tsc で `dist-lib/` を作り、素材画像を写す）が動く。npm の `allowScripts` で、このコミットの `prepare` だけを許可している
 - 固定の記録: [`contract/kyuura-gui-card-definitions-v2.json`](contract/kyuura-gui-card-definitions-v2.json) の `renderer.commit`（接続層のテストが `package.json`・lockfile と照らす）
 - 使う公開 API（パッケージの入口の export だけ。`src/` の中を直接 import しない）: `fromEngineCard`・`renderToCanvas`・`cancelRenderToCanvas`・型 `EngineCardRecord`・`RenderableCard` など（`web/src/cards/renderer.ts`）
@@ -446,9 +446,23 @@ new_game からの対戦では確かめていません。**構築盤面**（`ser
   - 特殊能力: ［おくりもの］（`power`。使った人と相手がそれぞれ見せる）
   - ワザの要素: くらげのむれ（`effect`）
 - 残りの 14 の呼ぶ箇所と、同じ処理を通るほかのカードは実行していません（エンジンの回帰テストと共有の処理による裏づけ）
-- 対象外: 化石の発掘・スロットゲームの束全体（`reveal_deck_top`）の公開・uid の方式全体
+- 対象外: 化石の発掘・スロットゲームの束全体（`reveal_deck_top`）の公開・uid の方式全体（→ 化石の発掘と束は 0.185.0 で表示した。下の節）
 - `card_id` のない旧い出来事・旧記録は、今までどおり「見せたカード（識別の情報なし）」です。旧記録は 0.184.0 で再実行・復元していません
 - ブラウザ: ［おくりもの］の相手・観戦者の欄（`web/e2e/reveal-identify.spec.ts`）と、パソコン通信の対照（`web/e2e/trader-log.spec.ts`）
+
+### 0.185.0: 化石の発掘とスロットゲームの束（v0.185）
+
+エンジン 0.185.0（エンジンの `docs/fossil-slot-reveal-v0.185.md`）で、化石の発掘の山札の側の `reveal_from_deck` に見せたカード自身の `card_id` が、スロットゲームの束の出来事 `reveal_deck_top` に `card_ids`（`cards` と同じ長さ・同じ順）が加わりました（[docs/engine-contract.md](docs/engine-contract.md) 27 章）。
+
+- 化石の発掘: 上の見せたカードの欄の「山札から見せて手札に加えた」の行のまま出ます（カード別の分岐はない）
+- スロットゲームの束: 欄に「プレイヤーN が山札の上からN 枚を見せた: 名前 ID・…」の行を加えました
+  - 枚数は出来事の `cards` の長さ。並びは `cards`・`card_ids` の添字の順で、同じ名前・同じ ID も枚数分出します
+  - 並びは見せた時点の山札の上からの順で、その後の山札の順・相手の今の山札を表しません
+  - `card_ids` のない旧形式は「見せたカード（識別の情報なし）」。カード名表にない ID は、そのカードだけ「カード定義にないカード（ID）」
+- 実行時検証: `card_ids` があるなら、文字列の並びで `cards` と同じ長さでなければ、ログの誤りとして止めます（一部だけ・`null`・型違いを旧形式として扱わない）
+- 本人だけが見る束（マスターボールの `look_at_deck_top` など）は欄の対象にしません。相手・観戦者には `hidden` の枚数だけが届きます
+- 確かめた範囲: 化石の発掘（山札の側）・スロットゲームの束 2 盤面（同じ ID 2 枚と 1 枚・3 枚）・本人だけの束の対照（マスターボール）を、構築盤面の実応答・接続層・単体・画面全体で確かめました。ブラウザはスロットゲームの束（同じ ID 3 枚）と、本人だけの束の対照の 2 件（`web/e2e/fossil-slot.spec.ts`）。化石の発掘はブラウザでは確かめていません
+- 未確認: new_game からの対戦、旧記録の再実行・復元、化石の発掘・スロットゲームのほかの経路（タワーの下・TOP1 など。エンジンの回帰テストの裏づけ）
 
 ## カード画像
 
@@ -558,7 +572,7 @@ npm run e2e         # 実エンジンへのブラウザの接続確認（Playwri
 3. エンジンの文書（`docs/client-api-*.md`・`docs/legal-actions-*.md`）と `kyuura_engine/client_api.py`・`legal_actions.py` の差分を読む。契約の識別・形式の版（`kyuura-client-api`・1、`kyuura_legal_actions_format` 1、`kyuura_diagnostic_schema` 1）が変わったら、`web/src/api/types.ts`・`validate.ts` を直す（知らない版は画面が「不明な応答」として止まる）
 4. 区分の値（処理可能性・状況・候補の種類・拒否のコードなど）が変わったら `contract/kyuura-client-api-v1.json` を直す。`server/tests/test_contract.py` がエンジンの定数と照らす
 5. 検証用の固定例の互換性を確かめる: 古いエンジンの環境と新しいエンジンの環境で `server/tools/scenario_views.py` を実行し、各時点の全入口の観測（`views`）を比べる。同じなら固定例の JSON の `compatibility` に確かめた結果を追記する（記録を作ったエンジン `engine_commit` は書き換えない）。違うときだけ、新しい固定コミットを checkout したエンジンの作業ツリーで `server/tools/build_scenarios.py --engine <作業ツリー>` で作り直し、`views_sha256` を入れ直して差分を確かめる。U7-5 の固定例も同じく比べ、違うときだけ `server/tools/build_u7_5_scenarios.py`・`server/tools/build_u7_5e_scenarios.py`・`server/tools/build_u7_5fg_scenarios.py`（導入済みのエンジンだけで作る）で作り直す。e2e の seed（21）で同じ操作に届くかも `server/tests/test_turn_basics.py`・`server/tests/test_attacks.py` で確かめる（届かなければ seed を探し直し、`conftest.py` と `playwright.config.ts` をそろえる）
-   P6 の構築盤面（`server/tests/p6_boards.py`）は、新しい固定コミットのエンジンの tests（`tests/test_legal_actions_p6_face_down_retreat_v0_174.py` の `face_down_active`。導入したパッケージには入っていないので、エンジンの作業ツリーから読むだけ）と状態の書き出し・乱数の指紋が同じかを確かめる（docs/engine-contract.md 14.6）。U-R3a の構築盤面（`server/tests/r3a_boards.py`）も、`tests/test_legal_actions_u_r3a_v0_175.py` の `placed` と同じく確かめる（15.6）。PT-5e の構築盤面（`server/tests/pt5e_boards.py`）も、`tests/test_legal_actions_pt5e_v0_176.py` の `table` と同じく確かめる（16.6）。UP-5t-C1 の構築盤面（`server/tests/up5t_boards.py`）も、`tests/test_legal_actions_up5t_c1_v0_178.py` の `opponent_face_down`・`opponent_face_up` と同じく確かめる（18.6）。PT-5t-C1 の構築盤面（`server/tests/pt5t_boards.py`）も、`tests/test_legal_actions_pt5t_c1_v0_179.py` の `opponent_face_down`（`extra_hand=(BILL,)`）・`opponent_face_up`・`own_face_down`・`with_allergy_pollen` と同じく確かめる（19.6）。F-1 の構築盤面（`server/tests/f1_boards.py`。P6 の 3 つの再利用と 2 つ）も、`tests/test_legal_actions_p6_face_down_retreat_v0_174.py` の `face_down_active(FIRE)`・`tests/test_secret_plan_v0_67.py` の `board()` と同じく確かめる（20.6）。交換おじさん・パソコン通信の構築盤面（`server/tests/trader_boards.py`）も、`tests/test_pokemon_trader_v0_24.py`・`tests/test_computer_search_v0_22.py` の `board()` と同じく確かめる（25.6）。0.184.0 の代表の構築盤面（`server/tests/reveal_boards.py`）も、`tests/test_reveal_identify_v0_184.py` の代表 3 事例の盤面と同じく確かめる（26.4）。違えば写し直す。0.177.0 からは、構築盤面と再生する固定例が `ClientHub.from_state`・`ActionHost.from_state` の入口の確かめで拒否されないことも確かめる（17.6）。拒否されたら、盤面の不整合か確かめの条件の問題かを個別に調べ、確かめを避けるために内部の組み立て（`HostedGame` など）へ移さない。製品のコードからエンジンの tests を読まない
+   P6 の構築盤面（`server/tests/p6_boards.py`）は、新しい固定コミットのエンジンの tests（`tests/test_legal_actions_p6_face_down_retreat_v0_174.py` の `face_down_active`。導入したパッケージには入っていないので、エンジンの作業ツリーから読むだけ）と状態の書き出し・乱数の指紋が同じかを確かめる（docs/engine-contract.md 14.6）。U-R3a の構築盤面（`server/tests/r3a_boards.py`）も、`tests/test_legal_actions_u_r3a_v0_175.py` の `placed` と同じく確かめる（15.6）。PT-5e の構築盤面（`server/tests/pt5e_boards.py`）も、`tests/test_legal_actions_pt5e_v0_176.py` の `table` と同じく確かめる（16.6）。UP-5t-C1 の構築盤面（`server/tests/up5t_boards.py`）も、`tests/test_legal_actions_up5t_c1_v0_178.py` の `opponent_face_down`・`opponent_face_up` と同じく確かめる（18.6）。PT-5t-C1 の構築盤面（`server/tests/pt5t_boards.py`）も、`tests/test_legal_actions_pt5t_c1_v0_179.py` の `opponent_face_down`（`extra_hand=(BILL,)`）・`opponent_face_up`・`own_face_down`・`with_allergy_pollen` と同じく確かめる（19.6）。F-1 の構築盤面（`server/tests/f1_boards.py`。P6 の 3 つの再利用と 2 つ）も、`tests/test_legal_actions_p6_face_down_retreat_v0_174.py` の `face_down_active(FIRE)`・`tests/test_secret_plan_v0_67.py` の `board()` と同じく確かめる（20.6）。交換おじさん・パソコン通信の構築盤面（`server/tests/trader_boards.py`）も、`tests/test_pokemon_trader_v0_24.py`・`tests/test_computer_search_v0_22.py` の `board()` と同じく確かめる（25.6）。0.184.0 の代表の構築盤面（`server/tests/reveal_boards.py`）も、`tests/test_reveal_identify_v0_184.py` の代表 3 事例の盤面と同じく確かめる（26.4）。0.185.0 の代表（同じファイルの `reveal_fossil`・`reveal_slot_pair`・`reveal_slot_triple`）も、`tests/test_fossil_slot_reveal_v0_185.py` の `fossil_board`・`tests/test_neo_trainer_components_v0_80.py` の `board` と同じく確かめる（27.5）。違えば写し直す。0.177.0 からは、構築盤面と再生する固定例が `ClientHub.from_state`・`ActionHost.from_state` の入口の確かめで拒否されないことも確かめる（17.6）。拒否されたら、盤面の不整合か確かめの条件の問題かを個別に調べ、確かめを避けるために内部の組み立て（`HostedGame` など）へ移さない。製品のコードからエンジンの tests を読まない
 6. `npm test`・`npm run typecheck`・`npm run e2e` を通す
 7. 新しい操作の種類（U7-5 など）が加わったら、[docs/engine-contract.md](docs/engine-contract.md) の「次の操作の種類への対応」に従う。画面を作るまでは `gui_operable_kinds` に入れない（候補は表示だけ）
 8. カード画像: 同梱データの形式（`kyuura_cards.json` の `format`）・記録の項目が変わっていないかを確かめる。`python -m kyuura_gui_server.card_definitions`（`server` で実行）で `omitted` が 0 であること、`server/tests/test_card_definitions.py` が通ることを確かめる。形式が変わったら `contract/kyuura-gui-card-definitions-v2.json` と写す項目（`card_definitions.py`・`web/src/cards/definitions.ts`）を直し、`schema_version` を上げる
@@ -573,7 +587,7 @@ npm run e2e         # 実エンジンへのブラウザの接続確認（Playwri
 ## 制限
 
 - 単一の対戦だけ。永続化・オンラインの再接続・認証・通信の暗号化・重複の排除はない
-- エンジンの公開のログ（0.183.0 の `log`）は、見せたカードの欄（`return_to_deck`・`reveal_from_deck` の 2 種類の出来事。0.184.0 から交換おじさんのほかの 17 の呼ぶ箇所も `card_id` を持つ）だけに使う。ログ欄は閲覧者に届いた公開の更新の要約（段階・番・入力待ち・公開の枚数・停止・結果）で、完全な対戦ログではない（ワザ・トレーナー・スタジアム・特殊能力のコインの結果・ダメージの計算の経過・おもてにしたカードの判定の経過などは載らない。受理のあとの状態は観測で表示する）
+- エンジンの公開のログ（0.183.0 の `log`）は、見せたカードの欄（`return_to_deck`・`reveal_from_deck` と、0.185.0 からスロットゲームの束 `reveal_deck_top` の 3 種類の出来事。0.184.0 から交換おじさんのほかの 17 の呼ぶ箇所、0.185.0 から化石の発掘の山札の側も `card_id` を持つ）だけに使う。ログ欄は閲覧者に届いた公開の更新の要約（段階・番・入力待ち・公開の枚数・停止・結果）で、完全な対戦ログではない（ワザ・トレーナー・スタジアム・特殊能力のコインの結果・ダメージの計算の経過・おもてにしたカードの判定の経過などは載らない。受理のあとの状態は観測で表示する）
 - カード画像は非公式のカード風の画像（イラスト枠は白・エネルギーは仮の表示・ベイビィはたねの枠）。実際のカードの画像ではない。描けないときは文字の表示。カード名はエンジンの同梱のカードデータの表
 - 本番ビルドは Web フォント（Noto Sans JP の文字の範囲ごとのファイル）と素材画像を含むため大きい（約 21 MB・548 ファイル。フォントは使う文字の範囲だけを読み込む）
 - デッキの検査はエンジンの `deck_problems` の結果をそのまま表示する。広いデッキビルダーはない
