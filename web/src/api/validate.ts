@@ -930,12 +930,40 @@ const samePosition = (a: LogPosition, b: LogPosition) => a.segment === b.segment
 /** here が位置 prev に続く位置か（同じ位置か、後ろの区間の 0 番。エンジンの位置の正規化）。 */
 const follows = (prev: LogPosition, here: LogPosition) => samePosition(prev, here) || (here.segment > prev.segment && here.index === 0);
 
-/** 見せたカードの出来事（card_id を持ちうる）の、表示に使う項目の形。 */
+/** 見せたカードの出来事（card_id・card_ids を持ちうる）の、表示に使う項目の形。 */
 function identifiedEvent(event: Record<string, unknown>, where: string): void {
   playerOrNull(event.player, `${where}.player`);
   if (event.player === null) fail(`${where}.player`);
+  if (event.kind === "reveal_deck_top") {
+    deckTopBundle(event, where);
+    return;
+  }
   if (event.card !== undefined && event.card !== null) int(event.card, `${where}.card`);
   if (event.card_id !== undefined) str(event.card_id, `${where}.card_id`);
+}
+
+/**
+ * 0.185.0: スロットゲームの束 reveal_deck_top（公開）。cards は既存のカード参照（整数か null）の並びで、整数は重ならない（別の個体）。
+ * card_ids（0.185.0 から）があるなら、cards と同じ長さの文字列の並びで、card_ids[i] は cards[i] のカードの ID（同じ ID の繰り返しはそのまま）。
+ * card_ids がある束の cards に null は受け付けない（識別のある位置にカードの参照がない）。null・型違い・一部だけ・長さ違いは拒否し、旧形式（card_ids なし）として扱わない。
+ * 枚数は cards の長さ（count の項目・エンジンの TOP1 の処理は使わない）。
+ */
+function deckTopBundle(event: Record<string, unknown>, where: string): void {
+  const cards = arr(event.cards, `${where}.cards`);
+  const seen = new Set<number>();
+  cards.forEach((c, i) => {
+    if (c === null) return;
+    const uid = int(c, `${where}.cards[${i}]`);
+    if (seen.has(uid)) fail(`${where}.cards[${i}]（同じカードの参照が重なる）`);
+    seen.add(uid);
+  });
+  if (!("card_ids" in event)) return; // 0.184.0 以前の旧形式（識別の情報なし）
+  const ids = arr(event.card_ids, `${where}.card_ids`);
+  if (ids.length !== cards.length) fail(`${where}.card_ids（cards と長さが違う）`);
+  ids.forEach((id, i) => {
+    str(id, `${where}.card_ids[${i}]`);
+    if (cards[i] === null) fail(`${where}.cards[${i}]（card_ids のある束にカードの参照がない）`);
+  });
 }
 
 function logItem(value: unknown, where: string): LogItem {
