@@ -151,9 +151,10 @@ describe("規約による使用不可と、CURRENT の未裁定の違い（実�
     const { transport } = server(B(T.TR3_GUST));
     const user = await start(transport, "CS-KYUURA-PLAY-TR3@1");
     const item = await waitFor(() => candidateItem("手札のトレーナーを使う"));
-    expect(item.textContent).toMatch(/未実装/); // 一覧はエンジンの区分のまま（選べるものを受け取っていない）
-    expect(item.textContent).not.toMatch(/規約により使用不可/);
-    expect(item.textContent).toMatch(/選べるものごとの理由を確かめられます/);
+    // 一覧は選べるものを受け取っていないので、規約とも未実装とも断定しない中立の表示（API の値は not_implemented・no_eligible_card のまま）
+    expect(item.querySelector(".badges")!.textContent).toMatch(/実行できる選択肢なし/);
+    expect(item.textContent).toMatch(/入力画面で理由を確認できます/);
+    expect(item.textContent).not.toMatch(/規約により使用不可|未実装/);
     const p = await openTrainer(user);
     const row = optionItem(p, "突風");
     expect(within(row).getByRole("radio")).toBeDisabled();

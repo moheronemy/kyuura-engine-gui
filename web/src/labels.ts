@@ -172,6 +172,15 @@ export const CONVENTION_EXCLUDED = {
     "規約により使用不可: 選べるカードがすべて、この対戦の規約集合のプレイ用の取り決めで除外されています（エンジンの区分は not_implemented・no_eligible_card ですが、受け取った選べるものはすべて規約による除外です。未実装ではありません）。",
 };
 
+/**
+ * 候補の一覧で、processability が not_implemented かつ reasons に no_eligible_card の候補の表示（表示だけ。API の値は変えない）。
+ * 一覧は選べるものを持たないので、規約による除外かそれ以外かを断定しない。理由は入力の画面で示す（CONVENTION_EXCLUDED は入力の画面だけ）。
+ */
+export const NO_EXECUTABLE_OPTION = {
+  label: "実行できる選択肢なし",
+  hint: "入力画面で理由を確認できます",
+};
+
 export const PLACEMENT_TEXT: Record<string, string> = {
   eligible: "",
   excluded_by_convention: "この規約集合では、最初のポケモンとして出せません（規約による扱い）。",
