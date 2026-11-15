@@ -155,7 +155,9 @@ describe("U-R3a の入力と表示", () => {
     rerenderWithCheck({ choices: choicesKey(["o1", "o3"]), response: VALID });
     expect(send()).toBeEnabled();
     const result = screen.getByText(/エンジンの形の検査を通りました/);
-    expect(result).toHaveTextContent("段の数・番号・前の段との組だけ。特殊能力を使えること・受理・完走の保証ではありません");
+    // 0.180.0 の追従のあと（docs/engine-contract.md 21 章）: おもてになることを予告しない（拒否ならうらのまま）
+    expect(result).toHaveTextContent("段の数・番号・前の段との組だけ。特殊能力を使えるか・受理されるか・処理が完了するかは保証しません。送信のあとエンジンが判定します");
+    expect(result.textContent).not.toMatch(/おもて/);
     await user.click(send());
     expect(onSubmit).toHaveBeenCalledWith(["o1", "o3"]); // 闘エネルギーの組（形は合う。受け付けるかはエンジンが決める）
   });

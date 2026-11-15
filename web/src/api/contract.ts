@@ -91,3 +91,14 @@ export const RESIDUAL_PRESENT_KEYS = new Set<string>(expected.residual_present_k
 export const RETREAT_STAGE_ROLES = expected.retreat_stage_roles as readonly string[];
 export const RETREAT_DISCARD_OPTION_KEYS = new Set<string>(expected.retreat_discard_option_keys);
 export const RETREAT_COST_EVALUATION = expected.retreat_cost_evaluation as { readonly status: string; readonly reason: string; readonly omitted: readonly string[] };
+// 0.183.0: 読み取りの要求 log（エンジンの docs/client-api-visible-log-v0.183.md 2 章）。最大件数・位置の鍵と上限・応答と出来事の項目・位置の不明の誤りのコード・card_id を持ちうる出来事
+export const LOG = expected.log as {
+  readonly request_type: "log";
+  readonly max_entries: number;
+  readonly position_keys: readonly string[];
+  readonly position_limit: number;
+  readonly entry_keys: readonly string[];
+  readonly response_keys: readonly string[];
+  readonly position_unknown: string;
+  readonly identified_events: readonly string[];
+};

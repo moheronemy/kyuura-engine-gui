@@ -176,6 +176,32 @@ function zonePlace(option: InputOption): string | null {
   return null;
 }
 
+/**
+ * 場のポケモンについているカード（エネルギーなど）の選べるものの付属先（表示だけ。送るのは id）。
+ * 公開の参照だけで対応づける: 選べるものの `card`（カードの番号）と、今の観測の両プレイヤーのバトル場・ベンチの `energy` の `card`。
+ * ちょうど 1 か所で見つかり、その card_id が選べるものと同じで、持ち主が観測で決まるときだけ「相手のバトル場：エビワラー」などを返す。
+ * 見つからない（手札・トラッシュのカード）・2 か所以上・card_id が違う・観測がないときは null（今の表示のまま。推測しない）。
+ * うらのポケモンは「裏向きのポケモン」と書き、本人のうらでも real・カード定義を読まない（カード名・ID で個体を対応づけない）。
+ */
+export function attachedTo(option: InputOption, observation: Observation | null): string | null {
+  if (!observation || typeof option.card !== "number" || typeof option.card_id !== "string") return null;
+  if (option.holder || option.zone || typeof option.pokemon === "number" || option.face_down) return null;
+  const found: { player: PlayerIndex; place: string; slot: FieldSlot; cardId: unknown }[] = [];
+  for (const p of observation.players) {
+    const slots: [string, FieldSlot | null][] = [["バトル場", p.active], ...p.bench.map((b, i): [string, FieldSlot | null] => [`ベンチ${i + 1}`, b])];
+    for (const [place, slot] of slots) {
+      const energy = slot && Array.isArray(slot.energy) ? (slot.energy as { card?: unknown; card_id?: unknown }[]) : [];
+      for (const e of energy) if (e.card === option.card) found.push({ player: p.player, place, slot: slot as FieldSlot, cardId: e.card_id });
+    }
+  }
+  if (found.length !== 1) return null;
+  const [hit] = found as [(typeof found)[number]];
+  if (hit.cardId !== option.card_id) return null;
+  const side = observation.viewer == null ? `${playerLabel(hit.player)}の` : hit.player === observation.viewer ? "自分の" : "相手の";
+  const face = "face_down" in hit.slot && hit.slot.face_down ? "裏向きのポケモン" : typeof hit.slot.name_ja === "string" ? hit.slot.name_ja : null;
+  return face === null ? null : `${side}${hit.place}：${face}`;
+}
+
 /** 選択肢の表示名（表示だけ。送るのは id）。 */
 export function optionLabel(option: InputOption, stage: OptionStage, observation: Observation | null, names: Names): string {
   const place = zonePlace(option);
@@ -189,7 +215,8 @@ export function optionLabel(option: InputOption, stage: OptionStage, observation
   if (typeof option.card_id === "string") {
     const name = names(option.card_id);
     const side = place ? sideOf(observation, option) : "";
-    return `${name ?? "（カード名表にない）"} ${option.card_id}${place ? `（${side}${place}）` : ""}`;
+    const attached = place ? null : attachedTo(option, observation);
+    return `${name ?? "（カード名表にない）"} ${option.card_id}${place ? `（${side}${place}）` : ""}${attached ? ` — ${attached}` : ""}`;
   }
   const v = option.value;
   if (stage.meaning === "pokemon" && typeof v === "number") return pokemonPlace(observation, v) ?? `ポケモン番号 ${v}`;
@@ -247,7 +274,7 @@ function PowerInfo({ candidate, names }: { candidate: Candidate; names: Names })
         </p>
         <p className="small attack-text">{text ?? "説明なし（公開カード定義に合う説明がない）"}</p>
         <p className="small warn">
-          送ると、エンジンがこのカードをおもてにしてから決めます（受理・拒否・トラッシュ）。「未確認」は使える・受理されるという意味ではありません。拒否なら状態はもどり、おもてにしたことも相手・観戦者に知らされません。
+          この候補では、特殊能力を使えるか・どうなるかを確かめていません。送信のあとにエンジンが判定します（受理・拒否のほか、本当のカードがたねポケモンでなければ、特殊能力を使わずにトラッシュして受理されることもあります）。「未確認」は使える・受理されるという意味ではありません。拒否された場合は状態が送信の前のまま（うらのまま）で、処理の途中でおもてにしたことも相手・観戦者に知らされません。
         </p>
       </div>
     );
@@ -273,6 +300,12 @@ function isFaceDownPower(candidate: Candidate): boolean {
   return POWER_KINDS.has(candidate.kind) && (candidate.power?.face_down === true || candidate.pokemon?.face_down === true);
 }
 
+/** v0.180（F-1）: 本人のうらのバトル場のポケモンのワザの候補か（エンジンが返したワザの選べるものの face_down。カード名・ID・保証文では決めない）。
+ * この候補の check は形（ワザの番号が 1 つで、ほかを選ばないこと）だけで、エンジンは宣言を受け付ける前の確かめ（必要なエネルギーなど）を呼ばない。表示の文だけに使い、送れるかは決めない。 */
+function isFaceDownAttack(candidate: Candidate, stages: InputStage[]): boolean {
+  return ATTACK_KINDS.has(candidate.kind) && stages.some((s) => s.input === "choose_option" && (s.options ?? []).some((o) => o.face_down === true));
+}
+
 /** 0.174.0（P6）: にげるのトラッシュの段が費用を評価していない（cost_evaluation）か。 */
 export function costNotEvaluated(stages: InputStage[]): boolean {
   return stages.some((s) => s.input === "choose_option" && s.cost_evaluation !== undefined);
@@ -287,8 +320,8 @@ function FaceDownRetreatInfo() {
         GUI も計算しません（0 個という意味ではありません）。
       </p>
       <p>
-        送ると、エンジンがこのポケモンをおもてにしてから決めます。結果は送信の応答と観測で表示します（ここでは予告しません）。受け付けられなかったときは状態がもどり、
-        おもてにしたことも相手・観戦者には知らされません（結果はあなたにだけ表示します）。
+        このにげるが受け付けられるか・どうなるかは、送信のあとにエンジンが判定します（ここでは予告しません）。結果は送信の応答と観測で表示します。拒否された場合は状態が送信の前のまま（うらのまま）で、
+        処理の途中でおもてにしたことも相手・観戦者には知らされません（結果はあなたにだけ表示します）。
       </p>
       <p>
         「入力を検査」（check）が確かめるのは、選んだ控え・カードが候補にあるか、枚数、重なり、段の順序などの形です。費用が足りるか・受理されるかは保証しません。
@@ -359,7 +392,8 @@ function AttackDetails({ option, observation }: { option: InputOption; observati
       </span>
       <span className="small attack-text">{option.text_ja ?? "説明なし"}</span>
       {option.face_down ? (
-        <span className="small">あなたのうらのバトル場のポケモン（本人だけが知るカード）のワザです。エンジンがおもてにしてから確かめます。</span>
+        // v0.180（F-1）: 候補の作成と入力の検査では、エンジンは必要なエネルギー・ワザを使えるかを確かめていない。おもてになるか・受理のあとを予告しない
+        <span className="small">あなたのうらのバトル場のポケモン（本人だけが知るカード）のワザです。必要なエネルギーが足りるか・ワザを使えるかは、エンジンが送信のあとに決めます（候補と入力の検査では確かめていません）。</span>
       ) : (
         <span className="small">
           出どころ: {labelOf(ROUTE_LABELS, option.route)} <code className="muted">route: {option.route}</code>
@@ -639,8 +673,10 @@ export function DecisionPanel({ selection, actor = null, observation, names, bus
             ? costNotEvaluated(stages)
               ? "エンジンの形の検査を通りました（参照・枚数・重なり・段の順序だけ。費用が足りるか・受理されるかは保証しません。結果は送信の応答で決まります）"
               : isFaceDownPower(candidate)
-                ? "エンジンの形の検査を通りました（段の数・番号・前の段との組だけ。特殊能力を使えること・受理・完走の保証ではありません。エンジンが送信のあとカードをおもてにしてから決めます）"
-                : "エンジンの検査を通りました（受理・完走の保証ではありません。結果は送信の応答で決まります）"
+                ? "エンジンの形の検査を通りました（段の数・番号・前の段との組だけ。特殊能力を使えるか・受理されるか・処理が完了するかは保証しません。送信のあとエンジンが判定します）"
+                : isFaceDownAttack(candidate, stages)
+                  ? "エンジンの形の検査を通りました（ワザの番号が 1 つで、ほかを選ばないことだけ。必要なエネルギーが足りるか・ワザを使えるか・受理・完走の保証ではありません。結果は送信の応答で決まります）"
+                  : "エンジンの検査を通りました（受理・完走の保証ではありません。結果は送信の応答で決まります）"
             : `通りません ${check.refusal?.code ?? ""}${check.refusal ? `（${REFUSAL_TEXT[check.refusal.code] ?? check.refusal.message}）` : ""}`}
         </p>
       ) : null}

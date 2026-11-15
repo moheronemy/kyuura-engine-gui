@@ -207,7 +207,14 @@ export function commonRoutes(call: Call): unknown | undefined {
   if (call.path === "/api/card-definitions") return CARD_DEFINITIONS;
   if (call.path === "/api/local-match") return MATCH;
   if (call.path.endsWith("/updates?after=0") || /\/updates\?after=\d+$/.test(call.path)) return EMPTY_UPDATES;
+  if (call.body?.type === "log") return emptyLog(call); // 0.183.0: ログを扱わない既存のテストの画面には、空のログ（模擬）を返す
   return undefined;
+}
+
+/** 模擬の空のログ（log の応答の形。from の位置が末尾）。ログを扱わない既存のテストのため（実応答ではない）。 */
+export function emptyLog(call: Call) {
+  const at = (call.body?.from as { segment: number; index: number } | undefined) ?? { segment: 0, index: 0 };
+  return { ...ENV, type: "log", ok: true, entries: [], next: at, end: at, complete: true, baseline_end: { segment: 0, index: 0 } };
 }
 
 export function deferred<T>() {

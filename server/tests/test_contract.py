@@ -23,7 +23,7 @@ EXPECTED = json.loads((ROOT / "contract" / "kyuura-client-api-v1.json").read_tex
 def test_engine_identity():
     """導入元は direct_url.json の vcs_info で確かめる（site-packages で git rev-parse をしない）。"""
     summary = verify_engine_source(EXPECTED["engine"]["commit"], EXPECTED["engine"]["version"])
-    assert summary["commit_id"] == EXPECTED["engine"]["commit"] and summary["version"] == kyuura_engine.__version__ == EXPECTED["engine"]["version"] == "0.179.0"
+    assert summary["commit_id"] == EXPECTED["engine"]["commit"] and summary["version"] == kyuura_engine.__version__ == EXPECTED["engine"]["version"] == "0.185.0"
     assert "site-packages" in Path(summary["module"]).parts and ".venv/src" not in Path(summary["module"]).as_posix()
     reqs = (ROOT / "server" / "requirements.txt").read_text(encoding="utf-8")
     assert f"kyuura-engine @ git+https://github.com/moheronemy/kyuura-engine@{EXPECTED['engine']['commit']}" in reqs
@@ -127,7 +127,10 @@ def test_u7_5_roles_match_engine():
     assert {L.MAY_STOP_LATER, L.UNVERIFIED} <= set(EXPECTED["processability"]) and {L.REASON_USE_CONDITION, L.REASON_STOPS} <= set(EXPECTED["reason_codes"])
     stadium = inspect.getsource(L._stadium_candidate)
     assert '"role": "energy"' in stadium and EXPECTED["stage_roles"][L.KIND_USE_STADIUM] == ["energy"]
-    assert "disclosure=DISCLOSURE_NONE" in stadium and EXPECTED["stage_roles_or_empty"] == [L.KIND_USE_STADIUM]
+    assert "disclosure=DISCLOSURE_NONE" in stadium and EXPECTED["stage_roles_or_empty"] == [L.KIND_USE_STADIUM, L.KIND_USE_ATTACK]
+    # 0.180.0 の追従で確かめた: うらのバトル場の本当のカードに印刷のワザがないと、ワザの候補は段のない not_implemented（U7-4 からの形）
+    face_down_attack = inspect.getsource(L._face_down_attack_candidate)
+    assert "REASON_NO_PRINTED_ATTACK" in face_down_attack and '_Candidate("", KIND_USE_ATTACK, public, [], disclosure=DISCLOSURE_CONFIRMED)' in face_down_attack
     assert set(EXPECTED["stage_roles"]) == {L.KIND_USE_ATTACK, *L.BOARD_KINDS, L.KIND_PLAY_TRAINER, L.KIND_USE_STADIUM}
     # retreat の discard・attach_energy の energy は U7-3 の段と同じ名前（GUI はほかの種類の段の role を止めるとき、この 2 つを除く）
     assert '"role": "discard"' in inspect.getsource(L._retreat_candidate) and '("energy", "target")' in inspect.getsource(L._attach_candidate)
@@ -303,3 +306,13 @@ def test_coverage_of_a_real_turn(fixed_bridge):
     assert end["processability"] == "may_stop_later" and end["input_disclosure"] == "no_input"
     for c in turn["candidates"][1:]:
         assert c["input_disclosure"] == "confirmed" and c["processability"] in EXPECTED["processability"]
+
+
+def test_log_request_values_match_engine():
+    """0.183.0: 読み取りの要求 log の値（契約の表の log）をエンジンの定数と照らす（docs/engine-contract.md 25 章）。"""
+    log = EXPECTED["log"]
+    assert C.MAX_LOG_ENTRIES == log["max_entries"] == 256
+    assert sorted(C._POSITION_KEYS) == sorted(log["position_keys"]) and C._POSITION_LIMIT == log["position_limit"] == 2**31
+    assert C.LOG_POSITION_UNKNOWN == log["position_unknown"] == EXPECTED["client_error_codes"][-1]
+    for role in (C.ROLE_PLAYER, C.ROLE_SPECTATOR, C.ROLE_HOST):
+        assert C._REQUESTS[role][log["request_type"]] == ({}, {"from": dict})

@@ -10,6 +10,8 @@ import type {
   CreateMatchRequest,
   CreateMatchResult,
   InputsResponse,
+  LogPosition,
+  LogResponse,
   PresetDeck,
   ScenarioInfo,
   SubmitResponse,
@@ -99,6 +101,8 @@ export interface EndpointClient {
   check(handle: Handle, choices: Choice[]): Promise<CheckResponse>;
   submit(handle: Handle, choices: Choice[], operationId: string): Promise<SubmitResponse>;
   updates(after: number): Promise<UpdatesResponse>;
+  /** 0.183.0: この入口の閲覧者の可視ログを位置 from から（null なら先頭から）。読み取りだけ（candidates・inputs・check を呼ばない）。 */
+  log(from: LogPosition | null): Promise<LogResponse>;
 }
 
 export function endpointClient(transport: Transport, endpoint: EndpointRef): EndpointClient {
@@ -126,6 +130,7 @@ export function endpointClient(transport: Transport, endpoint: EndpointRef): End
       raiseIfError(json, "submit");
       return V.submitResponse(json);
     },
+    log: (from) => call("log", from ? { from } : {}, (json) => V.logResponse(json, from)),
     async updates(after) {
       const json = await transport.request("GET", `${path}/updates?after=${encodeURIComponent(String(after))}`);
       const gui = V.guiError(json); // 更新の口は接続層の封筒（gui_server）。中の各更新は client_api の封筒

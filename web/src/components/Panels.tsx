@@ -369,7 +369,7 @@ export function LogPanel({ log }: { log: LogEntry[] }) {
     <section className="panel log" aria-label="対戦ログ">
       <h2>ログ（この閲覧者に届いた公開の更新）</h2>
       <p className="small muted">
-        接続層が閲覧者ごとに保持する最近の更新の要約です。エンジンの対戦ログ（visible_log）は現行の client_api の応答に含まれません。
+        接続層が閲覧者ごとに保持する最近の更新の要約です。エンジンの公開のログ（log）は、見せたカードの欄でだけ使います（全体のログの表示ではありません）。
       </p>
       {log.length === 0 ? (
         <p className="muted small">まだ更新はありません。</p>
