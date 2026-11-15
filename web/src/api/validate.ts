@@ -945,7 +945,9 @@ function identifiedEvent(event: Record<string, unknown>, where: string): void {
 /**
  * 0.185.0: スロットゲームの束 reveal_deck_top（公開）。cards は既存のカード参照（整数か null）の並びで、整数は重ならない（別の個体）。
  * card_ids（0.185.0 から）があるなら、cards と同じ長さの文字列の並びで、card_ids[i] は cards[i] のカードの ID（同じ ID の繰り返しはそのまま）。
- * card_ids がある束の cards に null は受け付けない（識別のある位置にカードの参照がない）。null・型違い・一部だけ・長さ違いは拒否し、旧形式（card_ids なし）として扱わない。
+ * card_ids の null の要素・型違い・一部だけ・長さ違いは拒否し、旧形式（card_ids なし）として扱わない。
+ * card_ids がある束でも cards の要素は整数か null のまま受け付ける（エンジンの契約: observation._mask_face_down は uid の項目 cards だけを見る人ごとにうらの伏せの null にし、
+ * card_ids は伏せない。fossil-slot-reveal-identification-design.md 4 章・fossil-slot-reveal-v0.185.md。docs/engine-contract.md 28 章）。null の位置の uid は補わず、表示はその位置の card_ids だけを使う。
  * 枚数は cards の長さ（count の項目・エンジンの TOP1 の処理は使わない）。
  */
 function deckTopBundle(event: Record<string, unknown>, where: string): void {
@@ -960,10 +962,7 @@ function deckTopBundle(event: Record<string, unknown>, where: string): void {
   if (!("card_ids" in event)) return; // 0.184.0 以前の旧形式（識別の情報なし）
   const ids = arr(event.card_ids, `${where}.card_ids`);
   if (ids.length !== cards.length) fail(`${where}.card_ids（cards と長さが違う）`);
-  ids.forEach((id, i) => {
-    str(id, `${where}.card_ids[${i}]`);
-    if (cards[i] === null) fail(`${where}.cards[${i}]（card_ids のある束にカードの参照がない）`);
-  });
+  ids.forEach((id, i) => str(id, `${where}.card_ids[${i}]`));
 }
 
 function logItem(value: unknown, where: string): LogItem {
