@@ -57,6 +57,7 @@ import {
   ADDON_LABELS,
   DECISION_TEXT,
   ENERGY_LABELS,
+  CONVENTION_EXCLUDED,
   KIND_LABELS,
   ORDER_TEXT,
   PLACEMENT_TEXT,
@@ -408,10 +409,28 @@ function AttackDetails({ option, observation }: { option: InputOption; observati
   );
 }
 
+/** 0.186.0: 状態の規約集合の続行規約で除外した選べるもの（エンジンが eligible: false と convention を付けたもの。GUI は条件を判定しない）。 */
+export function conventionExcluded(option: InputOption): boolean {
+  return option.eligible === false && typeof option.convention === "string" && !option.placement;
+}
+
+/**
+ * 0.186.0: 受け取った選べるものが 1 つ以上あり、すべてが規約による除外の候補（エンジンの区分は not_implemented・no_eligible_card）。
+ * このときだけ、候補の案内を「規約により使用不可」にする（not_implemented・no_eligible_card を理由に関係なく読み替えない）。
+ */
+export function allOptionsExcludedByConvention(candidate: Candidate, stages: InputStage[]): boolean {
+  if (candidate.processability !== "not_implemented" || !candidate.reasons.includes("no_eligible_card")) return false;
+  const options = stages.flatMap((s) => (s.input === "choose_option" ? (s.options ?? []) : []));
+  return stages.length > 0 && options.length > 0 && options.every(conventionExcluded);
+}
+
 export function optionUnavailable(option: InputOption): string | null {
   if (option.eligible === false && option.placement) return PLACEMENT_TEXT[option.placement] || "この選択肢は送れません。";
-  if (!EXECUTABLE_PROCESSABILITY.has(option.processability)) {
-    return PROCESSABILITY_TEXT[option.processability]?.description ?? "この選択肢は今は処理できません。";
+  if (conventionExcluded(option)) return CONVENTION_EXCLUDED.option;
+  // processability のない選べるものは規約による除外だけ（実行時検証）。ほかの形が来ても送れるものとして扱わない
+  const processability = option.processability ?? "";
+  if (!EXECUTABLE_PROCESSABILITY.has(processability)) {
+    return PROCESSABILITY_TEXT[processability]?.description ?? "この選択肢は今は処理できません。";
   }
   if (option.eligible === false) return "この選択肢は送れません（エンジンの候補の区分）。";
   return null;
@@ -593,6 +612,7 @@ export function DecisionPanel({ selection, actor = null, observation, names, bus
   // 送信の入口（useEndpointSession の submit）も同じ関数（state/checkGate.ts）で確かめる
   const needsCheck = needsCheckBeforeSubmit(candidate);
   const executable = EXECUTABLE_PROCESSABILITY.has(candidate.processability);
+  const conventionOnly = !withheld && allOptionsExcludedByConvention(candidate, stages);
   const canSend = !withheld && satisfied && !busy && !blocked && executable && (!needsCheck || check?.valid === true);
   const hasPathStage = stages.some((s) => s.input === "choose_option" && s.path_stages !== undefined && PATH_STAGE_KINDS[candidate.kind] !== undefined);
 
@@ -602,7 +622,17 @@ export function DecisionPanel({ selection, actor = null, observation, names, bus
         入力: {labelOf(KIND_LABELS, candidate.kind)} <code className="muted">{candidate.kind}</code>
       </h3>
       <div className="badges">
-        <ProcessabilityBadge value={candidate.processability} withDescription />
+        {conventionOnly ? (
+          <span className="badge convention-excluded" title={CONVENTION_EXCLUDED.candidate}>
+            <span className="badge-label">{CONVENTION_EXCLUDED.label}</span>
+            <code className="badge-code">
+              {candidate.processability}・{candidate.reasons.join("・")}
+            </code>
+            <span className="badge-desc">{CONVENTION_EXCLUDED.candidate}</span>
+          </span>
+        ) : (
+          <ProcessabilityBadge value={candidate.processability} withDescription />
+        )}
         <DisclosureBadge value={candidate.input_disclosure} />
       </div>
       {candidate.choices_format ? <p className="muted small">送る形: {candidate.choices_format}</p> : null}
@@ -686,7 +716,13 @@ export function DecisionPanel({ selection, actor = null, observation, names, bus
       {!withheld && needsCheck && satisfied && check?.valid !== true ? (
         <p className="small">この操作は、送る前に「入力を検査」で今の入力をエンジンに確かめます。</p>
       ) : null}
-      {!executable ? <p className="small warn">この候補は処理可能性の区分により送れません（ゲーム上の禁止ではありません）。</p> : null}
+      {!executable ? (
+        <p className="small warn">
+          {conventionOnly
+            ? "この候補は、選べるカードがすべてこの対戦の規約集合で除外されているため送れません（プレイ用の取り決め。史実の裁定の確定ではありません）。"
+            : "この候補は処理可能性の区分により送れません（ゲーム上の禁止ではありません）。"}
+        </p>
+      ) : null}
 
       <div className="actions">
         {!withheld ? (
@@ -847,7 +883,8 @@ function OptionStageInput({
                 </span>
               </label>
               <span className="option-meta">
-                <ProcessabilityBadge value={option.processability} />
+                {typeof option.processability === "string" ? <ProcessabilityBadge value={option.processability} /> : null}
+                {conventionExcluded(option) ? <span className="badge convention-excluded">{CONVENTION_EXCLUDED.label}</span> : null}
                 {option.placement && option.placement !== "eligible" ? <code className="small">placement: {option.placement}</code> : null}
                 {option.convention ? <code className="small">規約 {option.convention}</code> : null}
                 {option.reasons?.length ? <span className="small muted">理由: {reasonsText(option.reasons)}</span> : null}
@@ -968,7 +1005,7 @@ function DisplayOnlyInputs({
             <code className="muted small">
               owner: {op.owner}・position: {op.position}（0 がいちばん上）
             </code>{" "}
-            <ProcessabilityBadge value={op.processability} />
+            {typeof op.processability === "string" ? <ProcessabilityBadge value={op.processability} /> : null}
           </li>
         ))}
       </ul>

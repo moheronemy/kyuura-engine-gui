@@ -3,6 +3,7 @@
 import { useEffect, useId, useState } from "react";
 import { createMatch, loadPresets, loadScenarios, type Transport } from "../api/transport";
 import type { CreateMatchRequest, CreateMatchResult, DeckEntry, MatchInfo, PresetDeck, ScenarioInfo } from "../api/types";
+import { CONVENTION_SET_TEXT } from "../labels";
 
 export interface ParsedDeck {
   entries: DeckEntry[];
@@ -187,15 +188,26 @@ export function StartScreen({
           </div>
           <label className="field" htmlFor={`${formId}-conv`}>
             <span>規約集合（任意）</span>
-            <select id={`${formId}-conv`} value={conventions} onChange={(e) => setConventions(e.target.value)}>
+            <select
+              id={`${formId}-conv`}
+              value={conventions}
+              onChange={(e) => setConventions(e.target.value)}
+              aria-describedby={CONVENTION_SET_TEXT[conventions] ? `${formId}-conv-desc` : undefined}
+            >
               <option value="">既定（エンジンの現行の規約集合）</option>
               {conventionSets.map((c) => (
                 <option key={c} value={c}>
-                  {c}
+                  {CONVENTION_SET_TEXT[c] ? `${c}（${CONVENTION_SET_TEXT[c].label}）` : c}
                 </option>
               ))}
             </select>
           </label>
+          {/* 0.186.0: 選んだ集合の説明（表示だけ）。既定は変えず、利用者が明示的に選んだ対戦だけがその集合になる。接続後は対戦の状態の集合を表示する */}
+          {CONVENTION_SET_TEXT[conventions] ? (
+            <p className="small convention-set-text" id={`${formId}-conv-desc`}>
+              {CONVENTION_SET_TEXT[conventions].description}
+            </p>
+          ) : null}
         </>
       ) : (
         <fieldset>

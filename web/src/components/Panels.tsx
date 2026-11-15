@@ -2,6 +2,7 @@ import type { Candidate, LegalActions, StatusInfo, ViewResponse } from "../api/t
 import { DISPLAY_ONLY_KINDS, GUI_OPERABLE_KINDS, TURN_BASIC_KINDS } from "../api/contract";
 import {
   COMPLETENESS_TEXT,
+  CONVENTION_SET_TEXT,
   EMPTY_REASON_LABELS,
   RESIDUAL_STATUS_TEXT,
   RESIDUAL_TEXT,
@@ -73,6 +74,15 @@ export function StatusPanel({ view }: { view: ViewResponse }) {
               <code>
                 {s.convention_set.id}@{s.convention_set.version}
               </code>
+              {/* 0.186.0: 対戦の状態の規約集合（エンジンの status の値。作成の画面の選択値で上書きしない）。説明のある集合だけ説明を添える */}
+              {CONVENTION_SET_TEXT[`${s.convention_set.id}@${s.convention_set.version}`] ? (
+                <span className="small convention-set-text">
+                  {" "}
+                  {CONVENTION_SET_TEXT[`${s.convention_set.id}@${s.convention_set.version}`]!.label}
+                  <br />
+                  <span className="muted">{CONVENTION_SET_TEXT[`${s.convention_set.id}@${s.convention_set.version}`]!.description}</span>
+                </span>
+              ) : null}
             </dd>
           </div>
         ) : null}
@@ -137,6 +147,10 @@ export function CandidatesPanel({
                 <DisclosureBadge value={c.input_disclosure} />
               </div>
               {c.reasons.length ? <p className="small muted">理由: {reasonsText(c.reasons)}</p> : null}
+              {c.reasons.includes("no_eligible_card") && GUI_OPERABLE_KINDS.has(c.kind) ? (
+                // 0.186.0: 候補の一覧には選べるものがないので、理由を読み替えない（規約による除外かは、選べるものを受け取ってから入力の画面で示す）
+                <p className="small muted">送れる選べるものがありません。「この操作を選ぶ」で、エンジンが示した選べるものごとの理由を確かめられます。</p>
+              ) : null}
               {c.power && c.pokemon ? (
                 // U7-5e: 同じ種類の候補がいくつも並ぶので、エンジンが返した特殊能力の名前と使うポケモンを見出しの下に出す（候補は id で区別する）
                 // v0.172: 本人のうらのカードは、場所と「裏向き」だけを盤面の情報として、本当のカードを本人の知識として分けて書く
