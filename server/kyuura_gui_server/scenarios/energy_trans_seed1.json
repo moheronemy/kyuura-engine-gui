@@ -344,6 +344,17 @@
     "fossil_slot_reveal": "未出現（固定例のログに reveal_from_deck・reveal_deck_top・retrieve_trainer は 0 件。0.185.0 で化石の発掘の山札の側に加わった card_id と、スロットゲームの束の card_ids は固定例では確かめていない）",
     "other": "なし"
    }
+  },
+  {
+   "engine_commit": "a1b765918dc8e0f8ff326fa732d2c8220edab8e2",
+   "engine_version": "0.186.0",
+   "checked": "2026-11-15",
+   "result": "同じ（確かめの追記だけ。記録は作り直していない。0.185.0 の記録・スナップショットを流用して識別を書きかえたものではない）",
+   "method": "server/tools/scenario_views.py の --full と、閲覧者（0・1・観戦者）ごとの可視ログ（エンジンの公開の関数 visible_segment_logs・visible_log を固定例の状態に当てた写し。証跡の compare/logs.py）を、0.185.0（fa98012。この比べのためだけに作業の外に作った新しい venv に非 editable で入れた。direct_url のコミットを先に確かめた）と 0.186.0（a1b7659）の環境で実行し、項目ごとに比べ、版・識別／ログ／観測・通知／候補・選べるもの・順序／処理可能性・理由／入力／guarantees に分けた。固定例のすべての時点で、全入口の view・candidates と作成の知らせ、3 閲覧者の可視ログはすべて同じ（views_sha256 も同じ。違いは比べた出力の外側の engine_version だけ）。0.186.0 の要求 log（4 つの入口）は状態からの写しと同じ。どの時点も規約集合は既定の CS-KYUURA-CURRENT@1 で、規約による除外（convention を持つ選べるもの）は 0 件。再生は記録の操作の列を新しい版での対戦で再生した互換性の確かめで、旧記録の正式な再実行・復元ではない",
+   "log_difference": {
+    "play_convention_tr3": "対象外（固定例はどれも既定の集合。CS-KYUURA-PLAY-TR3@1 の規約による除外は固定例では確かめていない）",
+    "other": "なし"
+   }
   }
  ]
 }
