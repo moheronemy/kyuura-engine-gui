@@ -17,7 +17,7 @@ async function answerFirst(page: Page, label: string, outcome: RegExp) {
   const stages = panel(page).locator("fieldset.stage");
   const n = await stages.count();
   for (let i = 0; i < n; i++) {
-    await stages.nth(i).getByRole("radio").filter({ hasNotText: "選ばない" }).first().check();
+    await stages.nth(i).locator("label.option").filter({ hasNotText: "選ばない" }).first().locator("input").check(); // ラベルの文字で絞る（入力の要素は文字を持たない）
   }
   await panel(page).getByRole("button", { name: "入力を検査" }).click();
   await expect(panel(page).locator(".check-result")).toContainText("エンジンの検査を通りました");
