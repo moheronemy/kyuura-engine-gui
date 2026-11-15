@@ -4,7 +4,8 @@ GUI が使うエンジンの公開の境界と、その確かめ方・更新の�
 
 ## 0. 固定と導入
 
-- 版 0.186.0、導入する完全なコミット `a1b765918dc8e0f8ff326fa732d2c8220edab8e2`（「版を 0.186.0 にする」。開発用の規約集合 `CS-KYUURA-PLAY-TR3@1` を含む。配布の確認済みのコミット。Git の URL からの通常のインストール。29 章）。文書だけの後続のコミット（`f7ce4ee`）・検証用 AI のブランチ・エンジンの main へは自動で変えない
+- 版 0.187.0、導入する完全なコミット `d562ec16e3f493569ed0251cbcf9062ceccdbb1a`（「版を 0.187.0 にする」。停止の方針の台帳の場面の索引の整理（テスト・道具だけの語の項目 8 件を除いた）と版だけ。配布の確認済みのコミット。Git の URL からの通常のインストール。30 章）。文書だけの後続のコミット（`f0ad833`・`274f9e3`）・検証用 AI のブランチ・エンジンの main へは自動で変えない
+- 以前の固定: 版 0.186.0、導入する完全なコミット `a1b765918dc8e0f8ff326fa732d2c8220edab8e2`（「版を 0.186.0 にする」。開発用の規約集合 `CS-KYUURA-PLAY-TR3@1` を含む。配布の確認済みのコミット。Git の URL からの通常のインストール。29 章）。文書だけの後続のコミット（`f7ce4ee`）・検証用 AI のブランチ・エンジンの main へは自動で変えない
 - 以前の固定: 版 0.185.0、導入する完全なコミット `fa98012f7534fe89667730ffa3e997342bde22a6`（「版を 0.185.0 にする」。化石の発掘の山札の側の `card_id` とスロットゲームの束の `card_ids` を含む。配布の確認済みのコミット。Git の URL からの通常のインストール。27 章）。文書だけの後続のコミット（`ad4514a`）・検証用 AI のブランチ・エンジンの main へは自動で変えない
 - 以前の固定: 版 0.184.0、導入する完全なコミット `a9add68b1e56a574e9bc1672951d48cad2b3b814`（「版を 0.184.0 にする」。見せる 17 の呼ぶ箇所の `card_id` を含む。配布の確認済みのコミット。Git の URL からの通常のインストール。26 章）。文書だけの後続のコミット（`eecef47`）・検証用 AI のブランチ・エンジンの main へは自動で変えない。renderer の固定（`af88231`）は変えていない。以前の固定 0.183.0（`05290415`）は 25 章
 - 版 0.183.0、導入する完全なコミット `05290415377738143c5ec2fa7f5cf092e9e0e5ae`（「版を 0.183.0 にする」。0.182.0 のポケモン交換おじさんの見せる 2 枚の `card_id` と、0.183.0 の読み取りの要求 `log` を含む。配布の確認済みのコミット。Git の URL からの通常のインストール。25 章）。文書だけの後続のコミット（`d0538a2`）・検証用 AI のブランチ・エンジンの main へは自動で変えない。renderer の固定（`af88231`）は変えていない。以前の固定 0.181.0（`a2b29e9`）は 23 章（この節の下の行は 0.180.0 の時点の記述のまま）
@@ -2416,3 +2417,74 @@ check が valid でも結果は一律ではないことを、保存済みの結�
   - この組み合わせ以外の `not_implemented` と `unresolved_ruling` などは、共通の処理可能性の表示のまま（`PROCESSABILITY_TEXT` は変えない）
 - 入力の画面: 受け取った選べるものがすべて規約による除外のときだけ「規約により使用不可」（29.4 の判定のまま）
 - 確かめ: 修正の前に新しい表示のテストが失敗することを確かめ、修正のあと型検査と限定の vitest（候補の一覧・入力の画面・check・送信の要求）が通った。ブラウザ・E2E・接続層・エンジンは、製品の差分が文言と表示の分岐だけなので再実行していない
+
+## 30. 停止の方針の台帳の場面の索引の整理への追従（0.187.0。d562ec1 のパッケージの差と実応答で確かめた。2026-11-16）
+
+エンジン 0.187.0 に追従しました。エンジンの差は、停止の方針の台帳の場面の索引の整理と版だけです。GUI の製品コード（`web/src` の非テスト・`server/kyuura_gui_server` の Python）は変えていません。TR3 と既定の集合の意味は変わりません。
+
+### 30.1 基点・固定と依存の更新（0.186.0 → 0.187.0）
+
+- 基点: `feature/engine-0186-candidate-list-label` の `5452ec3`（origin と一致。GUI の main `593be09` と `feature/engine-0186-play-tr3` の `b613973` を含む）。想定基点のあとに取り込み・更新はなかった。作業は worktree `C:\dev\kyuura-engine-gui-wt-0187`・ブランチ `feature/engine-0187-scene-index`
+- 固定: `d562ec16e3f493569ed0251cbcf9062ceccdbb1a`（「版を 0.187.0 にする」。配布の確認済みのコミット。公開ブランチ `claude/token-sync-v0187`。エンジンの main には入っていない）。`d562ec1..274f9e3` は文書だけ（2 コミット）
+- パッケージの差（`a1b7659..d562ec1` の `kyuura_engine/` と `pyproject.toml`）:
+  - `kyuura_engine/data/convention_records.json`: `scene_index.scenes` が 398 → 390。除かれた 8 件はどれも `entry_kind` が `test_tool_only_code` で `codes` が空の項目（実際の ID: `UNRESOLVED_EFFECT_AFTER_NO_DAMAGES`・`UNRESOLVED_SELF_DAMAGE_WEAKNESS_RESISTANCE`・`UNRESOLVED_TEST`・`UNRESOLVED_TEST_AFTER_COIN`・`UNRESOLVED_TEST_EFFECT`・`UNRESOLVED_TEST_FORM`・`UNRESOLVED_TEST_PREFLIGHT`・`UNRESOLVED_X`）
+  - 残りの 390 件は内容・順とも同じ。停止コード→場面の対応（`scene_index.codes` 357 件）・`current_behavior`（261 件）・`sources`・`generated_by`・`schema_version` は同じ
+  - `kyuura_engine/__init__.py` と `pyproject.toml`: 版の 1 行だけ。依存は増えていない
+  - ほかのデータ（規約・規約集合の定義、カード、診断の目録）と、ゲームの処理・候補・入力・check・submit の実装は変わっていない
+- 新しい `.venv` に Git の URL と完全なハッシュで非 editable 導入し、次を確かめた:
+  - `direct_url.json` の `commit_id`・`requested_revision` とも `d562ec1…`（vcs は git・editable でない）
+  - site-packages から読み込む
+  - メタデータとパッケージの版がどちらも 0.187.0
+  - 実装の識別が固定先のソース（`git archive` の `kyuura_engine`）と同じ: `behavior_digest` `ae974fff8d01f381c5c51cafab859371376398ee8b122b60b80a2d5883d6a82a`（58 ファイル）・`instrumentation_digest` `13c773a8892efc0736d8896544d2f29bd8d6ce94a534502a852daabf07eba27a`（4 ファイル。0.186.0 と同じ）
+  - `pip freeze` の差は kyuura-engine の行だけ（依存の増減なし）
+
+### 30.2 契約・依存・版の期待値
+
+- `server/requirements.txt` の固定、契約の表の `engine` と `$comment` の一文、版の期待値（`test_contract`・`test_bridge`・`test_card_definitions`）だけを直した。契約の表のほかの値（規約集合・既定・照合値・選べるものの項目など）は同じ
+- renderer・カード定義・規約集合の内容・既定値は変えていない。lockfile・整形の差は入れていない。各ファイルの改行を保った
+
+### 30.3 除かれた 8 場面への参照
+
+- 実際の 8 つの ID で GUI のリポジトリの追跡ファイル全体（接続層・web・契約・fixture・文書・スクリプト。196 ファイル）を語の単位と部分一致で検索し、0 件だった
+- GUI・接続層は場面の索引（`convention_records.json`・`scene_index`）を読まない。製品コードの変更は要らない
+
+### 30.4 実応答の比べ（0.186.0 と 0.187.0）
+
+0.186.0（`a1b7659`）はこの比べのためだけに作業の外の新しい一時 venv へ非 editable で入れた（`direct_url` のコミットを先に確かめた）。同じ GUI の木から、両方の環境で同じ採取を実行した。旧記録の正式な再実行ではない。
+
+| 比べたもの | 結果 |
+|---|---|
+| 固定例 15 時点（全入口の view・candidates・作成の知らせ、3 閲覧者の可視ログ、要求 log） | 差は版の 2 か所だけ。規約集合はすべて CURRENT、規約による除外は 0 件 |
+| TR3 の構築盤面 12（view・candidates・inputs・check・送れない submit・送れる submit）と新しい対戦の作成（省略・TR3・知らない値） | 差 95 件 = 版 1 件 + ランダムな取っ手 94 件（`game`・`revision`・`token`・`match_id`。両側で 1 対 1）。ほかの差は 0 件 |
+| 規約・規約集合と照合値・既定の集合・カード定義 | 同じ。違うのは `convention_records.json` のハッシュと場面の数（398→390）だけ |
+
+0.187.0 の実応答では、次も 0.186.0 と同じです:
+
+- 省略の作成は `CS-KYUURA-CURRENT@1`、TR3 の明示の作成は `CS-KYUURA-PLAY-TR3@1`、知らない値は断る
+- TR3 の対象なしの 3 枚は `eligible: false` と規約 ID が付く。同じ盤面の CURRENT は `unresolved_ruling`
+- 混在の盤面では、使える別のカードを送って受理される
+- 全除外の候補は `not_implemented`・`no_eligible_card`
+
+固定例 14 の `compatibility` に 0.187.0 の確かめを追記した（`engine_commit` は書き換えない。各ファイルの改行を保った）。
+
+### 30.5 実行した検証（2026-11-16。限定。依存・契約・テストのコミット `e5cdeac`）
+
+| 名前 | 内容 | 結果 |
+|---|---|---|
+| R1 | 型検査 | 成功 |
+| R2 | 本番ビルド（tsc + vite build） | 成功 |
+| R3 | 接続層: test_contract・test_bridge・test_card_definitions・test_engine_source・test_scenarios・test_tr3 | 117 件成功 |
+| R4 | vitest 10 ファイル: CandidateListLabel・AppTr3・Tr3Convention・DecisionPanel・App・AppKeep・AppPT5tC1・AppU75・state/checkGate・api/validate | 101 件成功 |
+
+- R4 は、候補の一覧の「実行できる選択肢なし」、入力の画面の規約の表示、既定と明示選択、選択・check・submit の要求、checkGate・checkEpoch、拒否のあとの回答し直し、閲覧者の切り替えを含む
+- web の依存は lockfile から `npm ci` で入れた（lockfile は変わっていない）
+- 製品コードが変わらず、実応答の比べで版と取っ手のほかに差がないため、ブラウザ・E2E は再実行していない。エンジン全体テスト・新しい盤面・対戦バッチ・seed 探索・new_game からの到達・judge・replay はしていない
+
+### 30.6 失敗・未確認
+
+- 失敗: 固定の書きかえを Git Bash の `sed -i` で行ったら、5 ファイルの CRLF が LF になった。コミットの前に戻し、バイト列の置換でやり直した（コミットには入っていない）
+- 未確認: ブラウザ・E2E（上のとおり）。既存の 0.186.0 の `.venv` からの入れ替えそのもの（新しい作業場所の新しい `.venv` で確かめた）
+
+### 30.7 証跡
+
+`C:\dev\kyuura-engine-verification-gui-0187`（`verifier/runs/2026-11-16-0187`）。計画・基点の確かめ・パッケージの差と場面の索引の比べ・導入と識別・参照の検索・実応答の比べ・各実行の出力と終了コード・失敗の記録。公開してよい `public/` は件数・状態・時間・容量だけ。`MANIFEST.md`・`manifest.json`・`sha256.json`。
