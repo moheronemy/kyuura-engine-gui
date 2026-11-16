@@ -307,6 +307,12 @@ function isFaceDownAttack(candidate: Candidate, stages: InputStage[]): boolean {
   return ATTACK_KINDS.has(candidate.kind) && stages.some((s) => s.input === "choose_option" && (s.options ?? []).some((o) => o.face_down === true));
 }
 
+/** 0.189.0（R-2。0.188.0 からエンジンが示す）: 宣言といっしょに選ぶもの（role: declaration_options）の段に、エンジンが選べるものを示したか。check の文の選び分けだけに使う
+ * （うらのワザの check は、示したものがあればその形も確かめる。カード名・スタジアムからは決めない。送れるか・組は変えない）。 */
+function offersDeclaration(stages: InputStage[]): boolean {
+  return stages.some((s) => s.input === "choose_option" && s.role === "declaration_options" && (s.options ?? []).length > 0);
+}
+
 /** 0.174.0（P6）: にげるのトラッシュの段が費用を評価していない（cost_evaluation）か。 */
 export function costNotEvaluated(stages: InputStage[]): boolean {
   return stages.some((s) => s.input === "choose_option" && s.cost_evaluation !== undefined);
@@ -705,7 +711,9 @@ export function DecisionPanel({ selection, actor = null, observation, names, bus
               : isFaceDownPower(candidate)
                 ? "エンジンの形の検査を通りました（段の数・番号・前の段との組だけ。特殊能力を使えるか・受理されるか・処理が完了するかは保証しません。送信のあとエンジンが判定します）"
                 : isFaceDownAttack(candidate, stages)
-                  ? "エンジンの形の検査を通りました（ワザの番号が 1 つで、ほかを選ばないことだけ。必要なエネルギーが足りるか・ワザを使えるか・受理・完走の保証ではありません。結果は送信の応答で決まります）"
+                  ? offersDeclaration(stages)
+                    ? "エンジンの形の検査を通りました（ワザの番号が 1 つで、そのあとに宣言といっしょに選ぶものを示されたものから重ねずに選んだことだけ。必要なエネルギーが足りるか・ワザを使えるか・コインを投げられるか・受理・完走の保証ではありません。コインを選んで受理されても、コインを投げたとは限りません。結果は送信の応答で決まります）"
+                    : "エンジンの形の検査を通りました（ワザの番号が 1 つで、ほかを選ばないことだけ。必要なエネルギーが足りるか・ワザを使えるか・受理・完走の保証ではありません。結果は送信の応答で決まります）"
                   : "エンジンの検査を通りました（受理・完走の保証ではありません。結果は送信の応答で決まります）"
             : `通りません ${check.refusal?.code ?? ""}${check.refusal ? `（${REFUSAL_TEXT[check.refusal.code] ?? check.refusal.message}）` : ""}`}
         </p>

@@ -2,6 +2,7 @@
 // 呼び出し側が (対戦, 入口) ごとに key を変えて作り直すので、切り替え前の閲覧者の状態はここに残らない。
 // 0.183.0: 閲覧者の画面（ホストでない）は、view を取り直すたびにエンジンの公開のログ（log）を保持した位置から読み、見せたカードの欄に出す
 // （state/visibleLog.ts・components/RevealedCards.tsx）。ログの取得は候補・入力・check・送信と関わらない
+// 0.189.0（R-2）: 同じ取得済みのログのうち、コインの出来事 coin_flip だけをコインの結果の欄に出す（components/CoinFlips.tsx。全体の履歴の画面ではない）
 import { useMemo } from "react";
 import type { EndpointClient } from "../api/transport";
 import type { PlayerIndex } from "../api/types";
@@ -9,6 +10,7 @@ import type { SubmitGate } from "../state/submitGate";
 import { useEndpointSession } from "../state/useEndpointSession";
 import { useVisibleLog } from "../state/visibleLog";
 import { Board } from "./Board";
+import { CoinFlipsPanel } from "./CoinFlips";
 import { DecisionPanel } from "./DecisionPanel";
 import { CandidatesPanel, LogPanel, NoticesPanel, StatusPanel } from "./Panels";
 import { RevealedCardsPanel } from "./RevealedCards";
@@ -92,6 +94,7 @@ export function EndpointConsole({ client, kind, viewer, gate, names, refreshSign
           ) : null}
           {!canAct ? <p className="callout info small">観戦者は観測と公開の更新だけを受け取ります（候補・送信はありません）。</p> : null}
           {kind !== "host" ? <RevealedCardsPanel log={visibleLog} names={names} /> : null}
+          {kind !== "host" ? <CoinFlipsPanel log={visibleLog} names={names} /> : null}
           <LogPanel log={session.log} />
         </div>
       </div>
