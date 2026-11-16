@@ -32,7 +32,9 @@ from .test_u7_5e import handle_of
 VOLATILE = ("game", "revision")
 # エンジンの tests/test_legal_actions_f1_v0_180.py の定数（0.179.0 の GUARANTEE_ATTACK と 0.180.0 の GUARANTEE_FACE_DOWN_ATTACK の値の sha256）
 ATTACK_0179_SHA256 = "f1e79cef13b69200910504f90614393b2b2344d6dad71b47d25eff260ec5bc5b"
-FACE_DOWN_ATTACK_SHA256 = "aa316b12cb9a79033e6d80685a4fbffacfa2e13b1af310bda57d76049b6f1d0c"
+# 0.188.0 から、エンジンの tests/test_legal_actions_f1_v0_180.py の固定値と同じく更新（保証の文がクチバシティジムのコインを示す場合を述べるようになった。R-2）。
+# 0.180.0〜0.187.0 の値は aa316b12cb9a79033e6d80685a4fbffacfa2e13b1af310bda57d76049b6f1d0c
+FACE_DOWN_ATTACK_SHA256 = "37edd7c4884937ee2502341280afc124a58561495c52aa72bed20159185042cd"
 FACE_DOWN = ["face_down_reveal_not_evaluated"]
 EVALUATED = ["continuation_not_evaluated", "preflight_not_evaluated"]
 # 本人だけが知る本当のカードの印刷のワザ（エンジンのテストの値。結果の確かめにだけ使う）
