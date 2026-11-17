@@ -291,6 +291,17 @@
     "r2_stadium_coin": "未出現（固定例のログに source が stadium の coin_flip と secret_plan_revealed は 0 件、どの時点の候補にも本人のうらのバトル場のワザの候補はない。0.188.0 のクチバシティジムのコインの提示と 0.189.0 の先読みの修正は固定例では確かめていない）",
     "other": "なし"
    }
+  },
+  {
+   "engine_commit": "daf271833de645de5707e5554b7c10f13b51075a",
+   "engine_version": "0.190.0",
+   "checked": "2026-11-17",
+   "result": "観測・可視ログ・候補・入力・guarantees は同じ（確かめの追記だけ。記録は作り直していない。0.189.0 の記録・スナップショットを流用して識別を書きかえたものではない）。違いは版だけ",
+   "method": "server/tools/scenario_views.py の --full と、閲覧者（0・1・観戦者）ごとの可視ログ（エンジンの公開の関数 visible_segment_logs・visible_log を固定例の状態に当てた写し。証跡の compare/logs.py）を、0.189.0（021510c。この比べのためだけに作業の外に作った新しい venv に非 editable で入れた。direct_url のコミットを先に確かめた）と 0.190.0（daf2718）の環境で実行し、項目ごとに比べ、版・識別／ログ／観測・通知／候補・選べるもの・順序／処理可能性・理由／入力／guarantees に分けた。固定例のすべての時点で、違いは版の 2 か所だけ（views_sha256 も同じ）。0.190.0 の要求 log（4 つの入口）は状態からの写しと同じ。どの時点も規約集合は既定の CS-KYUURA-CURRENT@1。再生は記録の操作の列を新しい版での対戦で再生した互換性の確かめで、旧記録の正式な再実行・復元ではない",
+   "log_difference": {
+    "r2_with_power": "未出現（どの時点の候補にも本人のうらのバトル場のワザの候補はなく、入力・候補に addon が with_power の選べるものは 0 件、可視ログに group_attack_power・secret_plan_revealed は 0 件。0.190.0 の［めいれい］の提示は固定例では確かめていない）",
+    "other": "なし"
+   }
   }
  ]
 }
