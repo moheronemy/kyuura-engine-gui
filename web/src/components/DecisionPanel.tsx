@@ -313,6 +313,33 @@ function offersDeclaration(stages: InputStage[]): boolean {
   return stages.some((s) => s.input === "choose_option" && s.role === "declaration_options" && (s.options ?? []).length > 0);
 }
 
+/** 0.190.0（R-2 の［めいれい］）: 宣言といっしょに選ぶものの段に、エンジンが示した addon の種類。check の文の選び分けだけに使う（カード名・場からは決めない。送れるか・組は変えない）。 */
+function offeredAddons(stages: InputStage[]): Set<string> {
+  return new Set(
+    stages
+      .flatMap((s) => (s.input === "choose_option" && s.role === "declaration_options" ? (s.options ?? []) : []))
+      .map((o) => o.addon)
+      .filter((a): a is string => typeof a === "string"),
+  );
+}
+
+/** うらのワザで、エンジンが宣言といっしょに選ぶものを示したときの check を通った文。コインだけのときは 0.189.0 の文のまま。
+ * ［めいれい］（with_power）を示したときは、エンジンの check が確かめる範囲（同じ力を 2 つ選ぶ組の拒否を含む）と、特殊能力を使える・効果がはたらく保証でないことを示す。 */
+function faceDownDeclarationCheckText(stages: InputStage[]): string {
+  const addons = offeredAddons(stages);
+  if (!addons.has("with_power")) {
+    return "エンジンの形の検査を通りました（ワザの番号が 1 つで、そのあとに宣言といっしょに選ぶものを示されたものから重ねずに選んだことだけ。必要なエネルギーが足りるか・ワザを使えるか・コインを投げられるか・受理・完走の保証ではありません。コインを選んで受理されても、コインを投げたとは限りません。結果は送信の応答で決まります）";
+  }
+  const coin = addons.has("stadium_coin");
+  return (
+    "エンジンの形の検査を通りました（ワザの番号が 1 つで、そのあとに宣言といっしょに選ぶものを示されたものから重ねずに選び、同じ特殊能力を 2 つ選んでいないことだけ。" +
+    `必要なエネルギーが足りるか・ワザを使えるか・特殊能力を使えるか${coin ? "・コインを投げられるか" : ""}・受理・完走の保証ではありません。` +
+    "特殊能力を選んで受理されても、その効果がはたらいたとは限りません（ダメージが増えたかは、送信のあとの観測とログで確かめます）。" +
+    (coin ? "コインを選んで受理されても、コインを投げたとは限りません。" : "") +
+    "結果は送信の応答で決まります）"
+  );
+}
+
 /** 0.174.0（P6）: にげるのトラッシュの段が費用を評価していない（cost_evaluation）か。 */
 export function costNotEvaluated(stages: InputStage[]): boolean {
   return stages.some((s) => s.input === "choose_option" && s.cost_evaluation !== undefined);
@@ -712,7 +739,7 @@ export function DecisionPanel({ selection, actor = null, observation, names, bus
                 ? "エンジンの形の検査を通りました（段の数・番号・前の段との組だけ。特殊能力を使えるか・受理されるか・処理が完了するかは保証しません。送信のあとエンジンが判定します）"
                 : isFaceDownAttack(candidate, stages)
                   ? offersDeclaration(stages)
-                    ? "エンジンの形の検査を通りました（ワザの番号が 1 つで、そのあとに宣言といっしょに選ぶものを示されたものから重ねずに選んだことだけ。必要なエネルギーが足りるか・ワザを使えるか・コインを投げられるか・受理・完走の保証ではありません。コインを選んで受理されても、コインを投げたとは限りません。結果は送信の応答で決まります）"
+                    ? faceDownDeclarationCheckText(stages)
                     : "エンジンの形の検査を通りました（ワザの番号が 1 つで、ほかを選ばないことだけ。必要なエネルギーが足りるか・ワザを使えるか・受理・完走の保証ではありません。結果は送信の応答で決まります）"
                   : "エンジンの検査を通りました（受理・完走の保証ではありません。結果は送信の応答で決まります）"
             : `通りません ${check.refusal?.code ?? ""}${check.refusal ? `（${REFUSAL_TEXT[check.refusal.code] ?? check.refusal.message}）` : ""}`}
