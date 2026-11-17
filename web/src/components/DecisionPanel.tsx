@@ -398,9 +398,25 @@ function kindNote(kind: string, noStages: boolean, hasPathStage = false): string
 export function addonLabel(option: InputOption, observation: Observation | null, names: Names): string {
   const kind = labelOf(ADDON_LABELS, option.addon);
   if (option.addon === "stadium_coin" && typeof option.card_id === "string") return `${kind}（${names(option.card_id) ?? option.card_id}）`;
-  const where = typeof option.pokemon === "number" ? (pokemonPlace(observation, option.pokemon) ?? `ポケモン番号 ${option.pokemon}`) : null;
+  const where =
+    typeof option.pokemon === "number"
+      ? (pokemonPlace(observation, option.pokemon) ?? (option.face_down ? faceDownPlace(observation, option.pokemon) : null) ?? `ポケモン番号 ${option.pokemon}`)
+      : null;
   if (option.addon === "with_power" && typeof option.power === "string") return `［${option.power}］ — ${kind}${where ? `（${where}）` : ""}`;
   return `${kind}${where ? `（${where}）` : ""}`;
+}
+
+/** 0.192.0: face_down の選べるもの（with_power の自己持ち主: 本人のうらのバトル場のポケモン）の場所。今の観測の場のうらのポケモンを、公開の場の番号（pokemon_id）だけで
+ * 対応づけて「裏向きのポケモン（プレイヤー0・バトル場）」と書く。本人の観測の real（本当のカード）・カード ID・名前は読まない。見つからなければ null（今の表示のまま）。 */
+function faceDownPlace(observation: Observation | null, pokemonId: number): string | null {
+  if (!observation) return null;
+  const faceDown = (slot: FieldSlot | null | undefined) => slot != null && "face_down" in slot && slot.face_down === true && slot.pokemon_id === pokemonId;
+  for (const p of observation.players) {
+    if (faceDown(p.active)) return `裏向きのポケモン（${playerLabel(p.player)}・バトル場）`;
+    const index = p.bench.findIndex(faceDown);
+    if (index >= 0) return `裏向きのポケモン（${playerLabel(p.player)}・ベンチ${index + 1}）`;
+  }
+  return null;
 }
 
 /** U7-4: 必要なエネルギー（cost の値ごとの個数。印刷の値）。 */
