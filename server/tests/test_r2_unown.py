@@ -5,7 +5,8 @@
 操作は HTTP の口だけで行い、入力はエンジンが返した選べるものの id だけで作る（ワザ = 1 段目の位置・力 = 2 段目の with_power の位置。カード名・能力名・場から作らない）。
 
 - 示す: 2 段目に持ち主ごとに 1 つ（場の並び・任意・選んだ順・unverified・face_down_reveal_not_evaluated）。持ち主は公開の観測の場のポケモンと同じ番号・場所。note は新しい文
-- 示さない対照: 自己持ち主（使い手のアンノーンX 自身）・かがくへんかガス（力が無効）は、0.190.0 と同じ空の 2 段目
+- 示さない対照: かがくへんかガス（力が無効）は、0.190.0 と同じ空の 2 段目。自己持ち主（使い手のアンノーンX 自身。盤面 r2u_self）は 0.191.0 では示さない対照だったが、
+  0.192.0 から使い手自身の力を示す（意図した期待の変更。エンジンの test_self_holder_is_offered_from_v0_192 と同じ。詳しくは test_r2_unown_self.py）
 - check は形だけ（力なし・片方・両方の 2 順は valid。同じ持ち主の重なり（人工の入力）・力だけ・力が先は CANDIDATE_INPUT_INVALID）。状態・更新・ログを変えない
 - 受理: 力なし 10・［ANGER］30・［XXXXX］30（コイン「おもて」2 枚）・両方 50（どちらの順も）。公開の出来事は 1 回、ダメージは応答・状態のまま。3 閲覧者に同じ公開の出来事
 - XP1（相手のバトル場のベイビィ）: ［XXXXX］つきの送信は、check は valid、送信はエンジンの既存の停止（UNRESOLVED_GROUP_POWER_COIN_ORDER）で拒否。本人だけに診断。
@@ -112,12 +113,21 @@ def test_powers_are_offered_per_holder_in_field_order_and_the_holder_is_public(u
             assert (bench[index]["pokemon_id"], bench[index]["card_id"]) == (o["pokemon"], card_id)
 
 
-@pytest.mark.parametrize("board", ["r2u_self", "r2u_gas"])
+@pytest.mark.parametrize("board", ["r2u_gas"])
 def test_powers_are_not_offered_for_controls(ub, board):
     b, _ = ub
     _t, cand, _h, stages = start(b, board)
     assert (cand["processability"], cand["reasons"], cand["choices_format"]) == ("unverified", FACE_DOWN, "[ワザの番号]")
     assert stages[1]["options"] == [] and stages[1]["count"] == {"min": 0, "max": 0} and stages[1]["options_by_choice"] == {"o1": []}
+
+
+def test_self_holder_is_offered_from_0_192(ub):
+    """0.192.0 から（意図した期待の変更）: 0.191.0 の対照 r2u_self（うらのアンノーンX ＋ ベンチのコラッタ）では、使い手自身の［XXXXX］を 2 段目に 1 つだけ示す。"""
+    b, _ = ub
+    _t, cand, _h, stages = start(b, "r2u_self")
+    assert (cand["processability"], cand["reasons"]) == ("unverified", FACE_DOWN)
+    (only,) = stages[1]["options"]
+    assert (only["addon"], only["zone"], only["face_down"], only["power"]) == ("with_power", "active", True, X_POWER) and "card_id" not in only
 
 
 def test_check_is_shape_only_and_changes_nothing(ub):
