@@ -36,7 +36,9 @@ ATTACK_0179_SHA256 = "f1e79cef13b69200910504f90614393b2b2344d6dad71b47d25eff260e
 # 0.180.0〜0.187.0 の値は aa316b12cb9a79033e6d80685a4fbffacfa2e13b1af310bda57d76049b6f1d0c
 # 0.190.0 から、エンジンの同じテストの固定値と同じく更新（保証の文が［めいれい］を示す場合と、同じ力を 2 つ選ぶ組の check の拒否を述べるようになった。R-2）。
 # 0.188.0〜0.189.0 の値は 37edd7c4884937ee2502341280afc124a58561495c52aa72bed20159185042cd
-FACE_DOWN_ATTACK_SHA256 = "4accf876b58f005f94cb42710550fe6942252ca2311cd94f510f86240cadd376"
+# 0.191.0 から、エンジンの同じテストの固定値と同じく更新（保証の文が、分類済みの型の使い手に別のおもての持ち主の［XXXXX］・［ANGER］を対象のワザにだけ示す場合と、［XXXXX］が既存の未裁定の停止で拒否されうることを述べるようになった。R-2）。
+# 0.190.0 の値は 4accf876b58f005f94cb42710550fe6942252ca2311cd94f510f86240cadd376
+FACE_DOWN_ATTACK_SHA256 = "28f68001a145edb2d25ca70c2e8a8acbc73b74903a4ccbda75e4ba7c996bfba6"
 FACE_DOWN = ["face_down_reveal_not_evaluated"]
 EVALUATED = ["continuation_not_evaluated", "preflight_not_evaluated"]
 # 本人だけが知る本当のカードの印刷のワザ（エンジンのテストの値。結果の確かめにだけ使う）
