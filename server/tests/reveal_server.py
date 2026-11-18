@@ -8,7 +8,7 @@
 
 from __future__ import annotations
 
-from . import r2_boards, r2u_boards, r2us_boards, r2wp_boards, reveal_boards, tr3_boards
+from . import r2_boards, r2u_boards, r2us_boards, r2wp_boards, reveal_boards, tf_boards, tr3_boards
 from .p6_server import main as _main
 
 
@@ -19,10 +19,11 @@ def _install(scenarios_module, monkeypatch=None) -> None:
     r2wp_boards.install(scenarios_module, monkeypatch)  # 0.190.0: 同じく、同じ入口へ加える
     r2u_boards.install(scenarios_module, monkeypatch)  # 0.191.0: 同じく、同じ入口へ加える
     r2us_boards.install(scenarios_module, monkeypatch)  # 0.192.0: 同じく、同じ入口へ加える
+    tf_boards.install(scenarios_module, monkeypatch)  # 0.193.0・0.194.0（C-TF1・C-TF2）: 同じく、同じ入口へ加える
 
 
 def main(argv=None) -> None:
-    _main(argv, install=_install, description="0.184.0・0.185.0 の見せたカードと 0.186.0 の TR3・0.189.0 の R-2・0.190.0 の R-2［めいれい］・0.191.0 の R-2 アンノーン・0.192.0 の R-2 アンノーン自己持ち主の構築盤面の e2e 用の接続層（テスト専用。127.0.0.1 だけ）")
+    _main(argv, install=_install, description="0.184.0・0.185.0 の見せたカードと 0.186.0 の TR3・0.189.0 の R-2・0.190.0 の R-2［めいれい］・0.191.0 の R-2 アンノーン・0.192.0 の R-2 アンノーン自己持ち主・0.193.0/0.194.0 の変身 C-TF の構築盤面の e2e 用の接続層（テスト専用。127.0.0.1 だけ）")
 
 
 if __name__ == "__main__":
