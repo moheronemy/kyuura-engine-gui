@@ -217,7 +217,7 @@ renderer の `renderToCanvas` は、同じ Canvas では最後に始めた要求
 | 2（`role: declaration_options`・`meaning: declaration_option`・`count {0, n}`・`decline: true`・`order: significant`・`order_preserved: true`・`distinct: true`） | `depends_on_stage: 1`・`options_by_choice`（すべてのワザの番号に表がある。組は `option`・`eligible`・`processability`・`reasons`） | 必ずある。いっしょに選ぶものがなければ `options: []`・`count {0,0}`・組は空 | 組だけを示す。なければ入力を求めない |
 | 2 | `addon`（`stadium_coin`: `card`・`card_id` がスタジアム／`attack_power`: `pokemon`／`with_power`: `pokemon`・`card`・`zone`・`bench_index`・`card_id` か `face_down`・`power`） | addon ごとに決まる | addon の種類と、エンジンが返した名前・場所だけで表示 |
 
-- 入力 `choices` は `[ワザの番号, いっしょに選ぶものの番号...]`（選んだ順）。組にない・重なり・段の並びの誤り・知らない番号は `CANDIDATE_INPUT_INVALID`、止める組（未裁定・未対応）は `CANDIDATE_NOT_EXECUTABLE`（どちらもエンジンに渡さない・取っ手は失効しない）
+- 入力 `choices` は `[ワザの番号, いっしょに選ぶものの番号...]`（選んだ順）。組にない・重なり・段の並びの誤り・知らない番号は `CANDIDATE_INPUT_INVALID`、止める組（未裁定・未対応）は `CANDIDATE_NOT_EXECUTABLE`（どちらもエンジンに渡さない・取っ手は失効しない）。0.193.0 からの限定例外（変身で写した、写すことを確かめていない宣言用の力は 2 段目に示さず、その番号は `CANDIDATE_INPUT_INVALID`）は 35.3 節
 - GUI の検証（`web/src/api/validate.ts` の `kindStages`・`attackOption`・`addonOption`）: 段の role の並び（`stage_roles`）・選べるものの項目（`attack_option_keys`・`addon_option_keys`）・`route`・`addon`・`cost` の値が契約の表にないとき、すべてのワザに組の表がないとき、ほかの種類の段にワザの role が来たときは「不明な応答」として操作を止める。送信の結果の `result.status`（`status_values`）・`next`（`next_kinds`）・`halt` の形も確かめる
 - 宣言の対象・トラッシュ・検索・写すワザ・任意の効果は宣言の入力にない（受理のあとの既存の決定）。コインは入力にない
 
@@ -3237,7 +3237,7 @@ check（形だけ。状態・更新・ログを変えない）:
   - C-TF2（`c52f906`・版 `f747dc9`）: `effects.freeze_revealed_form` を `engine._reveal_for_action` の `UseAttack` だけから呼び、ワザの宣言でおもてにした使い手の姿を公開の直後に既存の固定へ足す（SF3。候補・入力の形は変えない）
 - 導入: 新しい `.venv` に Git の URL と完全なハッシュで非 editable。`direct_url` の `commit_id`・`requested_revision` は固定先、版は配布メタデータ・パッケージとも 0.194.0、site-packages から読み込み。実装の識別は behavior `b636dd946ad5a01597d59d7aec2a7d92630c64b002da727ce9a7c6cae3305815`（58 ファイル）・instrumentation `13c773a8…`（4 ファイル。0.192.0 と同じ）で、固定先のソースと一致
 - 依存: エンジンの依存の増減なし。pip freeze の違いはエンジンの行と、fastapi の推移的な依存 `annotated-doc`（0.0.6 → 0.0.7。GUI の requirements では固定していない。エンジンと関係しない）
-- 保証の文: `GUARANTEE_FACE_DOWN_ATTACK`（`cee8fc93…`）・`GUARANTEE_ATTACK`（`f1e79cef…`）の sha256 は 0.192.0 と同じ。`server/tests/test_f1.py` は変えていない。保証の文の読み（入力の形だけを確かめ、受理・公開のあとの結果を保証しない）も 34.1 のまま。GUI は保証の文を言い換えていない
+- 保証の文: `GUARANTEE_FACE_DOWN_ATTACK`（`cee8fc93…`）・`GUARANTEE_ATTACK`（`f1e79cef…`）の sha256 は 0.192.0 と同じ。`server/tests/test_f1.py` は変えていない。保証の文の読みは、うらとおもての使い手で分ける。うらの使い手の `GUARANTEE_FACE_DOWN_ATTACK` は 34.1 のまま（check は入力の形を確かめ、エンジンの確かめは呼ばない）。おもての使い手の `GUARANTEE_ATTACK` は、示した組に `check_use_attack` を使う（C-TF1 で示さない写した力の組は、その確かめが止める組の一部。エンジンの `docs/legal-actions-u7-4.md` 4.1 節）。どちらも、check を通っても、宣言の受理と受理のあとの効果は保証しない。GUI は保証の文を言い換えていない
 - 契約の表: `engine` と `$comment` の一文だけを直した（要求・応答の形・語彙は同じ）。版の期待（`test_bridge`・`test_card_definitions`・`test_contract`）
 
 ### 35.2 構築盤面と実応答
@@ -3258,8 +3258,8 @@ check（形だけ。状態・更新・ログを変えない）:
 - **C-TF1 の非提示**: T1 の 2 段目は `o3`（ベンチのアンノーンAの［ANGER］）だけ。写した使い手自身の［XXXXX］（0.192.0 の `o2`）は欠番。T2 の 2 段目は空（count 0〜0）。対照 O1 は `o2`（使い手自身の［XXXXX］・zone active）と `o3`、O2 は `o2`（`attack_power`）で今までどおり。候補はどれも `may_stop_later`（おもての使い手）
 - **check**: T1 で ワザだけ・ワザ＋`o3` は valid、同じ参照の重なり・力だけ・力が先は `CANDIDATE_INPUT_INVALID`。状態・更新・ログは変わらない
 - **受理**: T1 の力なし・［ANGER］つきはどちらもダメージ 20、T2 の写したワザ 20、O1 の自己［XXXXX］・自己［XXXXX］＋ベンチの［ANGER］30、O2 の［すいりょくはつでん］つき 30（どれもエンジンのテストの値と同じ。GUI は計算しない）
-- **人工の入力（欠番の id）**: check は `CANDIDATE_INPUT_INVALID`。送ると接続層が同じ区分で断る（`refused`。状態・更新・ログ・相手と観戦者の view は同じ）。示された入力に直すと受理（20）
-- **直接のコマンド（接続層・入力 API を通さない）**: T1 の使い手自身の `with_power`・使い手自身＋ベンチの `with_powers`、T2 の `attack_power` は、エンジンの `UNSUPPORTED_TRANSFORM_COPIED_POWER` で拒否（状態は同じ）。O1 の使い手自身の `with_power` は受理。接続層の `CANDIDATE_INPUT_INVALID`（示していない番号）とは別の区分として記録した
+- **人工の入力（欠番の id）**: check は `CANDIDATE_INPUT_INVALID`。送ると、エンジンの `client_api` が submit に同じ区分で `refused` を返し（エンジンのコマンドを適用する前）、接続層はその応答を中継する（状態・更新・ログ・相手と観戦者の view は同じ）。示された入力に直すと受理（20）
+- **直接のコマンド（接続層・入力 API を通さない）**: T1 の使い手自身の `with_power`・使い手自身＋ベンチの `with_powers`、T2 の `attack_power` は、エンジンの `UNSUPPORTED_TRANSFORM_COPIED_POWER` で拒否（状態は同じ）。O1 の使い手自身の `with_power` は受理。これはエンジン側の別の経路で、入力 API の `CANDIDATE_INPUT_INVALID`（示していない番号。接続層は中継するだけ）とは別の区分として記録した
 - **C-TF2 に関係する既存の操作（V1・おもて）**: きつねびを宣言（2 段目は空）→ 受理で決定 `forced_switch`（`meaning` pokemon・count 0〜1・`decline` true・選べるものの value は相手のベンチの番号）。決定を待つあいだ相手の candidates は空。回答: フシギダネ → フシギダネにダメージ 20、ゼニガメ → 10、入れ替えない → ロコンに 10。どれも決定のあと固定は空で、3 閲覧者の観測のダメージは同じ
 - **うらのメタモン（V2）**: ワザの候補は `not_implemented`（reasons `face_down_reveal_not_evaluated`・`no_printed_attack`）・`stages: []`。check（`[]`・人工の `["o1"]`）は `CANDIDATE_NOT_EXECUTABLE`、人工の送信は断る。状態は同じで、うらのまま。相手・観戦者の観測に本当のカードはない
 
@@ -3274,9 +3274,12 @@ check（形だけ。状態・更新・ログを変えない）:
 - 決定 `forced_switch` は既存の `choose_option` の段（「選ばない」と並ぶ radio・選べるものは公開の観測の場所の名前）。決定への回答は `check_before_submit_kinds` にない既存の扱いのまま（GUI は自動で答えない。check を通しても受理の保証ではない）
 - うらのメタモンのワザの候補は、開いても段がなく、実行できる区分でないので送信のボタンは押せない（既存の扱い）
 - `CANDIDATE_INPUT_INVALID` の表示の文は既存の「入力が候補の制約に合いません」。示していない番号を画面から選ぶ手段はない
+- 10.2 節の限定例外（0.193.0 から。エンジンの `docs/legal-actions-u7-4.md` 4 章・4.1 節）: 変身で写した、写すことを確かめていない宣言用の力（写した［XXXXX］・［ANGER］・［すいりょくはつでん］）は 2 段目に示さない。その番号を送ると、示していない番号として `CANDIDATE_INPUT_INVALID` になる（10.2 節の「止める組は `CANDIDATE_NOT_EXECUTABLE`」にはならない。ゲーム上の禁止を意味しない）。うらのメタモンの `no_printed_attack` の候補で check が `CANDIDATE_NOT_EXECUTABLE` になるのは、候補そのものが実行できない区分だからで（35.2 節）、この例外とは別の例
+- `CANDIDATE_INPUT_INVALID` は、示していない番号を送ったときのほか、示した組を宣言の確かめ（`check_use_attack`）が禁止と判定したときにも返る（エンジンの 4.1 節）。表示は上の既存の文のままで、GUI はこのコードからカード固有の裁定や禁止の理由を断定して表示しない
 - ダメージは観測の値のまま（GUI は計算しない）。拒否・決定の扱い・閲覧者の分離・選び直しで前の check を使わないことは既存のまま
 
 U7-4 の文書の訂正候補 AC-1〜AC-3（エンジンの `docs/r2-transform-frozen-reveal-design.md` 2 章。C-TF1 の例外の書き足し）は別件として残す。GUI の側で今回確かめたのは上の応答と扱いだけで、エンジンの文書は変えていない。
+（追記 2026-11-19: エンジンの `claude/u7-4-ac-doc-correction`（`7ee1501`）が U7-4 の文書を訂正した（4 章・4.1 節）。それに合わせて、この文書の 10.2・35.1・35.2・35.3・35.7 節を文書だけで訂正した（G-1〜G-4）。製品のコード・契約の表・テストは変えていない）
 
 ### 35.4 固定例の互換性
 
@@ -3302,8 +3305,8 @@ U7-4 の文書の訂正候補 AC-1〜AC-3（エンジンの `docs/r2-transform-f
 
 - うらのメタモンの入力の提示（変身のあとのワザ・2 段目）は保留（エンジンが `no_printed_attack` で示さない。GUI も作らない）
 - ［すいりょくはつでん］の写した経路・数え方（SF2）は未決のまま。写した宣言用の力は示さない（C-TF1）
-- U7-4 の文書の訂正候補 AC-1〜AC-3 は別件（エンジンの文書）
-- XP1 など未裁定の停止・実行を保証しない契約（`unverified`・`may_stop_later`・check は形だけ）は維持
+- U7-4 の文書の訂正候補 AC-1〜AC-3 はエンジンの `7ee1501` で訂正済み。この文書の G-1〜G-4 の訂正も反映した（35.3 節の追記）
+- XP1 など未裁定の停止・実行を保証しない契約は維持（`unverified`・`may_stop_later` の候補は、check を通っても受理を保証しない。check が入力の形だけを確かめるのは、うらのワザの候補（`GUARANTEE_FACE_DOWN_ATTACK`）。35.1 節）
 - 通常の対戦での到達は未確認
 - 34.7 のうち「変身の経路は未対応」は、C-TF1（示さない）・C-TF2（エンジンの固定の修正）の範囲で更新。ほかは変わらない
 
