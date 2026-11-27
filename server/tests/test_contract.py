@@ -23,7 +23,7 @@ EXPECTED = json.loads((ROOT / "contract" / "kyuura-client-api-v1.json").read_tex
 def test_engine_identity():
     """導入元は direct_url.json の vcs_info で確かめる（site-packages で git rev-parse をしない）。"""
     summary = verify_engine_source(EXPECTED["engine"]["commit"], EXPECTED["engine"]["version"])
-    assert summary["commit_id"] == EXPECTED["engine"]["commit"] and summary["version"] == kyuura_engine.__version__ == EXPECTED["engine"]["version"] == "0.185.0"
+    assert summary["commit_id"] == EXPECTED["engine"]["commit"] and summary["version"] == kyuura_engine.__version__ == EXPECTED["engine"]["version"] == "0.194.0"
     assert "site-packages" in Path(summary["module"]).parts and ".venv/src" not in Path(summary["module"]).as_posix()
     reqs = (ROOT / "server" / "requirements.txt").read_text(encoding="utf-8")
     assert f"kyuura-engine @ git+https://github.com/moheronemy/kyuura-engine@{EXPECTED['engine']['commit']}" in reqs
@@ -150,7 +150,11 @@ def test_u7_5_option_keys_cover_engine_source():
     assert set(EXPECTED["holder_keys"]) == {"pokemon", "card", "zone", "bench_index", "card_id", "face_down"}
     card = inspect.getsource(L._card_option)
     assert '"card"' in card and '"card_id"' in card and 'option["special"]' in card and 'category == "energy"' in card  # special はエネルギーだけ（トレーナーにない）
-    assert set(EXPECTED["trainer_option_keys"]) == common | {"card", "card_id"}
+    # 0.186.0: 規約による除外（状態の規約集合の続行規約）の選べるものは eligible: false と convention を持ち、processability を書かない（_trainer_candidate）
+    trainer = inspect.getsource(L._trainer_candidate)
+    assert '"eligible": False, "convention": rejected_by[0]' in trainer and "processability" not in trainer.split('"convention": rejected_by[0]')[0].rsplit("options.append(", 1)[1]
+    assert "(NOT_IMPLEMENTED, [\"no_eligible_card\"])" in trainer  # 選べるものが規約による除外だけなら not_implemented・no_eligible_card
+    assert set(EXPECTED["trainer_option_keys"]) == common | {"card", "card_id", "convention"}
     stadium = inspect.getsource(L._stadium_candidate)
     assert '"card": energy, "card_id": state.cards[energy].card_id, "holder": dict(base)' in stadium
     assert set(EXPECTED["stadium_energy_option_keys"]) == common | {"card", "card_id", "holder"}
@@ -316,3 +320,23 @@ def test_log_request_values_match_engine():
     assert C.LOG_POSITION_UNKNOWN == log["position_unknown"] == EXPECTED["client_error_codes"][-1]
     for role in (C.ROLE_PLAYER, C.ROLE_SPECTATOR, C.ROLE_HOST):
         assert C._REQUESTS[role][log["request_type"]] == ({}, {"from": dict})
+
+
+def test_convention_sets_match_engine_and_bridge():
+    """0.186.0: 新しい対戦で選べる規約集合（接続層の app.CONVENTION_SETS）・既定の集合・照合値が、契約の表と固定版のエンジンの登録（PINNED_SET_DIGESTS・SETS）と同じ。
+    既定は省略（""）のままエンジンの CS-KYUURA-CURRENT@1（GUI は既定を変えない）。TR3 は PO@1 の 20 規約と新しい 3 規約の計 23 件。"""
+    from kyuura_engine import conventions as C
+    from kyuura_gui_server.app import CONVENTION_SETS
+
+    table = EXPECTED["convention_sets"]
+    assert [k for k in CONVENTION_SETS if k] == table["selectable"] and CONVENTION_SETS[""] is None
+    assert all(CONVENTION_SETS[k] == k for k in table["selectable"])  # 選んだ値をそのままエンジンへ渡す（読み替えない）
+    assert table["default"] == f"{C.DEFAULT_SET[0]}@{C.DEFAULT_SET[1]}" == "CS-KYUURA-CURRENT@1"
+    pinned = {f"{k[0]}@{k[1]}": v for k, v in C.PINNED_SET_DIGESTS.items()}
+    assert {k: pinned[k] for k in table["digests"]} == table["digests"]
+    for ref in table["selectable"]:
+        set_id, version = ref.rsplit("@", 1)
+        assert (set_id, int(version)) in C.SETS, ref
+    tr3, po = C.SETS[("CS-KYUURA-PLAY-TR3", 1)], C.SETS[("CS-KYUURA-PLAY-PO", 1)]
+    new = [f"{m}@{v}" for m, v in tr3.members[len(po.members):]]
+    assert len(tr3.members) == table["tr3_members"] == 23 and tr3.members[: len(po.members)] == po.members and new == table["tr3_new_conventions"]

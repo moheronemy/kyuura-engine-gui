@@ -217,6 +217,12 @@ textarea {
 .proc-unverified {
   border-style: dashed;
 }
+/* 0.186.0: 規約による除外（処理可能性の区分ではない。未裁定・未実装と見分けられるよう、色ではなく二重線で示す） */
+.convention-excluded {
+  border-color: var(--info);
+  border-style: double;
+  border-width: 3px;
+}
 .disclosure-unconfirmed {
   border-color: var(--warn);
   background: var(--warn-bg);

@@ -417,10 +417,21 @@ function reasons(o: Obj, where: string): void {
   if ("reasons" in o) strList(o.reasons, `${where}.reasons`);
 }
 
+/** 0.186.0: 規約の参照（"ID@版"）。エンジンの legal_actions の f"{id}@{version}" の形だけ。 */
+const CONVENTION_REF = /^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*@[1-9][0-9]*$/;
+
 function option(value: unknown, where: string): InputOption {
   const o = obj(value, where);
   str(o.id, `${where}.id`);
-  oneOf(o.processability, PROCESSABILITY, `${where}.processability`);
+  if ("convention" in o) {
+    // 0.186.0（エンジンの docs/play-convention-tr3-v0.186.md D2）: 状態の規約集合の続行規約で除外した選べるもの。eligible は偽で、processability・reasons を持たない
+    // （処理可能性の区分ではない）。送れる形・区分を併せ持つものは、知らない意味として止める（規約による除外を送れるものとして読まない）
+    if (typeof o.convention !== "string" || !CONVENTION_REF.test(o.convention)) fail(`${where}.convention`);
+    if (o.eligible !== false) fail(`${where}: 規約による除外が eligible: false でない`);
+    if ("processability" in o || "reasons" in o) fail(`${where}: 規約による除外に処理可能性の区分・理由`);
+  } else {
+    oneOf(o.processability, PROCESSABILITY, `${where}.processability`);
+  }
   if ("eligible" in o) bool(o.eligible, `${where}.eligible`);
   if ("card_id" in o) str(o.card_id, `${where}.card_id`);
   reasons(o, where);
@@ -596,6 +607,10 @@ function retreatStages(stages: InputStage[]): void {
  * ほかの種類の段に、その種類の role が来たら止める（role だけで古い画面へ通さない）。
  */
 function kindStages(kind: string, stages: InputStage[]): void {
+  // 0.186.0: 規約による除外（convention）は、手札のトレーナー（trainer_kinds）の選べるものだけ（エンジンの _trainer_candidate）。ほかの種類に来たら知らない形として止める
+  if (!TRAINER_KINDS.has(kind)) {
+    for (const s of stages) if (s.input === "choose_option" && (s.options ?? []).some((op) => "convention" in op)) fail(`stages[${s.stage}]: ${kind} の段に規約による除外`);
+  }
   if (kind === "retreat") return retreatStages(stages);
   // にげるの外: 個数・費用の評価の項目は来ない（来たら、知らない制約として止める）
   for (const s of stages) {
@@ -681,7 +696,7 @@ function displayOnlyStages(kind: string, stages: InputStage[]): void {
     for (const key of Object.keys(op)) if (!FACE_UP_OPTION_KEYS.has(key)) fail(`${w}.${key}: 知らない表示だけの項目`);
     if (op.owner !== 0 && op.owner !== 1) fail(`${w}.owner`);
     if (int(op.position, `${w}.position`) < 1) fail(`${w}.position: いちばん上より下でない`);
-    if (op.eligible !== false || EXECUTABLE_PROCESSABILITY.has(op.processability)) fail(`${w}: 表示だけの選べるものが送れる区分`);
+    if (op.eligible !== false || typeof op.processability !== "string" || EXECUTABLE_PROCESSABILITY.has(op.processability)) fail(`${w}: 表示だけの選べるものが送れる区分`);
   });
 }
 

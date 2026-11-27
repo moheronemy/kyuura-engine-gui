@@ -32,7 +32,15 @@ from .test_u7_5e import handle_of
 VOLATILE = ("game", "revision")
 # エンジンの tests/test_legal_actions_f1_v0_180.py の定数（0.179.0 の GUARANTEE_ATTACK と 0.180.0 の GUARANTEE_FACE_DOWN_ATTACK の値の sha256）
 ATTACK_0179_SHA256 = "f1e79cef13b69200910504f90614393b2b2344d6dad71b47d25eff260ec5bc5b"
-FACE_DOWN_ATTACK_SHA256 = "aa316b12cb9a79033e6d80685a4fbffacfa2e13b1af310bda57d76049b6f1d0c"
+# 0.188.0 から、エンジンの tests/test_legal_actions_f1_v0_180.py の固定値と同じく更新（保証の文がクチバシティジムのコインを示す場合を述べるようになった。R-2）。
+# 0.180.0〜0.187.0 の値は aa316b12cb9a79033e6d80685a4fbffacfa2e13b1af310bda57d76049b6f1d0c
+# 0.190.0 から、エンジンの同じテストの固定値と同じく更新（保証の文が［めいれい］を示す場合と、同じ力を 2 つ選ぶ組の check の拒否を述べるようになった。R-2）。
+# 0.188.0〜0.189.0 の値は 37edd7c4884937ee2502341280afc124a58561495c52aa72bed20159185042cd
+# 0.191.0 から、エンジンの同じテストの固定値と同じく更新（保証の文が、分類済みの型の使い手に別のおもての持ち主の［XXXXX］・［ANGER］を対象のワザにだけ示す場合と、［XXXXX］が既存の未裁定の停止で拒否されうることを述べるようになった。R-2）。
+# 0.190.0 の値は 4accf876b58f005f94cb42710550fe6942252ca2311cd94f510f86240cadd376
+# 0.192.0 から、エンジンの同じテストの固定値と同じく更新（保証の文の preconditions が、うらの使い手自身の［XXXXX］・［ANGER］を示す条件と、check が使い手自身の力を本当のカードの登録で読むことを述べるようになった。acceptance・after_acceptance・supported_scope は同じ。R-2）。
+# 0.191.0 の値は 28f68001a145edb2d25ca70c2e8a8acbc73b74903a4ccbda75e4ba7c996bfba6
+FACE_DOWN_ATTACK_SHA256 = "cee8fc938c5892f81cae606d4a79bebde2ac89cca386a9b2abd17b10f80aac67"
 FACE_DOWN = ["face_down_reveal_not_evaluated"]
 EVALUATED = ["continuation_not_evaluated", "preflight_not_evaluated"]
 # 本人だけが知る本当のカードの印刷のワザ（エンジンのテストの値。結果の確かめにだけ使う）

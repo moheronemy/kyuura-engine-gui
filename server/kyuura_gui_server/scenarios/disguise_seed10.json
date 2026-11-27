@@ -340,6 +340,84 @@
     "fossil_slot_reveal": "未出現（固定例のログに reveal_from_deck・reveal_deck_top・retrieve_trainer は 0 件。0.185.0 で化石の発掘の山札の側に加わった card_id と、スロットゲームの束の card_ids は固定例では確かめていない）",
     "other": "なし"
    }
+  },
+  {
+   "engine_commit": "a1b765918dc8e0f8ff326fa732d2c8220edab8e2",
+   "engine_version": "0.186.0",
+   "checked": "2026-11-15",
+   "result": "同じ（確かめの追記だけ。記録は作り直していない。0.185.0 の記録・スナップショットを流用して識別を書きかえたものではない）",
+   "method": "server/tools/scenario_views.py の --full と、閲覧者（0・1・観戦者）ごとの可視ログ（エンジンの公開の関数 visible_segment_logs・visible_log を固定例の状態に当てた写し。証跡の compare/logs.py）を、0.185.0（fa98012。この比べのためだけに作業の外に作った新しい venv に非 editable で入れた。direct_url のコミットを先に確かめた）と 0.186.0（a1b7659）の環境で実行し、項目ごとに比べ、版・識別／ログ／観測・通知／候補・選べるもの・順序／処理可能性・理由／入力／guarantees に分けた。固定例のすべての時点で、全入口の view・candidates と作成の知らせ、3 閲覧者の可視ログはすべて同じ（views_sha256 も同じ。違いは比べた出力の外側の engine_version だけ）。0.186.0 の要求 log（4 つの入口）は状態からの写しと同じ。どの時点も規約集合は既定の CS-KYUURA-CURRENT@1 で、規約による除外（convention を持つ選べるもの）は 0 件。再生は記録の操作の列を新しい版での対戦で再生した互換性の確かめで、旧記録の正式な再実行・復元ではない",
+   "log_difference": {
+    "play_convention_tr3": "対象外（固定例はどれも既定の集合。CS-KYUURA-PLAY-TR3@1 の規約による除外は固定例では確かめていない）",
+    "other": "なし"
+   }
+  },
+  {
+   "engine_commit": "d562ec16e3f493569ed0251cbcf9062ceccdbb1a",
+   "engine_version": "0.187.0",
+   "checked": "2026-11-16",
+   "result": "同じ（確かめの追記だけ。記録は作り直していない。0.186.0 の記録・スナップショットを流用して識別を書きかえたものではない）",
+   "method": "server/tools/scenario_views.py の --full と、閲覧者（0・1・観戦者）ごとの可視ログ（エンジンの公開の関数 visible_segment_logs・visible_log を固定例の状態に当てた写し。証跡の compare/logs.py）を、0.186.0（a1b7659。この比べのためだけに作業の外に作った新しい venv に非 editable で入れた。direct_url のコミットを先に確かめた）と 0.187.0（d562ec1）の環境で実行し、項目ごとに比べ、版・識別／ログ／観測・通知／候補・選べるもの・順序／処理可能性・理由／入力／guarantees に分けた。固定例のすべての時点で、全入口の view・candidates と作成の知らせ、3 閲覧者の可視ログはすべて同じ（views_sha256 も同じ。違いは比べた出力の外側の engine_version だけ）。0.187.0 の要求 log（4 つの入口）は状態からの写しと同じ。0.187.0 のエンジンの差は停止の方針の台帳の場面の索引（テスト・道具だけの語の項目 8 件を除いた 398→390）と版だけ。どの時点も規約集合は既定の CS-KYUURA-CURRENT@1 で、規約による除外（convention を持つ選べるもの）は 0 件。再生は記録の操作の列を新しい版での対戦で再生した互換性の確かめで、旧記録の正式な再実行・復元ではない",
+   "log_difference": {
+    "play_convention_tr3": "対象外（固定例はどれも既定の集合。CS-KYUURA-PLAY-TR3@1 の規約による除外は固定例では確かめていない）",
+    "scene_index": "対象外（場面の索引は接続層・GUI が読まず、固定例の応答・ログに出ない）",
+    "other": "なし"
+   }
+  },
+  {
+   "engine_commit": "021510c6f46d51a48553b597f1421172ae5f0e98",
+   "engine_version": "0.189.0",
+   "checked": "2026-11-16",
+   "result": "観測と可視ログは同じ（確かめの追記だけ。記録は作り直していない。0.187.0 の記録・スナップショットを流用して識別を書きかえたものではない）。candidates の違いは coverage.residual の R-2 の note の文（0.188.0 の文の更新）だけ",
+   "method": "server/tools/scenario_views.py の --full と、閲覧者（0・1・観戦者）ごとの可視ログ（エンジンの公開の関数 visible_segment_logs・visible_log を固定例の状態に当てた写し。証跡の compare/logs.py）を、0.187.0（d562ec1。この比べのためだけに作業の外に作った新しい venv に非 editable で入れた。direct_url のコミットを先に確かめた）と 0.189.0（021510c）の環境で実行し、項目ごとに比べ、版・識別／ログ／観測・通知／候補・選べるもの・順序／処理可能性・理由／入力／guarantees に分けた。固定例のすべての時点で、全入口の view と作成の知らせ、3 閲覧者の可視ログは同じ（views_sha256 も同じ）。candidates の違いは 45 か所で、どれも coverage.residual.classes の R-2 の note の文（エンジンが 0.188.0 で、クチバシティジムのコインを条件つきで示すことを書き加えた）。候補・選べるもの・処理可能性・理由・入力・guarantees はほかに違いがない。0.189.0 の要求 log（4 つの入口）は状態からの写しと同じ。どの時点も規約集合は既定の CS-KYUURA-CURRENT@1。再生は記録の操作の列を新しい版での対戦で再生した互換性の確かめで、旧記録の正式な再実行・復元ではない",
+   "log_difference": {
+    "r2_stadium_coin": "未出現（固定例のログに source が stadium の coin_flip と secret_plan_revealed は 0 件、どの時点の候補にも本人のうらのバトル場のワザの候補はない。0.188.0 のクチバシティジムのコインの提示と 0.189.0 の先読みの修正は固定例では確かめていない）",
+    "other": "なし"
+   }
+  },
+  {
+   "engine_commit": "daf271833de645de5707e5554b7c10f13b51075a",
+   "engine_version": "0.190.0",
+   "checked": "2026-11-17",
+   "result": "観測・可視ログ・候補・入力・guarantees は同じ（確かめの追記だけ。記録は作り直していない。0.189.0 の記録・スナップショットを流用して識別を書きかえたものではない）。違いは版だけ",
+   "method": "server/tools/scenario_views.py の --full と、閲覧者（0・1・観戦者）ごとの可視ログ（エンジンの公開の関数 visible_segment_logs・visible_log を固定例の状態に当てた写し。証跡の compare/logs.py）を、0.189.0（021510c。この比べのためだけに作業の外に作った新しい venv に非 editable で入れた。direct_url のコミットを先に確かめた）と 0.190.0（daf2718）の環境で実行し、項目ごとに比べ、版・識別／ログ／観測・通知／候補・選べるもの・順序／処理可能性・理由／入力／guarantees に分けた。固定例のすべての時点で、違いは版の 2 か所だけ（views_sha256 も同じ）。0.190.0 の要求 log（4 つの入口）は状態からの写しと同じ。どの時点も規約集合は既定の CS-KYUURA-CURRENT@1。再生は記録の操作の列を新しい版での対戦で再生した互換性の確かめで、旧記録の正式な再実行・復元ではない",
+   "log_difference": {
+    "r2_with_power": "未出現（どの時点の候補にも本人のうらのバトル場のワザの候補はなく、入力・候補に addon が with_power の選べるものは 0 件、可視ログに group_attack_power・secret_plan_revealed は 0 件。0.190.0 の［めいれい］の提示は固定例では確かめていない）",
+    "other": "なし"
+   }
+  },
+  {
+   "engine_commit": "084157dd84047acf30ec9943a946fd87ba774882",
+   "engine_version": "0.191.0",
+   "checked": "2026-11-17",
+   "result": "観測・可視ログ・候補・入力・guarantees は同じ（確かめの追記だけ。記録は作り直していない。0.190.0 の記録・スナップショットを流用して識別を書きかえたものではない）。違いは版だけ",
+   "method": "server/tools/scenario_views.py の --full と、閲覧者（0・1・観戦者）ごとの可視ログ（エンジンの公開の関数 visible_segment_logs・visible_log を固定例の状態に当てた写し。証跡の compare/logs.py）を、0.190.0（daf2718。この比べのためだけに作業の外に作った新しい venv に非 editable で入れた。direct_url のコミットを先に確かめた）と 0.191.0（084157d）の環境で実行し、項目ごとに比べ、版・識別／ログ／観測・通知／候補・選べるもの・順序／処理可能性・理由／入力／guarantees に分けた。固定例のすべての時点で、違いは版の 2 か所だけ（views_sha256 も同じ）。0.191.0 の要求 log（4 つの入口）は状態からの写しと同じ。どの時点も規約集合は既定の CS-KYUURA-CURRENT@1。再生は記録の操作の列を新しい版での対戦で再生した互換性の確かめで、旧記録の正式な再実行・復元ではない",
+   "log_difference": {
+    "r2_unown_with_power": "未出現（どの時点の候補にも本人のうらのバトル場のワザの候補はなく、入力・候補に addon が with_power の選べるものは 0 件、可視ログに group_attack_power・secret_plan_revealed は 0 件。0.191.0 のアンノーンの［XXXXX］・［ANGER］の提示は固定例では確かめていない）",
+    "other": "なし"
+   }
+  },
+  {
+   "engine_commit": "58087397890db729f12085b4fbe71a38638b372c",
+   "engine_version": "0.192.0",
+   "checked": "2026-11-18",
+   "result": "観測・可視ログ・候補・入力・guarantees は同じ（確かめの追記だけ。記録は作り直していない。0.191.0 の記録・スナップショットを流用して識別を書きかえたものではない）。違いは版だけ",
+   "method": "server/tools/scenario_views.py の --full と、閲覧者（0・1・観戦者）ごとの可視ログ（エンジンの公開の関数 visible_segment_logs・visible_log を固定例の状態に当てた写し。証跡の compare/logs.py）を、0.191.0（084157d。この比べのためだけに作業の外に作った新しい venv に非 editable で入れた。direct_url のコミットを先に確かめた）と 0.192.0（5808739）の環境で実行し、項目ごとに比べ、版・識別／ログ／観測・通知／候補・選べるもの・順序／処理可能性・理由／入力／guarantees に分けた。固定例のすべての時点で、違いは版の 2 か所だけ（views_sha256 も同じ）。0.192.0 の要求 log（4 つの入口）は状態からの写しと同じ。どの時点も規約集合は既定の CS-KYUURA-CURRENT@1。再生は記録の操作の列を新しい版での対戦で再生した互換性の確かめで、旧記録の正式な再実行・復元ではない",
+   "log_difference": {
+    "r2_unown_self_holder": "未出現（どの時点の候補にも本人のうらのバトル場のワザの候補はなく、入力・候補に addon が with_power の選べるもの（zone が active・face_down の自己持ち主を含む）は 0 件、可視ログに group_attack_power・secret_plan_revealed は 0 件。0.192.0 のアンノーンの自己持ち主の［XXXXX］・［ANGER］の提示は固定例では確かめていない）",
+    "other": "なし"
+   }
+  },
+  {
+   "engine_commit": "f747dc971126145d1e61c4e6b14d8229c6a37e13",
+   "engine_version": "0.194.0",
+   "checked": "2026-11-19",
+   "result": "観測・可視ログ・候補・入力・guarantees は同じ（確かめの追記だけ。記録は作り直していない。0.192.0 の記録・スナップショットを流用して識別を書きかえたものではない）。違いは版だけ",
+   "method": "server/tools/scenario_views.py の --full と、閲覧者（0・1・観戦者）ごとの可視ログ（エンジンの公開の関数 visible_segment_logs・visible_log を固定例の状態に当てた写し。証跡の compare/logs.py）を、0.192.0（5808739。この比べのためだけに作業の外に作った新しい venv に非 editable で入れた。direct_url のコミットを先に確かめた）と 0.194.0（f747dc9）の環境で実行し、項目ごとに比べ、版・識別／ログ／観測・通知／候補・選べるもの・順序／処理可能性・理由／入力／guarantees に分けた。固定例のすべての時点で、違いは版の 2 か所だけ（views_sha256 も同じ）。0.194.0 の要求 log（4 つの入口）は状態からの写しと同じ。どの時点も規約集合は既定の CS-KYUURA-CURRENT@1。再生は記録の操作の列を新しい版での対戦で再生した互換性の確かめで、旧記録の正式な再実行・復元ではない",
+   "log_difference": {
+    "r2_transform_c_tf1_c_tf2": "未出現（どの時点の入力・候補にも addon が attack_power・with_power の選べるものは 0 件、reasons に no_printed_attack を持つワザの候補は 0 件、決定の段の decision_kind が forced_switch は 0 件、可視ログに transform を含む出来事・secret_plan_revealed・attack_power・group_attack_power は 0 件。0.193.0 の写した力を示さないこと（C-TF1）と 0.194.0 の公開した使い手の姿の固定（C-TF2）は固定例では確かめていない）",
+    "other": "なし"
+   }
   }
  ]
 }

@@ -44,7 +44,9 @@ from .safety import forbidden_paths, masked_hidden
 
 log = logging.getLogger("kyuura_gui_server")
 MAX_BODY = 32 * 1024
-CONVENTION_SETS = {"": None, "CS-KYUURA-PLAY-S2A@1": "CS-KYUURA-PLAY-S2A@1", "CS-KYUURA-PLAY-PO@1": "CS-KYUURA-PLAY-PO@1"}
+# 新しい対戦で選べる規約集合（"" は省略 = エンジンの既定の集合。既定は変えない）。0.186.0: プレイ用の開発用の集合 CS-KYUURA-PLAY-TR3@1（PO@1 の 20 規約と突風・ポケモンいれかえ・
+# きずぐすりの続行規約 3 件）を、明示的に選んだ対戦だけに加えた。ここにない値は GUI_FIELD_INVALID（エンジンへ渡さない）
+CONVENTION_SETS = {"": None, "CS-KYUURA-PLAY-S2A@1": "CS-KYUURA-PLAY-S2A@1", "CS-KYUURA-PLAY-PO@1": "CS-KYUURA-PLAY-PO@1", "CS-KYUURA-PLAY-TR3@1": "CS-KYUURA-PLAY-TR3@1"}
 ALLOWED_HOSTS = ("127.0.0.1", "localhost")
 
 ERRORS = {

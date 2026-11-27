@@ -57,6 +57,7 @@ import {
   ADDON_LABELS,
   DECISION_TEXT,
   ENERGY_LABELS,
+  CONVENTION_EXCLUDED,
   KIND_LABELS,
   ORDER_TEXT,
   PLACEMENT_TEXT,
@@ -306,6 +307,39 @@ function isFaceDownAttack(candidate: Candidate, stages: InputStage[]): boolean {
   return ATTACK_KINDS.has(candidate.kind) && stages.some((s) => s.input === "choose_option" && (s.options ?? []).some((o) => o.face_down === true));
 }
 
+/** 0.189.0（R-2。0.188.0 からエンジンが示す）: 宣言といっしょに選ぶもの（role: declaration_options）の段に、エンジンが選べるものを示したか。check の文の選び分けだけに使う
+ * （うらのワザの check は、示したものがあればその形も確かめる。カード名・スタジアムからは決めない。送れるか・組は変えない）。 */
+function offersDeclaration(stages: InputStage[]): boolean {
+  return stages.some((s) => s.input === "choose_option" && s.role === "declaration_options" && (s.options ?? []).length > 0);
+}
+
+/** 0.190.0（R-2 の［めいれい］）: 宣言といっしょに選ぶものの段に、エンジンが示した addon の種類。check の文の選び分けだけに使う（カード名・場からは決めない。送れるか・組は変えない）。 */
+function offeredAddons(stages: InputStage[]): Set<string> {
+  return new Set(
+    stages
+      .flatMap((s) => (s.input === "choose_option" && s.role === "declaration_options" ? (s.options ?? []) : []))
+      .map((o) => o.addon)
+      .filter((a): a is string => typeof a === "string"),
+  );
+}
+
+/** うらのワザで、エンジンが宣言といっしょに選ぶものを示したときの check を通った文。コインだけのときは 0.189.0 の文のまま。
+ * ［めいれい］（with_power）を示したときは、エンジンの check が確かめる範囲（同じ力を 2 つ選ぶ組の拒否を含む）と、特殊能力を使える・効果がはたらく保証でないことを示す。 */
+function faceDownDeclarationCheckText(stages: InputStage[]): string {
+  const addons = offeredAddons(stages);
+  if (!addons.has("with_power")) {
+    return "エンジンの形の検査を通りました（ワザの番号が 1 つで、そのあとに宣言といっしょに選ぶものを示されたものから重ねずに選んだことだけ。必要なエネルギーが足りるか・ワザを使えるか・コインを投げられるか・受理・完走の保証ではありません。コインを選んで受理されても、コインを投げたとは限りません。結果は送信の応答で決まります）";
+  }
+  const coin = addons.has("stadium_coin");
+  return (
+    "エンジンの形の検査を通りました（ワザの番号が 1 つで、そのあとに宣言といっしょに選ぶものを示されたものから重ねずに選び、同じ特殊能力を 2 つ選んでいないことだけ。" +
+    `必要なエネルギーが足りるか・ワザを使えるか・特殊能力を使えるか${coin ? "・コインを投げられるか" : ""}・受理・完走の保証ではありません。` +
+    "特殊能力を選んで受理されても、その効果がはたらいたとは限りません（ダメージが増えたかは、送信のあとの観測とログで確かめます）。" +
+    (coin ? "コインを選んで受理されても、コインを投げたとは限りません。" : "") +
+    "結果は送信の応答で決まります）"
+  );
+}
+
 /** 0.174.0（P6）: にげるのトラッシュの段が費用を評価していない（cost_evaluation）か。 */
 export function costNotEvaluated(stages: InputStage[]): boolean {
   return stages.some((s) => s.input === "choose_option" && s.cost_evaluation !== undefined);
@@ -364,9 +398,25 @@ function kindNote(kind: string, noStages: boolean, hasPathStage = false): string
 export function addonLabel(option: InputOption, observation: Observation | null, names: Names): string {
   const kind = labelOf(ADDON_LABELS, option.addon);
   if (option.addon === "stadium_coin" && typeof option.card_id === "string") return `${kind}（${names(option.card_id) ?? option.card_id}）`;
-  const where = typeof option.pokemon === "number" ? (pokemonPlace(observation, option.pokemon) ?? `ポケモン番号 ${option.pokemon}`) : null;
+  const where =
+    typeof option.pokemon === "number"
+      ? (pokemonPlace(observation, option.pokemon) ?? (option.face_down ? faceDownPlace(observation, option.pokemon) : null) ?? `ポケモン番号 ${option.pokemon}`)
+      : null;
   if (option.addon === "with_power" && typeof option.power === "string") return `［${option.power}］ — ${kind}${where ? `（${where}）` : ""}`;
   return `${kind}${where ? `（${where}）` : ""}`;
+}
+
+/** 0.192.0: face_down の選べるもの（with_power の自己持ち主: 本人のうらのバトル場のポケモン）の場所。今の観測の場のうらのポケモンを、公開の場の番号（pokemon_id）だけで
+ * 対応づけて「裏向きのポケモン（プレイヤー0・バトル場）」と書く。本人の観測の real（本当のカード）・カード ID・名前は読まない。見つからなければ null（今の表示のまま）。 */
+function faceDownPlace(observation: Observation | null, pokemonId: number): string | null {
+  if (!observation) return null;
+  const faceDown = (slot: FieldSlot | null | undefined) => slot != null && "face_down" in slot && slot.face_down === true && slot.pokemon_id === pokemonId;
+  for (const p of observation.players) {
+    if (faceDown(p.active)) return `裏向きのポケモン（${playerLabel(p.player)}・バトル場）`;
+    const index = p.bench.findIndex(faceDown);
+    if (index >= 0) return `裏向きのポケモン（${playerLabel(p.player)}・ベンチ${index + 1}）`;
+  }
+  return null;
 }
 
 /** U7-4: 必要なエネルギー（cost の値ごとの個数。印刷の値）。 */
@@ -408,10 +458,28 @@ function AttackDetails({ option, observation }: { option: InputOption; observati
   );
 }
 
+/** 0.186.0: 状態の規約集合の続行規約で除外した選べるもの（エンジンが eligible: false と convention を付けたもの。GUI は条件を判定しない）。 */
+export function conventionExcluded(option: InputOption): boolean {
+  return option.eligible === false && typeof option.convention === "string" && !option.placement;
+}
+
+/**
+ * 0.186.0: 受け取った選べるものが 1 つ以上あり、すべてが規約による除外の候補（エンジンの区分は not_implemented・no_eligible_card）。
+ * このときだけ、候補の案内を「規約により使用不可」にする（not_implemented・no_eligible_card を理由に関係なく読み替えない）。
+ */
+export function allOptionsExcludedByConvention(candidate: Candidate, stages: InputStage[]): boolean {
+  if (candidate.processability !== "not_implemented" || !candidate.reasons.includes("no_eligible_card")) return false;
+  const options = stages.flatMap((s) => (s.input === "choose_option" ? (s.options ?? []) : []));
+  return stages.length > 0 && options.length > 0 && options.every(conventionExcluded);
+}
+
 export function optionUnavailable(option: InputOption): string | null {
   if (option.eligible === false && option.placement) return PLACEMENT_TEXT[option.placement] || "この選択肢は送れません。";
-  if (!EXECUTABLE_PROCESSABILITY.has(option.processability)) {
-    return PROCESSABILITY_TEXT[option.processability]?.description ?? "この選択肢は今は処理できません。";
+  if (conventionExcluded(option)) return CONVENTION_EXCLUDED.option;
+  // processability のない選べるものは規約による除外だけ（実行時検証）。ほかの形が来ても送れるものとして扱わない
+  const processability = option.processability ?? "";
+  if (!EXECUTABLE_PROCESSABILITY.has(processability)) {
+    return PROCESSABILITY_TEXT[processability]?.description ?? "この選択肢は今は処理できません。";
   }
   if (option.eligible === false) return "この選択肢は送れません（エンジンの候補の区分）。";
   return null;
@@ -593,6 +661,7 @@ export function DecisionPanel({ selection, actor = null, observation, names, bus
   // 送信の入口（useEndpointSession の submit）も同じ関数（state/checkGate.ts）で確かめる
   const needsCheck = needsCheckBeforeSubmit(candidate);
   const executable = EXECUTABLE_PROCESSABILITY.has(candidate.processability);
+  const conventionOnly = !withheld && allOptionsExcludedByConvention(candidate, stages);
   const canSend = !withheld && satisfied && !busy && !blocked && executable && (!needsCheck || check?.valid === true);
   const hasPathStage = stages.some((s) => s.input === "choose_option" && s.path_stages !== undefined && PATH_STAGE_KINDS[candidate.kind] !== undefined);
 
@@ -602,7 +671,17 @@ export function DecisionPanel({ selection, actor = null, observation, names, bus
         入力: {labelOf(KIND_LABELS, candidate.kind)} <code className="muted">{candidate.kind}</code>
       </h3>
       <div className="badges">
-        <ProcessabilityBadge value={candidate.processability} withDescription />
+        {conventionOnly ? (
+          <span className="badge convention-excluded" title={CONVENTION_EXCLUDED.candidate}>
+            <span className="badge-label">{CONVENTION_EXCLUDED.label}</span>
+            <code className="badge-code">
+              {candidate.processability}・{candidate.reasons.join("・")}
+            </code>
+            <span className="badge-desc">{CONVENTION_EXCLUDED.candidate}</span>
+          </span>
+        ) : (
+          <ProcessabilityBadge value={candidate.processability} withDescription />
+        )}
         <DisclosureBadge value={candidate.input_disclosure} />
       </div>
       {candidate.choices_format ? <p className="muted small">送る形: {candidate.choices_format}</p> : null}
@@ -675,7 +754,9 @@ export function DecisionPanel({ selection, actor = null, observation, names, bus
               : isFaceDownPower(candidate)
                 ? "エンジンの形の検査を通りました（段の数・番号・前の段との組だけ。特殊能力を使えるか・受理されるか・処理が完了するかは保証しません。送信のあとエンジンが判定します）"
                 : isFaceDownAttack(candidate, stages)
-                  ? "エンジンの形の検査を通りました（ワザの番号が 1 つで、ほかを選ばないことだけ。必要なエネルギーが足りるか・ワザを使えるか・受理・完走の保証ではありません。結果は送信の応答で決まります）"
+                  ? offersDeclaration(stages)
+                    ? faceDownDeclarationCheckText(stages)
+                    : "エンジンの形の検査を通りました（ワザの番号が 1 つで、ほかを選ばないことだけ。必要なエネルギーが足りるか・ワザを使えるか・受理・完走の保証ではありません。結果は送信の応答で決まります）"
                   : "エンジンの検査を通りました（受理・完走の保証ではありません。結果は送信の応答で決まります）"
             : `通りません ${check.refusal?.code ?? ""}${check.refusal ? `（${REFUSAL_TEXT[check.refusal.code] ?? check.refusal.message}）` : ""}`}
         </p>
@@ -686,7 +767,13 @@ export function DecisionPanel({ selection, actor = null, observation, names, bus
       {!withheld && needsCheck && satisfied && check?.valid !== true ? (
         <p className="small">この操作は、送る前に「入力を検査」で今の入力をエンジンに確かめます。</p>
       ) : null}
-      {!executable ? <p className="small warn">この候補は処理可能性の区分により送れません（ゲーム上の禁止ではありません）。</p> : null}
+      {!executable ? (
+        <p className="small warn">
+          {conventionOnly
+            ? "この候補は、選べるカードがすべてこの対戦の規約集合で除外されているため送れません（プレイ用の取り決め。史実の裁定の確定ではありません）。"
+            : "この候補は処理可能性の区分により送れません（ゲーム上の禁止ではありません）。"}
+        </p>
+      ) : null}
 
       <div className="actions">
         {!withheld ? (
@@ -847,7 +934,8 @@ function OptionStageInput({
                 </span>
               </label>
               <span className="option-meta">
-                <ProcessabilityBadge value={option.processability} />
+                {typeof option.processability === "string" ? <ProcessabilityBadge value={option.processability} /> : null}
+                {conventionExcluded(option) ? <span className="badge convention-excluded">{CONVENTION_EXCLUDED.label}</span> : null}
                 {option.placement && option.placement !== "eligible" ? <code className="small">placement: {option.placement}</code> : null}
                 {option.convention ? <code className="small">規約 {option.convention}</code> : null}
                 {option.reasons?.length ? <span className="small muted">理由: {reasonsText(option.reasons)}</span> : null}
@@ -968,7 +1056,7 @@ function DisplayOnlyInputs({
             <code className="muted small">
               owner: {op.owner}・position: {op.position}（0 がいちばん上）
             </code>{" "}
-            <ProcessabilityBadge value={op.processability} />
+            {typeof op.processability === "string" ? <ProcessabilityBadge value={op.processability} /> : null}
           </li>
         ))}
       </ul>

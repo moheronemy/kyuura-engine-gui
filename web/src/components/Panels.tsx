@@ -2,7 +2,9 @@ import type { Candidate, LegalActions, StatusInfo, ViewResponse } from "../api/t
 import { DISPLAY_ONLY_KINDS, GUI_OPERABLE_KINDS, TURN_BASIC_KINDS } from "../api/contract";
 import {
   COMPLETENESS_TEXT,
+  CONVENTION_SET_TEXT,
   EMPTY_REASON_LABELS,
+  NO_EXECUTABLE_OPTION,
   RESIDUAL_STATUS_TEXT,
   RESIDUAL_TEXT,
   HALT_CATEGORY_LABELS,
@@ -73,6 +75,15 @@ export function StatusPanel({ view }: { view: ViewResponse }) {
               <code>
                 {s.convention_set.id}@{s.convention_set.version}
               </code>
+              {/* 0.186.0: 対戦の状態の規約集合（エンジンの status の値。作成の画面の選択値で上書きしない）。説明のある集合だけ説明を添える */}
+              {CONVENTION_SET_TEXT[`${s.convention_set.id}@${s.convention_set.version}`] ? (
+                <span className="small convention-set-text">
+                  {" "}
+                  {CONVENTION_SET_TEXT[`${s.convention_set.id}@${s.convention_set.version}`]!.label}
+                  <br />
+                  <span className="muted">{CONVENTION_SET_TEXT[`${s.convention_set.id}@${s.convention_set.version}`]!.description}</span>
+                </span>
+              ) : null}
             </dd>
           </div>
         ) : null}
@@ -127,72 +138,87 @@ export function CandidatesPanel({
         <p className="muted">候補はありません。{legal.empty_reason ? labelOf(EMPTY_REASON_LABELS, legal.empty_reason) : ""}</p>
       ) : (
         <ul className="candidate-list">
-          {legal.candidates.map((c) => (
-            <li key={c.id} className={selectedId === c.id ? "selected" : undefined}>
-              <div className="candidate-head">
-                <strong>{labelOf(KIND_LABELS, c.kind)}</strong> <code className="muted small">{c.kind}</code>
-              </div>
-              <div className="badges">
-                <ProcessabilityBadge value={c.processability} />
-                <DisclosureBadge value={c.input_disclosure} />
-              </div>
-              {c.reasons.length ? <p className="small muted">理由: {reasonsText(c.reasons)}</p> : null}
-              {c.power && c.pokemon ? (
-                // U7-5e: 同じ種類の候補がいくつも並ぶので、エンジンが返した特殊能力の名前と使うポケモンを見出しの下に出す（候補は id で区別する）
-                // v0.172: 本人のうらのカードは、場所と「裏向き」だけを盤面の情報として、本当のカードを本人の知識として分けて書く
-                <p className="small power-head">
-                  ［{c.power.name_ja}］ —{" "}
-                  {c.pokemon.face_down ? (
-                    <>
-                      裏向きのポケモン（{c.pokemon.zone === "active" ? "バトル場" : `ベンチ${(c.pokemon.bench_index ?? 0) + 1}`}）・あなただけが知るカード <code>{c.power.card_id}</code>
-                    </>
+          {legal.candidates.map((c) => {
+            // not_implemented かつ no_eligible_card: 一覧では規約とも未実装とも断定しない中立の表示（共通の ProcessabilityBadge・PROCESSABILITY_TEXT は変えない）
+            const noExecutable = c.processability === "not_implemented" && c.reasons.includes("no_eligible_card");
+            return (
+              <li key={c.id} className={selectedId === c.id ? "selected" : undefined}>
+                <div className="candidate-head">
+                  <strong>{labelOf(KIND_LABELS, c.kind)}</strong> <code className="muted small">{c.kind}</code>
+                </div>
+                <div className="badges">
+                  {noExecutable ? (
+                    <span className="badge no-executable-option" title={NO_EXECUTABLE_OPTION.hint}>
+                      <span className="badge-label">{NO_EXECUTABLE_OPTION.label}</span>
+                      <code className="badge-code">{c.processability}</code>
+                    </span>
                   ) : (
-                    <>
-                      <code>{c.pokemon.card_id}</code>（{c.pokemon.zone === "active" ? "バトル場" : `ベンチ${(c.pokemon.bench_index ?? 0) + 1}`}）
-                    </>
+                    <ProcessabilityBadge value={c.processability} />
                   )}
-                </p>
-              ) : null}
-              {c.stadium ? (
-                // U7-5d: 場のスタジアム（公開）。持ち主は出したプレイヤーで、使うのは番のプレイヤー
-                <p className="small">
-                  場のスタジアム: <code>{c.stadium.card_id}</code>（持ち主: {playerLabel(c.stadium.owner)}）
-                </p>
-              ) : null}
-              <details>
-                <summary>保証の範囲（guarantees）</summary>
-                <dl className="guarantees">
-                  {Object.entries(c.guarantees).map(([k, v]) => (
-                    <div key={k}>
-                      <dt>
-                        <code>{k}</code>
-                      </dt>
-                      <dd>{v}</dd>
-                    </div>
-                  ))}
-                </dl>
-                <p className="small">supported・may_stop_later でも、ここに書かれた範囲を超えて対戦の完走は保証されません。</p>
-              </details>
-              {GUI_OPERABLE_KINDS.has(c.kind) ? (
-                <button type="button" onClick={() => onSelect(c)} disabled={disabled} aria-pressed={selectedId === c.id}>
-                  {selectedId === c.id ? "入力中" : "この操作を選ぶ"}
-                </button>
-              ) : DISPLAY_ONLY_KINDS.has(c.kind) && legal.coverage.display_only_kinds.includes(c.kind) ? (
-                // U7-5f: 表示だけの候補。位置を見る（inputs だけ）。check・submit は呼ばない
-                <>
-                  <p className="small warn">表示だけ（送れません）: 未裁定のため、エンジンは送ってもゲームに渡す前に断ります。ゲーム上の禁止ではありません。</p>
-                  {c.input_disclosure === "confirmed" ? (
-                    <button type="button" onClick={() => onSelect(c)} disabled={disabled} aria-pressed={selectedId === c.id}>
-                      {selectedId === c.id ? "表示中" : "位置を表示する（表示だけ）"}
-                    </button>
-                  ) : null}
-                </>
-              ) : (
-                // 知らない種類: 入力の形を確かめていないので、古い入力の画面へ通さない（操作しない）
-                <p className="small warn">この GUI はこの種類の入力の画面を持っていません（表示だけ）。</p>
-              )}
-            </li>
-          ))}
+                  <DisclosureBadge value={c.input_disclosure} />
+                </div>
+                {c.reasons.length ? <p className="small muted">理由: {reasonsText(c.reasons)}</p> : null}
+                {noExecutable ? (
+                  // 0.186.0: 候補の一覧には選べるものがないので、理由を読み替えない（規約による除外かは、選べるものを受け取ってから入力の画面で示す）
+                  <p className="small muted">{NO_EXECUTABLE_OPTION.hint}</p>
+                ) : null}
+                {c.power && c.pokemon ? (
+                  // U7-5e: 同じ種類の候補がいくつも並ぶので、エンジンが返した特殊能力の名前と使うポケモンを見出しの下に出す（候補は id で区別する）
+                  // v0.172: 本人のうらのカードは、場所と「裏向き」だけを盤面の情報として、本当のカードを本人の知識として分けて書く
+                  <p className="small power-head">
+                    ［{c.power.name_ja}］ —{" "}
+                    {c.pokemon.face_down ? (
+                      <>
+                        裏向きのポケモン（{c.pokemon.zone === "active" ? "バトル場" : `ベンチ${(c.pokemon.bench_index ?? 0) + 1}`}）・あなただけが知るカード <code>{c.power.card_id}</code>
+                      </>
+                    ) : (
+                      <>
+                        <code>{c.pokemon.card_id}</code>（{c.pokemon.zone === "active" ? "バトル場" : `ベンチ${(c.pokemon.bench_index ?? 0) + 1}`}）
+                      </>
+                    )}
+                  </p>
+                ) : null}
+                {c.stadium ? (
+                  // U7-5d: 場のスタジアム（公開）。持ち主は出したプレイヤーで、使うのは番のプレイヤー
+                  <p className="small">
+                    場のスタジアム: <code>{c.stadium.card_id}</code>（持ち主: {playerLabel(c.stadium.owner)}）
+                  </p>
+                ) : null}
+                <details>
+                  <summary>保証の範囲（guarantees）</summary>
+                  <dl className="guarantees">
+                    {Object.entries(c.guarantees).map(([k, v]) => (
+                      <div key={k}>
+                        <dt>
+                          <code>{k}</code>
+                        </dt>
+                        <dd>{v}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                  <p className="small">supported・may_stop_later でも、ここに書かれた範囲を超えて対戦の完走は保証されません。</p>
+                </details>
+                {GUI_OPERABLE_KINDS.has(c.kind) ? (
+                  <button type="button" onClick={() => onSelect(c)} disabled={disabled} aria-pressed={selectedId === c.id}>
+                    {selectedId === c.id ? "入力中" : "この操作を選ぶ"}
+                  </button>
+                ) : DISPLAY_ONLY_KINDS.has(c.kind) && legal.coverage.display_only_kinds.includes(c.kind) ? (
+                  // U7-5f: 表示だけの候補。位置を見る（inputs だけ）。check・submit は呼ばない
+                  <>
+                    <p className="small warn">表示だけ（送れません）: 未裁定のため、エンジンは送ってもゲームに渡す前に断ります。ゲーム上の禁止ではありません。</p>
+                    {c.input_disclosure === "confirmed" ? (
+                      <button type="button" onClick={() => onSelect(c)} disabled={disabled} aria-pressed={selectedId === c.id}>
+                        {selectedId === c.id ? "表示中" : "位置を表示する（表示だけ）"}
+                      </button>
+                    ) : null}
+                  </>
+                ) : (
+                  // 知らない種類: 入力の形を確かめていないので、古い入力の画面へ通さない（操作しない）
+                  <p className="small warn">この GUI はこの種類の入力の画面を持っていません（表示だけ）。</p>
+                )}
+              </li>
+            );
+          })}
         </ul>
       )}
       <CoveragePanel legal={legal} />

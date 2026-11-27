@@ -152,6 +152,35 @@ export const HALT_CATEGORY_LABELS: Record<string, string> = {
   unmapped: "未分類",
 };
 
+/**
+ * 0.186.0: 新しい対戦で選べる規約集合の説明（表示だけ。選べる集合の一覧は接続層の /api/decks/presets の convention_sets のまま）。
+ * 説明のない集合は ID だけを示す。既定（省略）はエンジンの CS-KYUURA-CURRENT@1 で、GUI は既定を変えない。
+ */
+export const CONVENTION_SET_TEXT: Record<string, Explained> = {
+  "CS-KYUURA-PLAY-TR3@1": {
+    label: "対象がない突風・ポケモンいれかえ・きずぐすりを使用不可とするプレイ用規約",
+    description:
+      "CS-KYUURA-PLAY-PO@1 の 20 規約に、この 3 件（PC-GUST-WITHOUT-OPPONENT-BENCH@1・PC-SWITCH-WITHOUT-BENCH@1・PC-POTION-WITHOUT-DAMAGE@1）を加えた計 23 規約の、開発用の部分的な集合です（この 3 件だけの集合ではありません）。プレイ用の取り決めで、史実の裁定が確定したものではありません。ほかの未決の場面では、既定と同じく止まります。",
+  },
+};
+
+/** 0.186.0: 状態の規約集合の続行規約で除外した選べるもの（eligible: false・convention。処理可能性の区分ではない）。 */
+export const CONVENTION_EXCLUDED = {
+  label: "規約により使用不可",
+  option: "規約により使用不可: この対戦の規約集合のプレイ用の取り決めで、今は使えません（エンジンが除外しました。未裁定・未実装ではありません）。",
+  candidate:
+    "規約により使用不可: 選べるカードがすべて、この対戦の規約集合のプレイ用の取り決めで除外されています（エンジンの区分は not_implemented・no_eligible_card ですが、受け取った選べるものはすべて規約による除外です。未実装ではありません）。",
+};
+
+/**
+ * 候補の一覧で、processability が not_implemented かつ reasons に no_eligible_card の候補の表示（表示だけ。API の値は変えない）。
+ * 一覧は選べるものを持たないので、規約による除外かそれ以外かを断定しない。理由は入力の画面で示す（CONVENTION_EXCLUDED は入力の画面だけ）。
+ */
+export const NO_EXECUTABLE_OPTION = {
+  label: "実行できる選択肢なし",
+  hint: "入力画面で理由を確認できます",
+};
+
 export const PLACEMENT_TEXT: Record<string, string> = {
   eligible: "",
   excluded_by_convention: "この規約集合では、最初のポケモンとして出せません（規約による扱い）。",
@@ -218,7 +247,7 @@ export function reasonsText(reasons: readonly string[]): string {
 /** check・submit の拒否のコード（送り手だけに表示する）。 */
 export const REFUSAL_TEXT: Record<string, string> = {
   CANDIDATE_INPUT_INVALID: "入力が候補の制約に合いません",
-  CANDIDATE_NOT_EXECUTABLE: "エンジンが受け付ける前に止める入力です（未裁定・未対応など。ゲーム上の禁止ではありません）",
+  CANDIDATE_NOT_EXECUTABLE: "エンジンが受け付ける前に止める入力です（未裁定・未対応・規約集合による除外など。ゲーム上の禁止ではありません）",
   CANDIDATES_STALE: "候補が古くなりました（取り直します）",
   CANDIDATES_WRONG_GAME: "別の対戦の候補です（取り直します）",
   CANDIDATES_WRONG_ACTOR: "別の主体の候補です（取り直します）",

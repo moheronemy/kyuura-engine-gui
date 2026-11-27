@@ -278,7 +278,8 @@ export interface CandidatesResponse {
 
 export interface InputOption {
   id: string;
-  processability: string;
+  /** 0.186.0: 規約による除外（convention のある選べるもの）には processability がない（処理可能性の区分ではない）。それ以外は必ずある（実行時検証）。 */
+  processability?: string;
   value?: number | string;
   card?: number;
   card_id?: string;
